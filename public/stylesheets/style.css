@@ -1,0 +1,133 @@
+body {
+  padding: 50px;
+  font: 14px "Montserrat";
+}
+
+a {
+  color: #00B7FF;
+}
+
+.red {
+  color: #f00
+}
+
+h1 {
+  font-weight: bold;
+}
+
+.stat-form {
+  padding-right: 50px;
+}
+
+input[type=file] {
+  font-weight: 200;
+  outline:none !important;;
+}
+
+input, input:active, input:hover, input:focus {
+  outline: 0 !important;;
+  outline-offset: 0;
+}
+
+/* Utils */
+.mr-5 {
+  margin-right: 20px;
+}
+
+/*  */
+input[type=file]::file-selector-button {
+  margin: -10px -20px;
+  position: relative;
+  z-index: 99;
+  border: 1px solid;
+  border-image-slice: 1;
+  border-radius: 0 0.25rem 0.25rem 0;
+  border-image-source: linear-gradient(to left, #46a6ff, #a4ffb8);
+  background-color: #fff;
+  transition: .2s;
+  float: right;
+  padding: 10px 30px;
+  height: 44;
+  color: #46a6ff;
+  font-weight: 400;
+} 
+
+input[type=file]:hover::file-selector-button {
+  border-image-source: linear-gradient(to left, #46a6ff, #46a6ff);
+  background-color: #46a6ff !important;
+  border-color: #46a6ff;
+  color: #fff;
+}
+
+.form-control-wrapper {
+  border: 1px solid #ced4da;
+  border-right: none;
+  border-radius: .25rem;
+}
+
+.form-control {
+  border:none;
+  background: none;
+  border-radius: 0;
+  margin: -1px -2px -1px 0;
+  padding: 10px 20px;
+}
+
+.btn-primary {
+  outline:none;
+  color: #000;
+  padding: 15px 50px;
+  border: none;
+  font-size: 18px;
+  background-color: #46a6ff;
+  background: linear-gradient(94.95deg,#a4ffb8 2.9%,#46a6ff 101.18%);
+  transition: .3s;
+  transition: color 0s ease-in-out;
+}
+
+.btn-primary:hover {
+  color: #fff;
+  background: linear-gradient(94.95deg,#a4ffb8 0.9%,#46a6ff 60.18%);
+}
+
+.btn-primary:active {
+  color: #000;
+}
+
+.btn-secondary {
+  outline:none;
+  color: #000;
+  padding: 15px 50px;
+  background-color: #fff;
+  border: none;
+  font-size: 18px;
+  border: 1px solid #000;
+}
+
+.btn-secondary:hover {
+  background-color: #46a6ff;
+  border-color: #46a6ff;
+}
+
+.intro-img {
+  max-width: 100%;
+  max-height: 760px;
+}
+
+.form-label {
+  font-size: 18px;
+}
+
+.table td {
+  padding: 15px;
+}
+
+/* Tabs */
+.nav-item {
+  margin: 0 5px 0 0;
+}
+
+.nav-link, 
+.nav-link:hover {
+  color: #cccccc;
+}
