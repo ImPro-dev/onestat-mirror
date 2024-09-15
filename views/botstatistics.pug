@@ -1,0 +1,40 @@
+extends layout
+
+block content
+  .container
+    .row
+      .col-12
+        h1.mb-5= title
+      .col-6
+        h3= resultTitle
+      .col-6.text-end
+        a.btn.btn-secondary.mr-5(href="/") Home
+        a.btn.btn-primary.submit-btn(href="/download") Download
+      .col-12.mt-4
+        table.table.table-striped.mt-1
+          thead
+            tr
+              th= headers.adname
+              th= headers.spend
+              th= headers.new
+              th= headers.reg
+              th= headers.dep
+              th= headers.qua
+          tbody
+            each val, key in JSON.parse(data)
+              tr
+                td #{key}
+                td #{val.spend}
+                td #{val.new.value}
+                  if val.new.doubles
+                    span.red &nbsp;(#{val.new.doubles})
+                td #{val.reg.value}
+                  if val.reg.doubles
+                    span.red &nbsp;(#{val.reg.doubles})
+                td #{val.dep.value}
+                  if val.dep.doubles
+                    span.red &nbsp;(#{val.dep.doubles})
+                td #{val.qua.value}
+                  if val.qua.doubles
+                    span.red &nbsp;(#{val.qua.doubles})
+  
