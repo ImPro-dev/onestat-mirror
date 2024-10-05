@@ -11,7 +11,7 @@ var pwaStatisticsRouter = require('./routes/pwastatistics');
 var downloadRouter = require('./routes/download');
 
 var app = express();
-// var port = 3000;
+var port = 3000;
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -45,8 +45,8 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-// app.listen(port, () => {
-//   console.log(`Server is running on http://localhost:${port}`);
-// });
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
+});
 
 module.exports = app;
