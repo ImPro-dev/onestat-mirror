@@ -1,17 +1,17 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var botStatisticsRouter = require('./routes/botstatistics');
-var pwaStatisticsRouter = require('./routes/pwastatistics');
-var downloadRouter = require('./routes/download');
+const indexRouter = require('./routes/index');
+const usersRouter = require('./routes/users');
+const botStatisticsRouter = require('./routes/botstatistics');
+const pwaStatisticsRouter = require('./routes/pwastatistics');
+const downloadRouter = require('./routes/download');
 
-var app = express();
-var port = 3000;
+const app = express();
+const PORT = 3001;
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -30,12 +30,12 @@ app.use('/pwastatistics', pwaStatisticsRouter);
 app.use('/download', downloadRouter);
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   next(createError(404));
 });
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
@@ -45,8 +45,8 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
 
 module.exports = app;
