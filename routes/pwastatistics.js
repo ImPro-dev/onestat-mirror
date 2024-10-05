@@ -17,7 +17,7 @@ router.post('/', upload.fields(fields), function (req, res, next) {
   var aggregatedData = {};
   var FBcvsRow = 1;
   var KTConvCvsRow = 1;
-  var KTClicksCvsRow = 1
+  var KTClicksCvsRow = 1;
 
   // Keitaro data
   var keitaroData = config.Keitaro;
