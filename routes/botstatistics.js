@@ -113,7 +113,9 @@ router.post('/', upload.fields(fields), function (req, res, next) {
       var adname, adIndex, adFound;
       var spend, spendIndex, spendFound;
       var adColumnName = config.FB.adColumnName;
+      var adColumnName_ua = config.FB.adColumnName_ua;
       var spendColumnName = config.FB.spendColumnName;
+      var spendColumnName_ua = config.FB.spendColumnName_ua;
       
       var FBreader = fs.createReadStream("uploads/___FB.csv");
       FBreader.pipe(parse({ delimiter: ",", from_line: 1 }))
@@ -122,11 +124,11 @@ router.post('/', upload.fields(fields), function (req, res, next) {
           if (FBcvsRow == 1) {
             row.forEach((columnName, index) => {
               if (!adFound) {
-                adIndex = columnName === adColumnName ? index : '';
+                adIndex = (columnName === adColumnName || columnName === adColumnName_ua) ? index : '';
                 adFound = !!adIndex;
               }
               if (!spendFound) {
-                spendIndex = columnName === spendColumnName ? index : '';
+                spendIndex = (columnName === spendColumnName || columnName === spendColumnName_ua) ? index : '';
                 spendFound = !!spendIndex;
               }
             });

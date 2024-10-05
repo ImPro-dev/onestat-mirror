@@ -1,7 +1,9 @@
 module.exports = {
     FB: {
         adColumnName: 'Название объявления',
+        adColumnName_ua: 'Назва реклами',
         spendColumnName: 'Сумма затрат (USD)',
+        spendColumnName_ua: 'Сума витрат (USD)',
     },
     Keitaro: {
         subId: 'SubId',
