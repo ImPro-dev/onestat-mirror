@@ -11,3 +11,6 @@ Application can be used for aggregate FB and Keitaro statistics to the single fi
 
 ### v1.1.0
 * Added implementation for PWA
+
+### v1.2.0
+* Added UA column names from FB
