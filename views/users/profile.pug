@@ -1,0 +1,34 @@
+extends ../layout/layout
+
+block header
+  include ../layout/header
+
+block content
+  .container
+    .row
+      .col-12
+        h2.mb-4
+          | Профайл
+        table.table.table-striped.mt-1
+          thead
+            tr
+              th= 'Імʼя'
+              th= 'Емейл'
+              th= 'Web ID'
+              th= 'Роль'
+              th= 'Дія'
+          tbody
+              tr
+                td #{user.name}
+                td #{user.email}
+                td #{user.webID}
+                td #{user.role}
+                td
+                  a(href='/users/edit/' + user.id + '?allow=true') Редагувати
+                  br
+                  a(href='/users/remove/' + user.id) Видалити
+
+        <a class="btn btn btn-light" href="/users">< До списку</a>
+block footer
+  include ../layout/footer
+
