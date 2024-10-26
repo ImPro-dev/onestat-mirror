@@ -1,0 +1,21 @@
+block header
+  .container
+    .row
+      .col-6
+        h1.mb-5= title
+      .col-6
+        if username
+          div.text-right= username
+    .row
+      .col-12
+          div
+            if isAuth
+              <a class="btn btn btn-light" href="/statistics">Statistics</a>
+              if !isUser
+                <a class="btn btn btn-light" href="/users">Users</a>
+              <a class="btn btn btn-light" href="/documentation">Documentation</a>
+              <a class="btn btn btn-dark" href="/auth/logout">Logout</a>
+            else
+              <a class="btn btn btn-light" href="/">Home</a>
+
+

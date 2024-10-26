@@ -1,0 +1,39 @@
+extends ../layout/layout
+
+block header
+  include ../layout/header
+
+block content
+  .container
+    .row
+      .col-12
+        h2.mb-4
+            form(role='form' class='stat-form' method='POST' action='/users/add')
+              div.form-group.mb-4
+                label(class='form-label' for='name') Імʼя:
+                .form-control-wrapper
+                  input#name.form-control(type='text', name='name', required)
+              div.form-group.mb-4
+                label(class='form-label' for='email') Емейл:
+                .form-control-wrapper
+                  input#name.form-control(type='text', name='email', required)
+              div.form-group.mb-4
+                label(class='form-label' for='password') Пароль:
+                .form-control-wrapper
+                  input#email.form-control(type='password', name='password', required)
+              div.form-group.mb-4
+                label(class='form-label' for='webID') WebID:
+                .form-control-wrapper
+                  input#name.form-control(type='text', name='webID', required)
+              div.form-group.mb-5
+                label(class='form-label' for='role') Роль:
+                .form-control-wrapper
+                  select#name.form-control(type='text', name='role', required)
+                    option(name='user', value='user') user
+                    option(name='manager', value='manager') manager
+                    option(name='admin', value='admin') admin
+              button.btn.btn-primary.submit-btn.w-100(type="submit") Додати
+
+block footer
+  include ../layout/footer
+
