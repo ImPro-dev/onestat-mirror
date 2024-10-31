@@ -1,0 +1,2 @@
+.breadcrumbs {	display: flex;	flex-wrap: wrap;	padding: 0 1.25rem;	list-style: none;}.breadcrumbs-item {	flex-shrink: 0;	padding-right: 4px;}.breadcrumbs-item:not(:first-child) {	position: relative;	padding-left: 18px;}.breadcrumbs-item:not(:first-child)::before {	content: '\ec3c';	position: absolute;	font-family: 'Linearicons';	font-size: 0.75rem;	bottom: 3px;	left: 0.125rem;}.breadcrumbs-icon {	font-size: 0.8125rem;	margin-right: 0.3125rem;}
+/*# sourceMappingURL=breadcrumbs.css.map */

@@ -6,10 +6,10 @@ const User = require('../models/user');
 
 router.get('/', async (req, res, next) => {
   if (req.session.isAuthenticated) {
-    res.redirect('/statistics');
+    return res.redirect('/dashboard');
   }
-  res.render('login', {
-    title: 'OneStat',
+  res.render('pages/login', {
+    title: 'Авторизація',
     isLogin: true,
     error: req.flash('error')
   });
@@ -36,7 +36,7 @@ router.post('/login', async (req, res) => {
             throw err
           }
 
-          res.redirect('/statistics');
+          res.redirect('/dashboard');
         })
       } else {
         req.flash('error', 'Неправильний пароль');
@@ -47,7 +47,7 @@ router.post('/login', async (req, res) => {
     } else {
       // 404 user not found
       // res.redirect('/auth', 404);
-      req.flash('error', 'Емейл не знайдено');
+      req.flash('error', 'Користувача не знайдено');
       res.redirect('/auth');
     }
 

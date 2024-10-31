@@ -2,10 +2,15 @@ const { Schema, model } = require('mongoose');
 
 
 const userSchema = new Schema({
-  name: {
+  firstname: {
     type: String,
     unique: false,
-    required: [true, 'Please enter name']
+    required: [true, 'Please enter FirstName']
+  },
+  lastname: {
+    type: String,
+    unique: false,
+    required: [true, 'Please enter FirstName']
   },
   email: {
     type: String,
@@ -16,10 +21,19 @@ const userSchema = new Schema({
     type: String,
     required: [true, 'Please enter password']
   },
+  telegram: {
+    type: String,
+    unique: false,
+    required: false
+  },
+  position: {
+    type: String,
+    required: true
+  },
   webID: {
     type: String,
     unique: true,
-    required: [true, 'Please enter web ID']
+    required: false
   },
   role: {
     type: String,

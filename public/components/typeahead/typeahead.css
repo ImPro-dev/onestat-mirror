@@ -1,0 +1,111 @@
+.twitter-typeahead {
+  width: 100%;
+}
+
+.tt-menu {
+  width: 100%;
+}
+.tt-menu .tt-dataset {
+  overflow-y: auto;
+  max-height: 200px;
+  background: #fff;
+  border: 1px solid #a7a9b2;
+  border-top: 0;
+  border-radius: 0 0 0.25rem 0.25rem;
+}
+.tt-menu .tt-suggestion {
+  padding: 0.8125rem 1.25rem;
+  cursor: pointer;
+}
+.tt-menu .tt-suggestion:hover {
+  background: #fff;
+}
+
+.form-control-primary ~ .tt-menu .tt-dataset {
+  border-color: #0052ff;
+}
+.form-control-primary ~ .tt-menu .tt-suggestion {
+  display: block;
+}
+.form-control-primary ~ .tt-menu .tt-suggestion:hover {
+  background: #0052ff;
+  color: #fff;
+}
+
+.form-control-secondary ~ .tt-menu .tt-dataset {
+  border-color: #1bc773;
+}
+.form-control-secondary ~ .tt-menu .tt-suggestion {
+  display: block;
+}
+.form-control-secondary ~ .tt-menu .tt-suggestion:hover {
+  background: #1bc773;
+  color: #fff;
+}
+
+.form-control-success ~ .tt-menu .tt-dataset {
+  border-color: #00c3aa;
+}
+.form-control-success ~ .tt-menu .tt-suggestion {
+  display: block;
+}
+.form-control-success ~ .tt-menu .tt-suggestion:hover {
+  background: #00c3aa;
+  color: #fff;
+}
+
+.form-control-info ~ .tt-menu .tt-dataset {
+  border-color: #8bd3fb;
+}
+.form-control-info ~ .tt-menu .tt-suggestion {
+  display: block;
+}
+.form-control-info ~ .tt-menu .tt-suggestion:hover {
+  background: #8bd3fb;
+  color: #1a2643;
+}
+
+.form-control-warning ~ .tt-menu .tt-dataset {
+  border-color: #feb006;
+}
+.form-control-warning ~ .tt-menu .tt-suggestion {
+  display: block;
+}
+.form-control-warning ~ .tt-menu .tt-suggestion:hover {
+  background: #feb006;
+  color: #1a2643;
+}
+
+.form-control-danger ~ .tt-menu .tt-dataset {
+  border-color: #fe355f;
+}
+.form-control-danger ~ .tt-menu .tt-suggestion {
+  display: block;
+}
+.form-control-danger ~ .tt-menu .tt-suggestion:hover {
+  background: #fe355f;
+  color: #fff;
+}
+
+.form-control-light ~ .tt-menu .tt-dataset {
+  border-color: #dde3e8;
+}
+.form-control-light ~ .tt-menu .tt-suggestion {
+  display: block;
+}
+.form-control-light ~ .tt-menu .tt-suggestion:hover {
+  background: #dde3e8;
+  color: #1a2643;
+}
+
+.form-control-dark ~ .tt-menu .tt-dataset {
+  border-color: #1a2643;
+}
+.form-control-dark ~ .tt-menu .tt-suggestion {
+  display: block;
+}
+.form-control-dark ~ .tt-menu .tt-suggestion:hover {
+  background: #1a2643;
+  color: #fff;
+}
+/*# sourceMappingURL=typeahead.css.map */

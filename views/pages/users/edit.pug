@@ -1,0 +1,78 @@
+extends ../../components/base/_skeleton
+include ../../components/rd-navbar/_rd-navbar
+//- include ../components/breadcrumbs/_breadcrumbs
+include ../../components/input/_input
+//- include ../components/progress-circle/_progress-circle
+//- include ../components/progress/_progress
+
+block variables
+  - pageName = title;
+  - htmlClass.push( 'page-small-footer' );
+
+block page
+  header.section.page-header
+    +rd-navbar
+
+  section.section-xs
+    .container
+      .row.justify-content-center
+        .col-lg-8
+          .panel
+            .panel-header
+              h5.panel-title
+                span.panel-icon.linearicons-pencil5
+                = ' '
+                span= title
+            .panel-body
+              form(role='form' class='stat-form' method='POST' action='/users/edit')
+                .row
+                  .col-xl-6
+                    div.form-group
+                      label(class='form-label' for='firstname') Імʼя:
+                      .form-control-wrapper
+                        input#firstname.form-control(type='text', name='firstname', required, value=user.firstname)
+                    div.form-group
+                      label(class='form-label' for='email') Емейл:
+                      .form-control-wrapper
+                        input#email.form-control(type='text', name='email', required, value=user.email)
+                    div.form-group
+                      label(class='form-label' for='telegram') Телеграм аккаунт:
+                      .form-control-wrapper
+                        input#telegram.form-control(type='text', name='telegram', value=user.telegram)
+                  .col-xl-6
+                    div.form-group
+                      label(class='form-label' for='lastname') Прізвище:
+                      .form-control-wrapper
+                        input#lastname.form-control(type='text', name='lastname', required, value=user.lastname)
+                    div.form-group
+                      label(class='form-label' for='password') Пароль:
+                      .form-control-wrapper
+                        input#password.form-control(type='password', name='password', required)
+                    div.form-group
+                      label(class='form-label' for='role') Рівень доступу:
+                      .form-control-wrapper
+                        var
+                        select#role.form-control(type='text', name='role', required)
+                          option(name='user', value='user', selected=isUser ? 'selected' : '') user
+                          option(name='manager', value='manager', selected=isManager ? 'selected' : '') manager
+                          option(name='admin', value='admin', selected=isAdmin ? 'selected' : '') admin
+                  .col-3.mt-3
+                    div.form-group
+                      label(class='form-label' for='webID') WebID:
+                      .form-control-wrapper
+                        input#webid.form-control(type='text', name='webID', required, value=user.webID)
+                  .col-9.mt-3
+                    div.form-group
+                      label(class='form-label' for='position') Позиція:
+                      .form-control-wrapper
+                        input#position.form-control(type='text', name='position', required, value=user.position)
+
+                  .col-12.mt-4
+                    input#id.form-control(type='hidden', name='id', value=user.id)
+                    button.btn.btn-primary.submit-btn.w-100.mb-4(type="submit") Редагувати
+                    a.btn.btn-light(href="/users")
+                      span.mdi-keyboard-backspace.mr-2
+                      span= 'До списку'
+
+  footer
+    include ../layout/footer
