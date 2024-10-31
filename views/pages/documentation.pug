@@ -1,0 +1,30 @@
+//- extends layout/layout
+extends ../components/base/_skeleton
+include ../components/rd-navbar/_rd-navbar
+//- include ../components/breadcrumbs/_breadcrumbs
+//- include ../components/input/_input
+//- include ../components/progress-circle/_progress-circle
+//- include ../components/progress/_progress
+
+block variables
+  - pageName = title;
+  - htmlClass.push( 'page-small-footer' );
+
+block page
+  header.section.page-header
+    +rd-navbar
+
+  section.section-xs
+    .container-fluid
+      .row
+        .col-12
+          .panel
+            .panel-header
+              h5.panel-title
+                span.panel-icon.linearicons-users2
+                = ' '
+                span= title
+            .panel-body
+
+  footer
+    include layout/footer

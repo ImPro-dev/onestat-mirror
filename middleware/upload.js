@@ -1,9 +1,13 @@
 const multer = require('multer');
+const fs = require('fs');
 
 // Set up storage for uploaded files
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    const { webID } = req.session.user;
+    const path = `./uploads/${webID}`
+    fs.mkdirSync(path, { recursive: true })
+    return cb(null, path)
   },
   filename: (req, file, cb) => {
     let fileName;

@@ -1,0 +1,26 @@
+body {
+  background-image: url('../images/space.jpeg');
+  background-position: top center fixed;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.splash {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sixtyfour-convergence-splash-logo {
+  font-family: "Sixtyfour Convergence", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-size: 100px;
+  text-transform: uppercase;
+  font-style: normal;
+  font-variation-settings:
+    "BLED" 0,
+    "SCAN" 0,
+    "XELA" 0,
+    "YELA" 0;
+}

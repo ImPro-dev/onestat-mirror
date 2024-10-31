@@ -1,0 +1,1 @@
+{"version":3,"sources":["components/fullscreen/fullscreen.scss"],"names":[],"mappings":"AAAA;EACC;EACA;EACA;EACA;EACA","file":"fullscreen.css","sourcesContent":["[data-fullscreen]:-webkit-full-screen {\n\twidth: 100%;\n\theight: 100%;\n\toverflow-x: hidden;\n\toverflow-y: visible;\n\tbackground: white;\n}\n"]}
