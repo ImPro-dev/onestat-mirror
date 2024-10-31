@@ -1,0 +1,22 @@
+.sidebar {
+  position: fixed;
+  top: 70px;
+  bottom: 0;
+  right: 0;
+  transform: translateX(101%);
+  z-index: 10;
+  width: 280px;
+  transition: transform 0.2s ease-in-out;
+  background: #fff;
+  overflow: hidden;
+  overflow-y: scroll;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+.sidebar.active {
+  transform: translateX(0);
+}
+
+.sidebar-lg {
+  width: 320px;
+}
+/*# sourceMappingURL=sidebar.css.map */

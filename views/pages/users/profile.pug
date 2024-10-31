@@ -1,0 +1,45 @@
+extends ../../components/base/_skeleton
+include ../../components/rd-navbar/_rd-navbar
+include ../../components/helpers/_helpers
+//- include ../../components/breadcrumbs/_breadcrumbs
+//- include ../../components/input/_input
+//- include ../../components/progress-circle/_progress-circle
+//- include ../../components/progress/_progress
+
+block variables
+  - pageName = title;
+  - htmlClass.push( 'page-small-footer' );
+
+block page
+  header.section.page-header
+    +rd-navbar
+
+  section.section-xs.bg-white
+    .container-fluid
+      .media.flex-column.flex-sm-row.align-items-sm-center.group-30
+        .media-item
+          img( src='/images/users/user-01-165x165.png', width='165', height='165', alt='' )
+        .media-body
+          h4= user.firstname + ' ' + user.lastname
+          p= user.position
+          ul.list-marked.mt-4.mb-4
+            li.list-block-item
+              span.fa-envelope-square.h4.text-warning.mr-3
+              span= 'Емейл: ' + user.email
+            li.list-block-item
+              span.fa-telegram.h4.text-info.mr-3
+              span= 'Телеграм: '
+                +telegramFormat(user.telegram)
+            li.list-block-item
+              span.mdi-briefcase-check.h4.text-success.mr-3
+              span= 'WebID: ' + user.webID
+            if !isUser
+              li.list-block-item
+                span.mdi-account-circle.h4.text-danger.mr-3
+                span= 'Рівень доступу: ' + user.role
+          if !isUser
+            a.btn.btn-secondary(href='/users/edit/' + user.id + '?allow=true') Редагувати профіль
+
+  footer
+    include ../layout/footer
+

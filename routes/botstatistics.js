@@ -210,9 +210,9 @@ router.post('/',
 
             await csvWriter.writeRecords(records);
 
-            res.render('botstatistics', {
-              title: 'OneStat',
-              resultTitle: 'OneStat result:',
+            res.render('pages/manual_statistics/botstatistics', {
+              title: 'OneBot Статистика',
+              resultTitle: 'Зведені дані:',
               headers: {
                 adname: subId1ColumnName,
                 subID: subIdColumnName,

@@ -16,6 +16,7 @@ const varMiddlware = require('./middleware/variables');
 const indexRouter = require('./routes/index');
 const authRouter = require('./routes/auth');
 const usersRouter = require('./routes/users');
+const dashboardRouter = require('./routes/dashboard');
 const documentationRouter = require('./routes/documentation');
 const botStatisticsRouter = require('./routes/botstatistics');
 const pwaStatisticsRouter = require('./routes/pwastatistics');
@@ -23,7 +24,7 @@ const statisticsRouter = require('./routes/statistics');
 const downloadRouter = require('./routes/download');
 
 // DB Connection
-const { MONGODB_URI, SESSION_SECRET } = process.env;
+const { MONGODB_URI, SESSION_SECRET, COOKIE_AGE } = process.env;
 dbHelper.dbConnect(MONGODB_URI);
 
 const app = express();
@@ -52,7 +53,7 @@ app.use(session({
   //   expires: new Date(Date.now() + (20 * 1000)),
   // },
   cookie: {
-    maxAge: 1000 * 60 * 60 * 1 // 1h
+    maxAge: 1000 * 60 * 60 * COOKIE_AGE // 1h
   },
   store: store
 }));
@@ -62,6 +63,7 @@ app.use(varMiddlware);
 // Routes
 app.use('/', indexRouter);
 app.use('/auth', authRouter);
+app.use('/dashboard', dashboardRouter);
 app.use('/users', usersRouter);
 app.use('/documentation', documentationRouter);
 app.use('/botstatistics', botStatisticsRouter);

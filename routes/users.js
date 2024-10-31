@@ -3,7 +3,7 @@ const router = express.Router();
 const User = require('../models/user');
 const dbHelper = require('../helpers/dbHelper');
 const auth = require('../middleware/auth');
-const role = require('../middleware/role')
+const role = require('../middleware/role');
 
 /**
  * GET users listing.
@@ -13,8 +13,9 @@ router.get('/',
   role('admin', 'manager'),
   async (req, res, next) => {
     const users = await User.find();
-    res.render('users/list', {
-      title: 'OneStat',
+    res.render('pages/users/list', {
+      title: 'Користувачі',
+      userError: req.flash('userError'),
       users
     });
   });
@@ -26,8 +27,9 @@ router.get('/add',
   auth,
   role('admin', 'manager'),
   function (req, res) {
-    res.render('users/add', {
-      title: 'OneStat',
+    res.render('pages/users/add', {
+      title: 'Новий користувач',
+      userError: req.flash('userError')
     });
   }
 );
@@ -40,19 +42,21 @@ router.post('/add',
   role('admin', 'manager'),
   async (req, res) => {
     try {
-      const { name, email, password, webID, role } = req.body;
+      const { firstname, lastname, email, password, telegram, position, webID, role } = req.body;
       const candidate = await User.findOne({ email });
 
       if (candidate) {
         res.redirect('/users/add');
       } else {
         const hashedPassword = await dbHelper.hashPassword(password);
-        const newUser = new User({ name, email, password: hashedPassword, webID, role });
+        const newUser = new User({ firstname, lastname, email, password: hashedPassword, telegram, position, webID, role });
         await newUser.save();
         res.redirect('/users')
       }
     } catch (error) {
       console.log(error);
+      req.flash('userError', 'Сталася помилка, звернись до Ігоря. ' + error.message);
+      res.redirect('/users/add')
     }
   }
 );
@@ -70,41 +74,83 @@ router.get('/edit/:id',
 
     const user = await User.findById(req.params.id);
 
-    res.render('users/edit', {
-      title: 'OneStat',
+    res.render('pages/users/edit', {
+      title: 'Редагувати дані користувача',
       user
     });
   }
 );
 
+/**
+ * Edit user data
+ */
 router.post('/edit',
   auth,
   role('admin', 'manager'),
   async (req, res) => {
-    const userData = req.body;
-    const { id } = req.body;
-    userData.password = await dbHelper.hashPassword(req.body.password);
-    delete req.body.id;
-    await User.findByIdAndUpdate(id, userData);
+    try {
+      const userData = req.body;
+      const { id } = req.body;
+      userData.password = await dbHelper.hashPassword(req.body.password);
+      delete req.body.id;
+      await User.findByIdAndUpdate(id, userData);
 
-    res.redirect('/users');
+      res.redirect('/users');
+    } catch (error) {
+      console.log(error);
+      req.flash('userError', 'Сталася помилка, звернись до Ігоря. ' + error.message);
+      res.redirect('/users')
+    }
   }
 );
 
-
+/**
+ * User profile page (access for all)
+ */
 router.get('/:id',
   auth,
-  role('admin', 'manager'),
+  role('admin', 'manager', 'user'),
   async (req, res) => {
-    const user = await User.findById(req.params.id);
+    let _id = req.params.id;
+    let myID = res.locals.myID;
+    let isUser = res.locals.isUser;
 
-    res.render('users/profile', {
-      title: 'OneStat',
+    if (isUser && _id != myID) {
+      return res.redirect('/');
+    }
+    const user = await User.findById(_id);
+
+    res.render('pages/users/profile', {
+      title: 'Профіль',
       user
     });
   }
 );
 
+/**
+ * User profile page (access for user)
+ */
+// router.get('/profile/:id',
+//   auth,
+//   role('admin', 'manager', 'user'),
+//   async (req, res) => {
+
+//     if (req.params.id) {
+//       const user = await User.findById(req.params.id);
+
+//       res.render('pages/users/profile', {
+//         title: 'Профіль',
+//         user
+//       });
+//     } else {
+//       return res.redirect('/');
+//     }
+//   }
+// );
+
+/**
+ * Remove user
+ */
 router.get('/remove/:id',
   auth,
   role('admin', 'manager'),

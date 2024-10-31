@@ -273,9 +273,9 @@ router.post('/',
 
                 await csvWriter.writeRecords(records);
 
-                res.render('pwastatistics', {
-                  title: 'OneStat',
-                  resultTitle: 'OneStat result:',
+                res.render('pages/manual_statistics/pwastatistics', {
+                  title: 'PWA Статистика',
+                  resultTitle: 'Зведені дані:',
                   headers: {
                     adname: subId1ColumnName,
                     subID: subIdColumnName,

@@ -4,8 +4,8 @@ const auth = require('../middleware/auth');
 
 /* GET home page. */
 router.get('/', auth, function (req, res, next) {
-  res.render('statistics', {
-    title: 'OneStat',
+  res.render('pages/manual_statistics/statistics', {
+    title: 'Статистика',
     csvError: req.flash('csvError')
   });
 });
