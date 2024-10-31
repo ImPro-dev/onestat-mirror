@@ -1,0 +1,80 @@
+//- extends layout/layout
+extends ../../components/base/_skeleton
+include ../../components/rd-navbar/_rd-navbar
+//- include ../components/breadcrumbs/_breadcrumbs
+//- include ../components/input/_input
+//- include ../components/progress-circle/_progress-circle
+//- include ../components/progress/_progress
+
+//- block header
+//- include layout/header
+
+block variables
+  -
+    pageName = title;
+    htmlClass.push( 'page-small-footer' );
+
+block page
+  header.section.page-header
+    +rd-navbar
+
+  section.section-xs
+    .container
+      .row.justify-content-center
+        .col-12
+          .panel
+            .panel-header
+              h5.panel-title
+                span.panel-icon.linearicons-chart-bars
+                = ' '
+                span= title
+            .panel-body
+              .container
+                .row
+                  .col-12.col-md-6
+                    h6.mb-4
+                      | Завантаж файли з Facebook і Keitaro:
+                    if csvError && csvError.length
+                      div.mb-4
+                        +alert( {close: true} ).alert-danger.alert-sm
+                          span.alert-icon.fa-exclamation-triangle
+                          span= csvError
+
+                    .tabs.tabs-vertical-top
+                      ul.nav.nav-tabs.scroller.scroller-horizontal( role='tablist' )
+                        li.nav-item: a.nav-link.active( data-toggle='tab', href='#onebot', role='tab', aria-selected='true' ) OneBot
+                        li.nav-item: a.nav-link( data-toggle='tab', href='#pwa', role='tab', aria-selected='false' ) PWA
+
+                      .tab-content
+                        #onebot.tab-pane.fade.show.active( role='tabpanel' )
+                          form(role='form' class='stat-form' method='POST' action='/botstatistics' enctype="multipart/form-data")
+                            div.form-group.mb-4
+                              label(class='form-label' for='fb_stat') Файл з Facebook:
+                              .form-control-wrapper.custom-file
+                                input#name.form-control(type='file', name='fb_stat', required)
+                            div.form-group.mb-5
+                              label(class='form-label' for='keitaro_stat') Файл з Keitaro:
+                              .form-control-wrapper.custom-file
+                                input#email.form-control(type='file', name='keitaro_stat_conversions', required)
+                            button.btn.btn-primary.submit-btn.w-100(type="submit") Завантажити
+                        #pwa.tab-pane.fade( role='tabpanel' )
+                          form(role='form' class='stat-form' method='POST' action='/pwastatistics' enctype="multipart/form-data")
+                            div.form-group.mb-4
+                              label(class='form-label' for='fb_stat') Файл з Facebook:
+                              .form-control-wrapper.custom-file
+                                input#name.form-control(type='file', name='fb_stat', required)
+                            div.form-group.mb-4
+                              label(class='form-label' for='keitaro_stat') Файл з Keitaro (Clicks):
+                              .form-control-wrapper.custom-file
+                                input#email.form-control(type='file', name='keitaro_stat_clicks', required)
+                            div.form-group.mb-5
+                              label(class='form-label' for='keitaro_stat') Файл з Keitaro (Conversions):
+                              .form-control-wrapper.custom-file
+                                input#email.form-control(type='file', name='keitaro_stat_conversions', required)
+                            button.btn.btn-primary.submit-btn.w-100(type="submit") Завантажити
+                  .col-6
+                    img(class="intro-img", src="../images/OneStat_bg.png", alt="")
+
+  footer
+    include ../layout/footer
+

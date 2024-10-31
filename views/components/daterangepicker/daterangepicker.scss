@@ -1,0 +1,153 @@
+@import "../bootstrap/scss/functions";
+@import "../base/functions";
+@import "../base/variables";
+@import "../bootstrap/scss/variables";
+
+// Variables
+$dtrp-bg: $white;
+$dtrp-color: $gray-900;
+$dtrp-border-color: $white;
+
+$dtrp-bg-active: $primary;
+$dtrp-bg-hover: rgba( $dtrp-bg-active, .4 );
+$dtrp-bg-range: rgba( $dtrp-bg-active, .2 );
+
+@import "../daterangepicker/_daterangepicker";
+
+.daterangepicker {
+	color: $dtrp-color;
+	background-color: $dtrp-bg;
+	border-color: $dtrp-border-color;
+	z-index: $zindex-dropdown;
+	box-shadow: $box-shadow;
+
+	&:before {
+		border-bottom-color: $dtrp-bg;
+	}
+
+	&:after {
+		border-bottom-color: $dtrp-bg;
+	}
+
+	// inner calendar
+	.calendar-table {
+		background-color: $dtrp-bg;
+		border-color: $dtrp-bg;
+
+		td,
+		th {
+			min-width: 34px;
+			width: 34px;
+			height: 30px;
+			font-size: $font-size-base;
+			font-weight: 400;
+		}
+
+		// month name
+		thead {
+			tr:last-child {
+				th {
+					font-size: 10px;
+					text-transform: uppercase;
+					font-weight: 700;
+				}
+			}
+		}
+	}
+
+	// prev/next arrows
+	.calendar-table {
+		.prev {
+			span { margin-right: -0.3em; }
+		}
+
+		.next {
+			span { margin-left: -0.3em; }
+		}
+
+		.next,
+		.prev {
+			background-color: $gray-200;
+
+			span {
+				border-width: 0 1px 1px 0;
+				border-color: $dtrp-color;
+			}
+
+			&:hover {
+				background-color: $dtrp-bg-active;
+
+				span {
+					border-color: $white;
+				}
+			}
+		}
+	}
+
+	// hover dates
+	td.available:hover,
+	th.available:hover {
+		background-color: $dtrp-bg-hover;
+	}
+
+	// prev/next month days
+	td.off,
+	td.off.in-range,
+	td.off.start-date,
+	td.off.end-date {
+		color: rgba( $dtrp-color, .5 );
+		background-color: transparent;
+	}
+
+	// dates in range
+	td.in-range {
+		color: $dtrp-color;
+		background-color: $dtrp-bg-range;
+	}
+
+	// active dates
+	td.active,
+	td.active:hover {
+		color: color-yiq( $dtrp-bg-active );
+		background-color: $dtrp-bg-active;
+	}
+
+	// dates list
+	.ranges li {
+		&:hover{
+			color: color-yiq( $dtrp-bg-hover );
+			background-color: $dtrp-bg-hover;
+		}
+		&.active{
+			color: color-yiq( $dtrp-bg-active );
+			background-color: $dtrp-bg-active;
+		}
+	}
+
+	// dates buttons
+	.drp-buttons {
+		margin-bottom: -8px;
+		border-top: 1px solid rgba($black, .15);
+
+		.btn {
+			margin-left: 0;
+		}
+
+		> * {
+			margin-right: 8px;
+			margin-bottom: 8px;
+			vertical-align: middle;
+		}
+	}
+}
+
+// Color themes
+@each $theme, $color in $theme-colors {
+	.form-control-#{$theme} ~ .daterangepicker {
+		td.active,
+		.ranges li.active{
+			background: $color;
+			color: color-yiq( $color );
+		}
+	}
+}

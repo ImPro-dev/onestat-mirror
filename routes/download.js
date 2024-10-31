@@ -1,12 +1,15 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const config = require('../config/config')
+const config = require('../config/statConfig')
+const auth = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/', function (req, res, next) {
-  var filePath = path.join(__dirname, '../download/' + config.OneStatFileName);
+router.get('/', auth, function (req, res, next) {
+  const { webID } = req.session.user;
+  // const path = `./uploads/${webID}`
+  var filePath = path.join(__dirname, '..', 'download', webID, config.OneStatFileName);
   if (fs.existsSync(filePath)) {
     res.download(filePath, config.OneStatFileName, (err) => {
       if (err) {
@@ -15,7 +18,7 @@ router.get('/', function (req, res, next) {
       }
     });
   } else {
-      res.status(404).send('CSV file not found');
+    res.status(404).send('CSV file not found');
   }
 });
 

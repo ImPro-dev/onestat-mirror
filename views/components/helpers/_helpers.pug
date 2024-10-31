@@ -1,0 +1,8 @@
+//- Alert
+	@param {object|string} data - alert parameters or alert text
+	@param {string} data.icon - alert icon class
+	@param {boolean} data.close - enable close button
+mixin telegramFormat ( telegram )
+	a(href='https://t.me/' + telegram.replace('@', '') target='_blank') #{telegram.slice(0, 20)}
+		if telegram.length > 20
+			|...

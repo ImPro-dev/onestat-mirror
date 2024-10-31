@@ -1,0 +1,72 @@
+@charset "UTF-8";
+.blockquote {
+  padding: 0.625rem 1.25rem;
+  font-size: 1.03125rem;
+  border-left: 5px solid;
+}
+
+.blockquote-footer {
+  display: block;
+  font-size: 87%;
+  color: #6c757d;
+}
+.blockquote-footer::before {
+  content: "— ";
+}
+
+* + .blockquote {
+  margin-top: 20px;
+}
+
+.blockquote-reverse {
+  text-align: right;
+  border-left: 0;
+  border-right: 5px solid;
+}
+
+.blockquote-thin {
+  border-width: 3px;
+}
+
+.blockquote-rounded {
+  border-radius: 11px;
+}
+
+.blockquote-primary {
+  border-color: #0052ff;
+}
+
+.blockquote-secondary {
+  border-color: #1bc773;
+}
+
+.blockquote-success {
+  border-color: #00c3aa;
+}
+
+.blockquote-info {
+  border-color: #8bd3fb;
+}
+
+.blockquote-warning {
+  border-color: #feb006;
+}
+
+.blockquote-danger {
+  border-color: #fe355f;
+}
+
+.blockquote-light {
+  border-color: #dde3e8;
+}
+
+.blockquote-dark {
+  border-color: #1a2643;
+}
+
+.md-editor blockquote {
+  padding: 0.625rem 1.25rem;
+  font-size: 1.03125rem;
+  border-left: 5px solid #0052ff;
+}
+/*# sourceMappingURL=blockquote.css.map */
