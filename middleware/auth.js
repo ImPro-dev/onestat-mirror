@@ -5,7 +5,7 @@ module.exports = function (req, res, next) {
   let token = req.session.token;
 
   if (!isAuthenticated) {
-    req.session.destroy();
+    // req.session.destroy();
     return res.redirect('/auth');
   }
 
