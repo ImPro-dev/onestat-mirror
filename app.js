@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-// const helmet = require('helmet');
+const helmet = require('helmet');
 const createError = require('http-errors');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
@@ -31,7 +31,6 @@ const app = express();
 const store = new MongoStore({
   collection: 'sessions',
   uri: MONGODB_URI
-
 });
 
 // view engine setup
@@ -53,9 +52,9 @@ app.use(session({
   //   expires: new Date(Date.now() + (20 * 1000)),
   // },
   cookie: {
-    maxAge: 1000 * 60 * 60 * COOKIE_AGE // 1h
+    maxAge: 1000 * 60 * 60 * COOKIE_AGE
   },
-  store: store
+  store: store,
 }));
 app.use(flash());
 app.use(varMiddlware);

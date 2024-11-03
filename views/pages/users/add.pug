@@ -34,41 +34,57 @@ block page
                   .col-xl-6
                     div.form-group
                       label(class='form-label' for='firstname') Імʼя:
-                      .form-control-wrapper
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text.linearicons-user
                         input#firstname.form-control(type='text', name='firstname', required)
                     div.form-group
                       label(class='form-label' for='email') Емейл:
-                      .form-control-wrapper
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text.linearicons-envelope
                         input#email.form-control(type='text', name='email', required)
                     div.form-group
                       label(class='form-label' for='telegram') Телеграм аккаунт:
-                      .form-control-wrapper
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text.linearicons-paper-plane
                         input#telegram.form-control(type='text', name='telegram')
                   .col-xl-6
                     div.form-group
                       label(class='form-label' for='lastname') Прізвище:
-                      .form-control-wrapper
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text.linearicons-user
                         input#lastname.form-control(type='text', name='lastname', required)
                     div.form-group
                       label(class='form-label' for='password') Пароль:
-                      .form-control-wrapper
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text.linearicons-lock
                         input#password.form-control(type='password', name='password', required)
                     div.form-group
                       label(class='form-label' for='role') Рівень доступу:
-                      .form-control-wrapper
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text.linearicons-database-lock
                         select#role.form-control(type='text', name='role', required)
-                          option(name='user', value='user') user
+                          option(name='user', value='user' selected='selected') user
                           option(name='manager', value='manager') manager
                           option(name='admin', value='admin') admin
                   .col-3.mt-3
                     div.form-group
                       label(class='form-label' for='webID') WebID:
-                      .form-control-wrapper
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text.linearicons-briefcase
                         input#webid.form-control(type='text', name='webID', required)
                   .col-9.mt-3
                     div.form-group
                       label(class='form-label' for='position') Позиція:
-                      .form-control-wrapper
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text.linearicons-users2
                         input#position.form-control(type='text', name='position', required)
 
                   .col-12.mt-4

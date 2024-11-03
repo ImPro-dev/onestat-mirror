@@ -1,0 +1,66 @@
+//- extends layout/layout
+extends ../components/base/_skeleton
+include ../components/rd-navbar/_rd-navbar
+//- include ../components/breadcrumbs/_breadcrumbs
+//- include ../components/input/_input
+//- include ../components/progress-circle/_progress-circle
+//- include ../components/progress/_progress
+
+block variables
+  - pageName = title;
+  - htmlClass.push( 'page-small-footer' );
+
+block page
+  header.section.page-header
+    +rd-navbar
+
+  section.jumbotron
+    h4= title
+    p.lead Як налаштувати та користуватись автоматизацією заповнення детальної статистики
+    hr.my-3
+    p Перш ніж користуватися, необхідно налаштувати “OneStat” add-on в своїй Google таблиці.
+
+    ol.mt-4
+      li
+        p У свій файл з детальною статистикою скопіювати&nbsp;
+          a(href='https://docs.google.com/spreadsheets/d/1LzETSJHmd1ZH5vbrE50FBnkwb5GSL5Fr1v3ypo00nK4/edit?gid=715864948#gid=715864948' target='_blank') лист OneStat
+        p.text-muted.font-italic Щоб зробити повну копію, з форматом і розмірами комірок, використовуй пункт меню
+          strong “Копіювати в…” → “Iснуюча таблиця”:
+        p
+          img(src='/images/documentation/doc1.png', alt='', width=600)
+        p Далі обери саме свою таблицю з детальною статистикою і встав лист. Створиться повна копія листа.
+
+        p
+          blockquote.blockquote.blockquote-danger
+            strong ВАЖЛИВО!&nbsp;
+            | Структуру цього листа змінювати не можна. Всі стовпчики мають бути на своїх місцях.
+
+        li
+          p В своїй таблиці відкрити&nbsp;
+            strong “Доповнення” → “Apps Script”:
+          p
+            img(src='/images/documentation/doc2.png', alt='', width=600)
+
+        li
+          p.mt-4 У відкритому вікні, в полі для коду видалити весь вміст та вставити туди повністю весь код з&nbsp;
+            a(href='https://docs.google.com/document/d/1tMVkZulYOPSJKZ2U0uu8EhPwJU6wv_disc5Ik-zAoFQ/edit?tab=t.0', target='_blank') цього документу.
+
+        li
+          p.mt-4 Онови сторінку з таблицею, після чого має зʼявитися пункт меню OneStat.
+          p
+            img(src='/images/documentation/doc3.png', alt='', width=600)
+
+    p
+      h6 OneStat add-on готовий до роботи.
+    p
+      blockquote.blockquote.blockquote-primary
+        strong Примітка!&nbsp;
+        | Автоматичне занесення статистики коректно працює, якщо структура таблиці статистики має наступний вигляд (назви колонок):
+        p
+            img(src='/images/documentation/doc4.png', alt='', width=1000)
+        p Якщо таблиця відрізняється, то необхідно адаптувати OneStat add-on під конкретну таблицю.
+        p В такому випадку звертайся&nbsp;
+          a(href='https:t.me/ihormazurenko', taeget='_blank') в підтримку.
+
+  footer
+    include layout/footer
