@@ -1,0 +1,23 @@
+extends ../components/base/_skeleton
+include ../components/rd-navbar/_rd-navbar
+
+block variables
+  - pageName = title;
+  - htmlClass.push( 'page-small-footer' );
+
+block page
+  header.section.page-header
+    +rd-navbar
+
+  section.jumbotron
+    h4= title
+    p.lead Скрінкаст записаний на бета-версії проекту. Зараз завантажувати і обробляти файли можна в розділі&nbsp;
+      a(href='/statistics') Статистика
+    hr.my-3
+
+    <video width="100%" controls>
+      <source src="/video/onestat_usage.mp4" type="video/mp4">
+    </video>
+
+  footer
+    include layout/footer
