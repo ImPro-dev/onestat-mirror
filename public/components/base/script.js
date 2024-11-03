@@ -1904,6 +1904,7 @@ let components = {
 					stickUpClone: false,
 					anchorNav: false,
 					autoHeight: false,
+					focusOnHover: true,
 					responsive: {
 						0: {
 							layout: 'rd-navbar-fixed',

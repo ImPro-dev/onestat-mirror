@@ -35,13 +35,13 @@ block page
                     .input-group
                       .input-group-prepend
                         span.input-group-text.fa.fa-user
-                      input#user.form-control( type='text', name='email', placeholder='Емейл', required )
+                      input#email.form-control( type='text', name='email', placeholder='Емейл', autocomplete='on', required )
                   .form-group
                     label( for='password' ) Пароль
                     .input-group
                       .input-group-prepend
                         span.input-group-text.fa.fa-lock
-                      input#pass.form-control( type='password', name='password', placeholder='Пароль', required )
+                      input#password.form-control( type='password', name='password', placeholder='Пароль', autocomplete='on', required )
             .panel-footer
               .row.row-10
                 .col-sm-6

@@ -370,9 +370,9 @@ appearance: none;
 // Custom file input 2
 .custom-file {
   input[type=file]::file-selector-button {
-    margin: -13px -20px;
-    position: relative;
-    z-index: 99;
+    margin: 0;
+    position: absolute;
+    z-index: 9999;
     border: 1px solid;
     border-image-slice: 1;
     border-radius: 0 0.25rem 0.25rem 0;
@@ -380,16 +380,17 @@ appearance: none;
     border-color: $primary;
     background-color: #fff;
     transition: .2s;
-    float: right;
+    right: 0;
+    top: 0;
     padding: 10px 30px;
-    height: 48px;
+    height: 50px;
     color: $primary;
     font-weight: 400;
     cursor: pointer;
   }
 
   input[type=file]:hover::file-selector-button {
-    border-image-source: linear-gradient(to left, $primary, $primary);
+    // border-image-source: linear-gradient(to left, $primary, $primary);
     background-color: $primary !important;
     border-color: $primary;
     color: #fff;

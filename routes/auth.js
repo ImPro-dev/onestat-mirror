@@ -59,8 +59,12 @@ router.post('/login', async (req, res) => {
 })
 
 router.get('/logout', async (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/auth');
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Помилка видалення сесії:', err);
+      return res.status(500).send('Помилка при виході');
+    }
+    res.redirect('/');
   });
 })
 
