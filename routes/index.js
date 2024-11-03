@@ -1,9 +1,13 @@
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 
 /* GET home page. */
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'OneStat' });
+router.get('/', function (req, res, next) {
+  if (req.session.isAuthenticated) {
+    return res.redirect('/dashboard');
+  }
+  return res.redirect('/auth');
+  // res.render('index', { title: 'OneStat' });
 });
 
 module.exports = router;

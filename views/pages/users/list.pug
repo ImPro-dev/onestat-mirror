@@ -1,0 +1,69 @@
+extends ../../components/base/_skeleton
+include ../../components/rd-navbar/_rd-navbar
+include ../../components/helpers/_helpers
+//- include ../components/breadcrumbs/_breadcrumbs
+
+block variables
+  - pageName = title;
+  - htmlClass.push( 'page-small-footer' );
+
+block page
+  header.section.page-header
+    +rd-navbar
+
+  section.section-xs
+    .container-fluid
+      .row
+        .col-12
+          .panel
+            .panel-header
+              h5.panel-title
+                span.panel-icon.linearicons-users2
+                = ' '
+                span= title
+            .panel-body
+              if userError && userError.length
+                .col-12.mb-4
+                  +alert( {close: false} ).alert-danger.alert-sm
+                    span.alert-icon.fa-exclamation-triangle
+                    span= userError
+              table.table.table-striped.mt-1.mb-4
+                thead
+                  tr
+                    th= 'No'
+                    th= 'Імʼя'
+                    th= 'Емейл'
+                    th= 'Телеграм'
+                    th= 'Web ID'
+                    th= 'Позиція'
+                    th= 'Доступ'
+                    th= 'Дія'
+                tbody
+                  each val, key in users
+                    tr
+                      td #{key + 1}
+                      td
+                        a(href='/users/' + val.id) #{val.firstname} #{val.lastname}
+                      td #{val.email}
+                      td
+                        if val.telegram
+                          +telegramFormat(val.telegram)
+                      td #{val.webID}
+                      td #{val.position}
+                      td #{val.role}
+                      td
+                        a.mr-3(href='/users/edit/' + val.id + '?allow=true', data-toggle='tooltip', data-original-title="Редагувати")
+                          span.fa-edit
+                        if (myID == val.id)
+                          span.fa-trash-o( data-toggle='tooltip', data-original-title="Неможливо видалити свій профіль")
+                        else
+                          a(href='/users/remove/' + val.id, data-toggle='tooltip', data-original-title="Видалити")
+                            span.fa-trash-o.text-danger
+
+              a.btn.btn-primary(href="/users/add")
+                span.fa-plus-circle.mr-2
+                span= 'Створити користувача'
+
+  footer
+    include ../layout/footer
+

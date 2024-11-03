@@ -1,0 +1,140 @@
+@import "../bootstrap/scss/functions";
+@import "../base/functions";
+@import "../base/variables";
+@import "../bootstrap/scss/variables";
+
+// Variables
+$enable-shadows: false;
+$btn-box-shadow: 0 0 0 transparent;
+$btn-border-radius: px-to-rem( 5px );
+
+@import "../bootstrap/scss/mixins";
+@import "../bootstrap/scss/buttons";
+@import "../bootstrap/scss/button-group";
+
+// Base styles
+.btn {
+	transition: .2s;
+}
+
+.btn-icon:not(:only-child) {
+	padding-right: 0.4em;
+}
+
+// Modifiers
+.btn-rounded {
+	@include border-radius($rounded-pill, 0);
+}
+
+.btn.disabled {
+	pointer-events: none; 
+}
+
+.btn-gradient {
+	position: relative;
+	overflow: hidden;
+
+	span {
+		position: relative;
+		z-index: 2;
+	}
+
+	&:before, &:after {
+		position: absolute;
+		content: '';
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 1;
+		transition: ease-in-out .2s;
+	}
+
+	&:after {
+		opacity: 0;
+	}
+	
+	&:hover {
+		&:before {
+			opacity: 0;
+		}
+
+		&:after {
+			opacity: 1;
+		}
+	} 
+}
+
+// Color themes
+@each $color, $value in $theme-colors {
+	.btn-#{$color} {
+		@include button-variant($value, $value);
+	}
+}
+
+@each $color, $value in $theme-colors {
+	.btn-#{$color}.btn-gradient {
+		@include button-variant($value, $value);
+		border: none;
+
+		&:before {
+			background-image: linear-gradient(to right, rgba( $white, .2 ), darken($value, 25%));;
+		}
+
+		&:after {
+			background-image: linear-gradient(to left, rgba( $white, .2 ), darken($value, 25%));;
+		}
+	}
+}
+
+// Offsets
+h6 + .btn-block {
+	margin-top: px-to-rem( 10px );
+}
+
+// Button context in rdnavbar
+.rd-navbar-fixed {
+	.btn-navbar-panel {
+		position: relative;
+		cursor: pointer;
+		color: $gray-400;
+		background: transparent;
+		font-size: px-to-rem( 28px );
+		line-height: px-to-rem( 22px );
+
+		&:hover,
+		&:active,
+		&.rd-navbar-sidebar-active,
+		&.active {
+			outline: none;
+			box-shadow: none;
+
+			&:focus {
+				box-shadow: none;
+			}
+		}
+
+		&:focus {
+			outline: none;
+			box-shadow: none ;
+		}
+	}
+
+	.rd-navbar-panel-cell-user .btn-navbar-panel {
+		background: transparent;
+		font-size: px-to-rem( 15px );
+		color: $gray-900;
+
+		&:hover,
+		&:active,
+		&.rd-navbar-sidebar-active,
+		&.active {
+			background: transparent;
+			box-shadow: none;
+
+			&:focus {
+				box-shadow: none;
+			}
+		}
+	}
+} 

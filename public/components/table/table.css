@@ -1,0 +1,350 @@
+.table {
+  width: 100%;
+  margin-bottom: 1rem;
+  color: #1a2643;
+}
+.table th,
+.table td {
+  padding: 0.75rem;
+  vertical-align: top;
+  border-top: 1px solid #dde3e8;
+}
+.table thead th {
+  vertical-align: bottom;
+  border-bottom: 2px solid #dde3e8;
+}
+.table tbody + tbody {
+  border-top: 2px solid #dde3e8;
+}
+
+.table-sm th,
+.table-sm td {
+  padding: 0.3rem;
+}
+
+.table-bordered {
+  border: 1px solid #dde3e8;
+}
+.table-bordered th,
+.table-bordered td {
+  border: 1px solid #dde3e8;
+}
+.table-bordered thead th,
+.table-bordered thead td {
+  border-bottom-width: 2px;
+}
+
+.table-borderless th,
+.table-borderless td,
+.table-borderless thead th,
+.table-borderless tbody + tbody {
+  border: 0;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.table-hover tbody tr:hover {
+  color: #1a2643;
+  background-color: rgba(0, 0, 0, 0.075);
+}
+
+.table-primary,
+.table-primary > th,
+.table-primary > td {
+  background-color: rgb(183.6, 206.56, 255);
+}
+.table-primary th,
+.table-primary td,
+.table-primary thead th,
+.table-primary tbody + tbody {
+  border-color: rgb(122.4, 165.04, 255);
+}
+
+.table-hover .table-primary:hover {
+  background-color: rgb(158.1, 189.26, 255);
+}
+.table-hover .table-primary:hover > td,
+.table-hover .table-primary:hover > th {
+  background-color: rgb(158.1, 189.26, 255);
+}
+
+.table-secondary,
+.table-secondary > th,
+.table-secondary > td {
+  background-color: rgb(191.16, 239.32, 215.8);
+}
+.table-secondary th,
+.table-secondary td,
+.table-secondary thead th,
+.table-secondary tbody + tbody {
+  border-color: rgb(136.44, 225.88, 182.2);
+}
+
+.table-hover .table-secondary:hover {
+  background-color: rgb(170.6881690141, 234.2918309859, 203.2295774648);
+}
+.table-hover .table-secondary:hover > td,
+.table-hover .table-secondary:hover > th {
+  background-color: rgb(170.6881690141, 234.2918309859, 203.2295774648);
+}
+
+.table-success,
+.table-success > th,
+.table-success > td {
+  background-color: rgb(183.6, 238.2, 231.2);
+}
+.table-success th,
+.table-success td,
+.table-success thead th,
+.table-success tbody + tbody {
+  border-color: rgb(122.4, 223.8, 210.8);
+}
+
+.table-hover .table-success:hover {
+  background-color: rgb(162.9571428571, 233.3428571429, 224.319047619);
+}
+.table-hover .table-success:hover > td,
+.table-hover .table-success:hover > th {
+  background-color: rgb(162.9571428571, 233.3428571429, 224.319047619);
+}
+
+.table-info,
+.table-info > th,
+.table-info > td {
+  background-color: rgb(222.52, 242.68, 253.88);
+}
+.table-info th,
+.table-info td,
+.table-info thead th,
+.table-info tbody + tbody {
+  border-color: rgb(194.68, 232.12, 252.92);
+}
+
+.table-hover .table-info:hover {
+  background-color: rgb(197.87, 233.33, 253.03);
+}
+.table-hover .table-info:hover > td,
+.table-hover .table-info:hover > th {
+  background-color: rgb(197.87, 233.33, 253.03);
+}
+
+.table-warning,
+.table-warning > th,
+.table-warning > td {
+  background-color: rgb(254.72, 232.88, 185.28);
+}
+.table-warning th,
+.table-warning td,
+.table-warning thead th,
+.table-warning tbody + tbody {
+  border-color: rgb(254.48, 213.92, 125.52);
+}
+
+.table-hover .table-warning:hover {
+  background-color: rgb(254.618, 224.822, 159.882);
+}
+.table-hover .table-warning:hover > td,
+.table-hover .table-warning:hover > th {
+  background-color: rgb(254.618, 224.822, 159.882);
+}
+
+.table-danger,
+.table-danger > th,
+.table-danger > td {
+  background-color: rgb(254.72, 198.44, 210.2);
+}
+.table-danger th,
+.table-danger td,
+.table-danger thead th,
+.table-danger tbody + tbody {
+  border-color: rgb(254.48, 149.96, 171.8);
+}
+
+.table-hover .table-danger:hover {
+  background-color: rgb(254.5943842365, 173.0656157635, 190.1014778325);
+}
+.table-hover .table-danger:hover > td,
+.table-hover .table-danger:hover > th {
+  background-color: rgb(254.5943842365, 173.0656157635, 190.1014778325);
+}
+
+.table-light,
+.table-light > th,
+.table-light > td {
+  background-color: rgb(245.48, 247.16, 248.56);
+}
+.table-light th,
+.table-light td,
+.table-light thead th,
+.table-light tbody + tbody {
+  border-color: rgb(237.32, 240.44, 243.04);
+}
+
+.table-hover .table-light:hover {
+  background-color: rgb(230.2694736842, 234.6336842105, 238.2705263158);
+}
+.table-hover .table-light:hover > td,
+.table-hover .table-light:hover > th {
+  background-color: rgb(230.2694736842, 234.6336842105, 238.2705263158);
+}
+
+.table-dark,
+.table-dark > th,
+.table-dark > td {
+  background-color: rgb(190.88, 194.24, 202.36);
+}
+.table-dark th,
+.table-dark td,
+.table-dark thead th,
+.table-dark tbody + tbody {
+  border-color: rgb(135.92, 142.16, 157.24);
+}
+
+.table-hover .table-dark:hover {
+  background-color: rgb(176.8764028777, 180.9702158273, 190.8635971223);
+}
+.table-hover .table-dark:hover > td,
+.table-hover .table-dark:hover > th {
+  background-color: rgb(176.8764028777, 180.9702158273, 190.8635971223);
+}
+
+.table-active,
+.table-active > th,
+.table-active > td {
+  background-color: rgba(0, 0, 0, 0.075);
+}
+
+.table-hover .table-active:hover {
+  background-color: rgba(0, 0, 0, 0.075);
+}
+.table-hover .table-active:hover > td,
+.table-hover .table-active:hover > th {
+  background-color: rgba(0, 0, 0, 0.075);
+}
+
+.table .thead-dark th {
+  color: #fff;
+  background-color: #343a40;
+  border-color: rgb(69.1465517241, 77.125, 85.1034482759);
+}
+.table .thead-light th {
+  color: #262a37;
+  background-color: #eef0f2;
+  border-color: #dde3e8;
+}
+
+.table-dark {
+  color: #fff;
+  background-color: #343a40;
+}
+.table-dark th,
+.table-dark td,
+.table-dark thead th {
+  border-color: rgb(69.1465517241, 77.125, 85.1034482759);
+}
+.table-dark.table-bordered {
+  border: 0;
+}
+.table-dark.table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+.table-dark.table-hover tbody tr:hover {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.075);
+}
+
+@media (max-width: 575.98px) {
+  .table-responsive-sm {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-responsive-sm > .table-bordered {
+    border: 0;
+  }
+}
+@media (max-width: 767.98px) {
+  .table-responsive-md {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-responsive-md > .table-bordered {
+    border: 0;
+  }
+}
+@media (max-width: 991.98px) {
+  .table-responsive-lg {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-responsive-lg > .table-bordered {
+    border: 0;
+  }
+}
+@media (max-width: 1199.98px) {
+  .table-responsive-xl {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-responsive-xl > .table-bordered {
+    border: 0;
+  }
+}
+@media (max-width: 1599.98px) {
+  .table-responsive-xxl {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-responsive-xxl > .table-bordered {
+    border: 0;
+  }
+}
+.table-responsive {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.table-responsive > .table-bordered {
+  border: 0;
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+.table-vertical-align td, .table-vertical-align th {
+  vertical-align: middle;
+}
+
+.table-align-1 th:nth-child(1),
+.table-align-1 td:nth-child(1) {
+  text-align: center;
+}
+
+.data-table {
+  width: 100% !important;
+}
+
+.table-in-panel.table th {
+  border-top: none;
+  padding: 1.25rem;
+  font-size: 0.75rem;
+  line-height: 1.75rem;
+  text-transform: uppercase;
+}
+.table-in-panel.table td {
+  padding: 1.25rem;
+}
+/*# sourceMappingURL=table.css.map */
