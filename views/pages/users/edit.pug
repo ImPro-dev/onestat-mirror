@@ -29,47 +29,65 @@ block page
                   .col-xl-6
                     div.form-group
                       label(class='form-label' for='firstname') Імʼя:
-                      .form-control-wrapper
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text.linearicons-user
                         input#firstname.form-control(type='text', name='firstname', required, value=user.firstname)
                     div.form-group
                       label(class='form-label' for='email') Емейл:
-                      .form-control-wrapper
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text.linearicons-envelope
                         input#email.form-control(type='text', name='email', required, value=user.email)
                     div.form-group
                       label(class='form-label' for='telegram') Телеграм аккаунт:
-                      .form-control-wrapper
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text.linearicons-paper-plane
                         input#telegram.form-control(type='text', name='telegram', value=user.telegram)
                   .col-xl-6
                     div.form-group
                       label(class='form-label' for='lastname') Прізвище:
-                      .form-control-wrapper
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text.linearicons-user
                         input#lastname.form-control(type='text', name='lastname', required, value=user.lastname)
                     div.form-group
                       label(class='form-label' for='password') Пароль:
-                      .form-control-wrapper
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text.linearicons-lock
                         input#password.form-control(type='password', name='password', required)
                     div.form-group
                       label(class='form-label' for='role') Рівень доступу:
-                      .form-control-wrapper
-                        var
+                      - var isUserSelected = user.role==='user' ? 'selected="selected"' : ''
+                      - var isManagerSelected= user.role==='manager' ? 'selected="selected"' : ''
+                      - var isAdminSelectes= user.role==='admin' ? 'selected="selected"' : ''
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text.linearicons-database-lock
                         select#role.form-control(type='text', name='role', required)
-                          option(name='user', value='user', selected=isUser ? 'selected' : '') user
-                          option(name='manager', value='manager', selected=isManager ? 'selected' : '') manager
-                          option(name='admin', value='admin', selected=isAdmin ? 'selected' : '') admin
+                          <option name="user" value="user" #{isUserSelected}>user</option>
+                          <option name="manager" value="manager" #{isManagerSelected}>manager</option>
+                          <option name="admin" value="admin" #{isAdminSelectes}>admin</option>
                   .col-3.mt-3
                     div.form-group
                       label(class='form-label' for='webID') WebID:
-                      .form-control-wrapper
-                        input#webid.form-control(type='text', name='webID', required, value=user.webID)
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text.linearicons-briefcase
+                        input#webID.form-control(type='text', name='webID', required, value=user.webID)
                   .col-9.mt-3
                     div.form-group
                       label(class='form-label' for='position') Позиція:
-                      .form-control-wrapper
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text.linearicons-users2
                         input#position.form-control(type='text', name='position', required, value=user.position)
 
                   .col-12.mt-4
                     input#id.form-control(type='hidden', name='id', value=user.id)
-                    button.btn.btn-primary.submit-btn.w-100.mb-4(type="submit") Редагувати
+                    button.btn.btn-primary.submit-btn.w-100.mb-4(type="submit") Зберегти
                     a.btn.btn-light(href="/users")
                       span.mdi-keyboard-backspace.mr-2
                       span= 'До списку'

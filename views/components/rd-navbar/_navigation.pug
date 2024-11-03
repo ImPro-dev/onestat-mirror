@@ -11,7 +11,7 @@ mixin navigation( menu, type )
 				else
 					if (role && item.access && item.access.includes(role))
 						li.rd-navbar-nav-item( class= {active: item.active} )
-							a.rd-navbar-link( href= item.link )
+							a.rd-navbar-link( href= item.link target= item.blank ? '_blank' : '' )
 								if( item.icon )
 									span.rd-navbar-icon( class= item.icon )
 								span.rd-navbar-link-text= item.title

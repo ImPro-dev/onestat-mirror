@@ -49,28 +49,28 @@ block page
                         #onebot.tab-pane.fade.show.active( role='tabpanel' )
                           form(role='form' class='stat-form' method='POST' action='/botstatistics' enctype="multipart/form-data")
                             div.form-group.mb-4
-                              label(class='form-label' for='fb_stat') Файл з Facebook:
+                              label(class='form-label' for='fb_stat_bot') Файл з Facebook:
                               .form-control-wrapper.custom-file
-                                input#name.form-control(type='file', name='fb_stat', required)
+                                input#fb_stat_bot.form-control(type='file', name='fb_stat', required)
                             div.form-group.mb-5
-                              label(class='form-label' for='keitaro_stat') Файл з Keitaro:
+                              label(class='form-label' for='keitaro_stat_conversions') Файл з Keitaro:
                               .form-control-wrapper.custom-file
-                                input#email.form-control(type='file', name='keitaro_stat_conversions', required)
+                                input#keitaro_stat_conversions.form-control(type='file', name='keitaro_stat_conversions', required)
                             button.btn.btn-primary.submit-btn.w-100(type="submit") Завантажити
                         #pwa.tab-pane.fade( role='tabpanel' )
                           form(role='form' class='stat-form' method='POST' action='/pwastatistics' enctype="multipart/form-data")
                             div.form-group.mb-4
-                              label(class='form-label' for='fb_stat') Файл з Facebook:
+                              label(class='form-label' for='fb_stat_pwa') Файл з Facebook:
                               .form-control-wrapper.custom-file
-                                input#name.form-control(type='file', name='fb_stat', required)
+                                input#fb_stat_pwa.form-control(type='file', name='fb_stat', required)
                             div.form-group.mb-4
-                              label(class='form-label' for='keitaro_stat') Файл з Keitaro (Clicks):
+                              label(class='form-label' for='keitaro_stat_clicks') Файл з Keitaro (Clicks):
                               .form-control-wrapper.custom-file
-                                input#email.form-control(type='file', name='keitaro_stat_clicks', required)
+                                input#keitaro_stat_clicks.form-control(type='file', name='keitaro_stat_clicks', required)
                             div.form-group.mb-5
-                              label(class='form-label' for='keitaro_stat') Файл з Keitaro (Conversions):
+                              label(class='form-label' for='keitaro_stat_conversions') Файл з Keitaro (Conversions):
                               .form-control-wrapper.custom-file
-                                input#email.form-control(type='file', name='keitaro_stat_conversions', required)
+                                input#keitaro_stat_conversions.form-control(type='file', name='keitaro_stat_conversions', required)
                             button.btn.btn-primary.submit-btn.w-100(type="submit") Завантажити
                   .col-6
                     img(class="intro-img", src="../images/OneStat_bg.png", alt="")

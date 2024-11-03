@@ -14,3 +14,10 @@ Application can be used for aggregate FB and Keitaro statistics to the single fi
 
 ### v1.2.0
 * Added UA column names from FB
+
+### v2.0.0
+* CRM inited.
+* DB is connected (MongoDB)
+* Authorization added
+* CRUD Users added
+* New design is implemented

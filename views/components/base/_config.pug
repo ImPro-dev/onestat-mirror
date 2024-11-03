@@ -22,20 +22,39 @@
 				access: ['user', 'manager', 'admin']
 			},
 			{
-				title: 'Інструкція',
-				link: '/documentation',
-				icon: 'linearicons-document2',
-				access: ['user', 'manager', 'admin']
-			},
-			{
 				heading: 'Налаштування',
-				access: ['manager', 'admin']
+				access: ['user', 'manager', 'admin']
 			},
 			{
 				title: 'Користувачі',
 				link: '/users',
 				icon: 'linearicons-users2',
 				access: ['manager', 'admin']
+			},
+			{
+				title: 'Інструкція',
+				link: '#',
+				icon: 'linearicons-reading',
+				access: ['user', 'manager', 'admin'],
+				dropdown: [
+					{
+						title: 'Налаштування',
+						link: '/documentation/setup',
+						icon: 'linearicons-cog'
+					},
+					{
+						title: 'Використання',
+						link: '/documentation/usage',
+						icon: 'linearicons-file-spreadsheet'
+					}
+				]
+			},
+			{
+				title: 'Підтримка',
+				link: 'https://t.me/ihormazurenko',
+				icon: 'linearicons-paper-plane',
+				access: ['user', 'manager', 'admin'],
+				blank: true
 			},
 			//- { heading: 'Menu' },
 			//- {
