@@ -1,0 +1,62 @@
+extends ../../components/base/_skeleton
+include ../../components/rd-navbar/_rd-navbar
+
+block variables
+  -
+    pageName = title;
+    htmlClass.push( 'page-small-footer' );
+
+block page
+  header.section.page-header
+    +rd-navbar
+
+  section.section-xs
+    .container-fluid
+      .row.justify-content-center
+        .col-12
+          .panel
+            .panel-header
+              h5.panel-title
+                span.panel-icon.linearicons-chart-bars
+                = ' '
+                span= title
+            .panel-body
+              .container-fluid
+                .row
+                  .col-6
+                    h5.mt-3= resultTitle
+                  .col-6.text-right
+                    a.btn.btn-light.mr-4(href="/statistics")
+                      span.mdi-keyboard-backspace.mr-1
+                      span= 'Назад'
+                    a.btn.btn-secondary(href="/download") Завантажити
+                  .col-12.mt-4
+                    table.table.table-striped.mt-1
+                      thead
+                        tr
+                          th= headers.adname
+                          th= headers.spend
+                          th= headers.new
+                          th= headers.reg
+                          th= headers.dep
+                          th= headers.qua
+                      tbody
+                        each val, key in JSON.parse(data)
+                          tr
+                            td #{key}
+                            td #{val.spend}
+                            td #{val.new.value}
+                              if val.new.doubles
+                                span.red &nbsp;(#{val.new.doubles})
+                            td #{val.reg.value}
+                              if val.reg.doubles
+                                span.red &nbsp;(#{val.reg.doubles})
+                            td #{val.dep.value}
+                              if val.dep.doubles
+                                span.red &nbsp;(#{val.dep.doubles})
+                            td #{val.qua.value}
+                              if val.qua.doubles
+                                span.red &nbsp;(#{val.qua.doubles})
+
+  footer
+    include ../layout/footer

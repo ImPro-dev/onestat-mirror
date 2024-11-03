@@ -1,0 +1,34 @@
+include _config
+include _functions
+include _mixins
+
+block variables
+- main();
+
+doctype html
+html( lang='en', class= htmlClass )
+	head
+		title= pageName
+
+		meta( charset='utf-8' )
+		meta( name='viewport', content='width=device-width, height=device-height, initial-scale=1.0' )
+		meta( http-equiv='X-UA-Compatible', content='IE=edge' )
+
+		meta( property='og:title', content='OneStat CRM' )
+		meta( property='og:description', content='' )
+
+		link( rel='icon', href='/images/favicon.ico', type='image/x-icon' )
+		link( rel='stylesheet', href='/components/base/base.css' )
+		script(src='/components/base/script.js')
+
+
+		block head
+
+	body
+		.page( class= pageClass )
+			block page
+
+			block sidebar
+				include ../sidebar/_sidebar-default
+
+			block modal

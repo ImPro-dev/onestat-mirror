@@ -21,11 +21,16 @@ h1 {
 
 input[type=file] {
   font-weight: 200;
-  outline:none !important;;
+  outline: none !important;
+  ;
 }
 
-input, input:active, input:hover, input:focus {
-  outline: 0 !important;;
+input,
+input:active,
+input:hover,
+input:focus {
+  outline: 0 !important;
+  ;
   outline-offset: 0;
 }
 
@@ -50,7 +55,7 @@ input[type=file]::file-selector-button {
   height: 44;
   color: #46a6ff;
   font-weight: 400;
-} 
+}
 
 input[type=file]:hover::file-selector-button {
   border-image-source: linear-gradient(to left, #46a6ff, #46a6ff);
@@ -66,7 +71,7 @@ input[type=file]:hover::file-selector-button {
 }
 
 .form-control {
-  border:none;
+  border: none;
   background: none;
   border-radius: 0;
   margin: -1px -2px -1px 0;
@@ -74,20 +79,20 @@ input[type=file]:hover::file-selector-button {
 }
 
 .btn-primary {
-  outline:none;
+  outline: none;
   color: #000;
   padding: 15px 50px;
   border: none;
   font-size: 18px;
   background-color: #46a6ff;
-  background: linear-gradient(94.95deg,#a4ffb8 2.9%,#46a6ff 101.18%);
+  background: linear-gradient(94.95deg, #a4ffb8 2.9%, #46a6ff 101.18%);
   transition: .3s;
   transition: color 0s ease-in-out;
 }
 
 .btn-primary:hover {
   color: #fff;
-  background: linear-gradient(94.95deg,#a4ffb8 0.9%,#46a6ff 60.18%);
+  background: linear-gradient(94.95deg, #a4ffb8 0.9%, #46a6ff 60.18%);
 }
 
 .btn-primary:active {
@@ -95,7 +100,7 @@ input[type=file]:hover::file-selector-button {
 }
 
 .btn-secondary {
-  outline:none;
+  outline: none;
   color: #000;
   padding: 15px 50px;
   background-color: #fff;
@@ -127,7 +132,7 @@ input[type=file]:hover::file-selector-button {
   margin: 0 5px 0 0;
 }
 
-.nav-link, 
+.nav-link,
 .nav-link:hover {
   color: #cccccc;
 }

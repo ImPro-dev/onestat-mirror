@@ -1,0 +1,1 @@
+{"version":3,"sources":["components/particles/particles.scss"],"names":[],"mappings":"AAAA;EACC;EACA;EACA;EACA;EACA;EACA","file":"particles.css","sourcesContent":["#particles-container{\n\tposition: fixed;\n\ttop: 0;\n\tleft: 0;\n\tright: 0;\n\tbottom: 0;\n\tpointer-events: none;\n}\n"]}

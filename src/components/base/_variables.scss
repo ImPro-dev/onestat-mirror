@@ -1,0 +1,93 @@
+// Variables
+
+$gray-100: #f9f9f9; // link hover bg
+$gray-200: #eef0f2; // body bg
+$gray-300: #dde3e8; // navbar nav item border
+$gray-400: #a7a9b2; // body color
+$gray-700: #262a37; // box shadow
+$gray-900: #1a2643; // dark
+$white: #fff;
+$black: #000;
+
+$primary: #0052ff;
+$secondary: #1bc773;
+$success: #00c3aa;
+$info: #8bd3fb;
+$warning: #feb006;
+$danger: #fe355f;
+$light: $gray-300;
+$dark: $gray-900;
+
+
+// Body
+$body-color: $gray-900;
+$body-bg: darken($gray-100, 1%);
+
+// The yiq lightness value
+$yiq-contrasted-threshold: 160;
+
+// Fonts
+$font-family-base: 'Muli', sans-serif;
+$font-size-base: px-to-rem(15px);
+$line-height-base: 1.47;
+$line-height-lg: 1.1;
+$line-height-sm: 1.6;
+
+$h1-font-size: px-to-rem(60px);
+$h2-font-size: px-to-rem(52px);
+$h3-font-size: px-to-rem(42px);
+$h4-font-size: px-to-rem(32px);
+$h5-font-size: px-to-rem(24px);
+$h6-font-size: px-to-rem(18px);
+
+$h1-line-height: px-to-rem(72px)/$h1-font-size;
+$h2-line-height: px-to-rem(62px)/$h2-font-size;
+$h3-line-height: px-to-rem(50px)/$h3-font-size;
+$h4-line-height: px-to-rem(38px)/$h4-font-size;
+$h5-line-height: px-to-rem(28px)/$h5-font-size;
+$h6-line-height: px-to-rem(21px)/$h6-font-size;
+
+$headings-color: $gray-900;
+$headings-font-weight: 400;
+
+$small-font-size: 87%;
+
+// Grid breakpoints
+$grid-breakpoints: (
+	xs: 0,
+	sm: 576px,
+	md: 768px,
+	lg: 992px,
+	xl: 1200px,
+	xxl: 1600px
+);
+
+// Grid containers
+$container-max-widths: (
+	sm: 540px,
+	md: 720px,
+	lg: 960px,
+	xl: 1200px
+);
+
+// Components
+$box-shadow: 0 0 px-to-rem(20px) rgba($black, .08);
+$box-shadow-lg: px-to-rem(20px) px-to-rem(20px) px-to-rem(60px) rgba($gray-700, .1);
+
+// Buttons + Forms
+$input-btn-padding-y: px-to-rem(13px);
+$input-btn-padding-x: px-to-rem(20px);
+
+$input-btn-padding-y-lg: px-to-rem(19px);
+
+// Custom control
+$custom-control-indicator-size : px-to-rem(25px);
+
+// Z-index master list
+$zindex-dropdown: 10;
+$zindex-sticky: 11;
+$zindex-popover: 12;
+$zindex-tooltip: 13;
+$zindex-fixed: 14;
+$zindex-modal-backdrop: 15;
+$zindex-modal: 16;
