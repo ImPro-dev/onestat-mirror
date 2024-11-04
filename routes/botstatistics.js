@@ -45,20 +45,20 @@ router.post('/',
         if (KTcvsRow == 1) {
           row.forEach((columnName, index) => {
             if (!subIdFound) {
-              subIdIndex = columnName === subIdColumnName ? index : '';
-              subIdFound = !!subIdIndex;
+              subIdIndex = columnName.toLowerCase() === subIdColumnName.toLowerCase() ? index : '';
+              subIdFound = subIdIndex === '' ? false : true;
             }
             if (!origStatusFound) {
-              origStatusIndex = columnName === origStatusColumnName ? index : '';
-              origStatusFound = !!origStatusIndex;
+              origStatusIndex = columnName.toLowerCase() === origStatusColumnName.toLowerCase() ? index : '';
+              origStatusFound = origStatusIndex === '' ? false : true;
             }
             if (!subId1Found) {
-              subId1Index = columnName === subId1ColumnName ? index : '';
-              subId1Found = !!subId1Index;
+              subId1Index = columnName.toLowerCase() === subId1ColumnName.toLowerCase() ? index : '';
+              subId1Found = subId1Index === '' ? false : true;
             }
             if (!subId14Found) {
-              subId14Index = columnName === subId14ColumnName ? index : '';
-              subId14Found = !!subId14Index;
+              subId14Index = columnName.toLowerCase() === subId14ColumnName.toLowerCase() ? index : '';
+              subId14Found = subId14Index === '' ? false : true;
             }
 
             if (!subIdFound || !origStatusFound || !subId1Found) {
@@ -132,12 +132,14 @@ router.post('/',
             if (FBcvsRow == 1) {
               row.forEach((columnName, index) => {
                 if (!adFound) {
-                  adIndex = (columnName === adColumnName || columnName === adColumnName_ua) ? index : '';
-                  adFound = !!adIndex;
+                  adIndex = (columnName.toLowerCase() === adColumnName.toLowerCase()
+                    || columnName.toLowerCase() === adColumnName_ua.toLowerCase()) ? index : '';
+                  adFound = adIndex === '' ? false : true;
                 }
                 if (!spendFound) {
-                  spendIndex = (columnName === spendColumnName || columnName === spendColumnName_ua) ? index : '';
-                  spendFound = !!spendIndex;
+                  spendIndex = (columnName.toLowerCase() === spendColumnName.toLowerCase()
+                    || columnName.toLowerCase() === spendColumnName_ua.toLowerCase()) ? index : '';
+                  spendFound = spendIndex === '' ? false : true;
                 }
               });
             } else {
