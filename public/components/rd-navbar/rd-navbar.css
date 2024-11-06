@@ -167,6 +167,15 @@
 .rd-navbar-fixed .rd-navbar-nav-item:last-child {
   border-bottom: 1px solid #dde3e8;
 }
+.rd-navbar-fixed .rd-navbar-nav-item:hover > .rd-navbar-link {
+  cursor: pointer;
+  background: #f9f9f9;
+  color: #0052ff;
+}
+.rd-navbar-fixed .rd-navbar-nav-item:hover > .rd-navbar-link:before {
+  transform: translateY(0);
+  opacity: 1;
+}
 .rd-navbar-fixed .rd-navbar-link {
   position: relative;
   display: flex;
@@ -260,11 +269,11 @@
   font-size: 0.875rem;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: right;
   color: #1a2643;
-  width: 40px;
+  width: 100%;
   height: 50px;
-  padding: 5px;
+  padding: 5px 15px;
   transition: background 0.15s;
 }
 .rd-navbar-fixed .rd-navbar-submenu-toggle::before {

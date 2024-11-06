@@ -11,13 +11,35 @@ block page
 
   section.jumbotron
     h4= title
-    p.lead Скрінкаст записаний на бета-версії проекту. Зараз завантажувати і обробляти файли можна в розділі&nbsp;
-      a(href='/statistics') Статистика
     hr.my-3
-
-    <video width="100%" controls>
-      <source src="/video/onestat_usage.mp4" type="video/mp4">
-    </video>
+    ol.mt-4
+      li.mb-5
+        p Запустити “OneStat → Update Projects List”, щоб підтягнулися всі проекти, які є в даній таблиці, в поле конфігів.
+          br
+          | Цю команду необхідно запускати кожен раз, коли додається новий проект в таблицю.
+        p
+          img(src='/images/documentation/doc4.png', alt='', width=600)
+      li.mb-5
+        p Gеред першим запуском Гугл може запросити авторизацію. Необхідно дозволити доступ. Покрокові скріни:
+        p
+          img(src='/images/documentation/doc5.png', alt='', width=600)
+          p
+          img(src='/images/documentation/doc6.png', alt='', width=600)
+          p
+          img(src='/images/documentation/doc7.png', alt='', width=600)
+          p
+          img(src='/images/documentation/doc8.png', alt='', width=600)
+          p
+          img(src='/images/documentation/doc9.png', alt='', width=600)
+      li.mb-5
+        p Відео інструкція з використання.
+          br
+          | Скрінкаст записаний на бета-версії проекту. Зараз завантажувати і обробляти файли можна в розділі&nbsp;
+          a(href='/statistics') Статистика
+        p
+          <video width="800" controls>
+            <source src="/video/onestat_usage.mp4" type="video/mp4">
+          </video>
 
   footer
     include layout/footer
