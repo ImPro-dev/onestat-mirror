@@ -67,7 +67,7 @@ router.post('/',
           });
         } else {
           // Fill out data rows
-          subId1 = row[subId1Index]; // adname
+          subId1 = decodeURI(row[subId1Index]); // adname
           subId = row[subIdIndex];
           origStatus = row[origStatusIndex];
           subId14 = row[subId14Index]
@@ -143,7 +143,7 @@ router.post('/',
                 }
               });
             } else {
-              adname = row[adIndex];
+              adname = decodeURI(row[adIndex]);
               spend = row[spendIndex];
 
               if (aggregatedData[adname]) {

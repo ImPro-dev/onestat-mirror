@@ -70,14 +70,14 @@ block page
                           <option name="user" value="user" #{isUserSelected}>user</option>
                           <option name="manager" value="manager" #{isManagerSelected}>manager</option>
                           <option name="admin" value="admin" #{isAdminSelectes}>admin</option>
-                  .col-3.mt-3
+                  .col-xl-3.mt-3
                     div.form-group
                       label(class='form-label' for='webID') WebID:
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-briefcase
                         input#webID.form-control(type='text', name='webID', required, value=user.webID)
-                  .col-9.mt-3
+                  .col-xl-9.mt-3
                     div.form-group
                       label(class='form-label' for='position') Позиція:
                       .input-group
@@ -92,5 +92,4 @@ block page
                       span.mdi-keyboard-backspace.mr-2
                       span= 'До списку'
 
-  footer
-    include ../layout/footer
+  include ../layout/footer

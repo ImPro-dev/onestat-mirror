@@ -3,7 +3,7 @@ const router = express.Router();
 const fs = require('fs');
 const path = require('path');
 const { createObjectCsvWriter } = require('csv-writer');
-const { parse } = require("csv-parse");
+const { parse } = require('csv-parse');
 
 const config = require('../config/statConfig')
 const upload = require('../middleware/upload');
@@ -30,6 +30,7 @@ router.post('/',
     var origStatusColumnName = keitaroData.origStatus;
     var subId1ColumnName = keitaroData.subId1;
     var installStatus = keitaroData.install;
+    var newStatus = keitaroData.new;
     var regStatus = keitaroData.reg;
     var depStatus = keitaroData.dep;
     var quaStatus = keitaroData.qua;
@@ -56,7 +57,7 @@ router.post('/',
           });
         } else {
           // Fill out data rows
-          subId1 = row[subId1Index]; // adname
+          subId1 = decodeURI(row[subId1Index]); // adname
           subId = row[subIdIndex];
 
           if (subId1) {
@@ -65,6 +66,11 @@ router.post('/',
                 subId: '',
                 spend: 0,
                 install: {
+                  value: 0,
+                  subId: [],
+                  doubles: 0
+                },
+                new: {
                   value: 0,
                   subId: [],
                   doubles: 0
@@ -131,7 +137,7 @@ router.post('/',
                 });
               } else {
                 // Fill out data rows
-                subId1 = row[subId1Index]; // adname
+                subId1 = decodeURI(row[subId1Index]); // adname
                 subId = row[subIdIndex];
                 origStatus = row[origStatusIndex];
 
@@ -141,6 +147,11 @@ router.post('/',
                       subId: '',
                       spend: 0,
                       install: {
+                        value: 0,
+                        subId: [],
+                        doubles: 0
+                      },
+                      new: {
                         value: 0,
                         subId: [],
                         doubles: 0
@@ -205,7 +216,7 @@ router.post('/',
                     }
                   });
                 } else {
-                  adname = row[adIndex];
+                  adname = decodeURI(row[adIndex]);
                   spend = row[spendIndex];
 
                   if (aggregatedData[adname]) {
@@ -215,6 +226,11 @@ router.post('/',
                       subId: '',
                       spend: spend.replace('.', ','),
                       install: {
+                        value: 0,
+                        subId: [],
+                        doubles: 0
+                      },
+                      new: {
                         value: 0,
                         subId: [],
                         doubles: 0
@@ -266,7 +282,8 @@ router.post('/',
                   records.push({
                     subId1: property,
                     spend: aggregatedData[property].spend,
-                    install: aggregatedData[property].install.value + (aggregatedData[property].install.doubles ? '|' + aggregatedData[property].install.doubles : ''),
+                    install: (aggregatedData[property].install.value + aggregatedData[property].new.value)
+                      + (aggregatedData[property].install.doubles || aggregatedData[property].new.double ? '|' + (aggregatedData[property].install.doubles + aggregatedData[property].new.doubles) * 1 : ''),
                     reg: aggregatedData[property].reg.value + (aggregatedData[property].reg.doubles ? '|' + aggregatedData[property].reg.doubles : ''),
                     dep: aggregatedData[property].dep.value + (aggregatedData[property].dep.doubles ? '|' + aggregatedData[property].dep.doubles : ''),
                     qua: aggregatedData[property].qua.value + (aggregatedData[property].qua.doubles ? '|' + aggregatedData[property].qua.doubles : ''),
@@ -282,7 +299,7 @@ router.post('/',
                     adname: subId1ColumnName,
                     subID: subIdColumnName,
                     spend: spendColumnName,
-                    install: installStatus,
+                    install: installStatus + '(+' + newStatus + ')',
                     reg: regStatus,
                     dep: depStatus,
                     qua: quaStatus,
