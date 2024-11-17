@@ -15,7 +15,7 @@ block page
         .col-lg-6
           .row.row-10.align-items-end
             .col-6.col-sm-7
-              a( href='/' ): img( src='images/logo.svg', alt='onestat' )
+              a( href='/' ): img( src='images/logo_' + process.env.NODE_ENV + '.svg', alt='onestat' )
 
           form.panel(role='form' class='stat-form' method='POST' action='/auth/login')
             .panel-header
