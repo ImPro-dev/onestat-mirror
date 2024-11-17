@@ -31,7 +31,7 @@ block page
             .panel-body
               .container
                 .row
-                  .col-12.col-md-6
+                  .col-md-6.mb-3
                     h6.mb-4
                       | Завантаж файли з Facebook і Keitaro:
                     if csvError && csvError.length
@@ -72,9 +72,8 @@ block page
                               .form-control-wrapper.custom-file
                                 input#keitaro_stat_conversions.form-control(type='file', name='keitaro_stat_conversions', required)
                             button.btn.btn-primary.submit-btn.w-100(type="submit") Завантажити
-                  .col-6
+                  .col-md-6
                     img(class="intro-img", src="../images/OneStat_bg.png", alt="")
 
-  footer
-    include ../layout/footer
+  include ../layout/footer
 
