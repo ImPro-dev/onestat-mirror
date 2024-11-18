@@ -96,7 +96,7 @@ mixin rd-navbar
 					div
 						.group-15
 							.rd-navbar-brand
-								a( href='/' ): img( src='/images/logo.svg', alt='onestat' )
+								a( href='/' ): img( src='/images/logo_' + process.env.NODE_ENV + '.svg', alt='onestat' )
 							.rd-navbar-sidebar-search
 								input.form-control( type='text', placeholder='Search' )
 					button.btn.btn-sm.btn-navbar-panel.rd-navbar-sidebar-toggle( data-navigation-switch= true ): span.linearicons-menu

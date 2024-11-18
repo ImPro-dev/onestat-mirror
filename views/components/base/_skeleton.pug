@@ -17,7 +17,7 @@ html( lang='en', class= htmlClass )
 		meta( property='og:title', content='OneStat CRM' )
 		meta( property='og:description', content='' )
 
-		link( rel='icon', href='/images/favicon.ico', type='image/x-icon' )
+		link( rel='icon', href='/images/favicon_' + process.env.NODE_ENV + '.ico', type='image/x-icon' )
 		link( rel='stylesheet', href='/components/base/base.css' )
 		script(src='/components/base/script.js')
 

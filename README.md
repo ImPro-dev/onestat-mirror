@@ -21,3 +21,8 @@ Application can be used for aggregate FB and Keitaro statistics to the single fi
 * Authorization added
 * CRUD Users added
 * New design is implemented
+
+### v2.1.0
+* added sum for installs and subs for CAPI+BOT
+* added handling encoded symbols in adnames
+* remove unnecessary files and refactoring

@@ -2384,6 +2384,31 @@ let components = {
 			// })
 		}
 	},
+	confirmation: {
+		selector: '[data-confirmation]',
+		styles: [
+			'./components/modal/modal.css',
+			'./components/animate/animate.css'
+		],
+		script: [
+			'./components/base/jquery-3.4.1.min.js',
+			'./components/bootstrap/js/popper.js',
+			'./components/bootstrap/js/bootstrap.min.js'
+		],
+		init: function (nodes) {
+			console.log(123);
+			$(nodes).on('click', function (e) {
+				alert(1);
+				e.preventDefault();
+			})
+			nodes.forEach(function (node) {
+				$(node).modal({
+					show: false,
+					focus: false
+				});
+			});
+		}
+	},
 };
 
 /**
