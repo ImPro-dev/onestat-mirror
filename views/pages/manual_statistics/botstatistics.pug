@@ -47,16 +47,15 @@ block page
                             td #{val.spend}
                             td #{val.new.value}
                               if val.new.doubles
-                                span.red &nbsp;(#{val.new.doubles})
+                                span.text-danger &nbsp;(#{val.new.doubles})
                             td #{val.reg.value}
                               if val.reg.doubles
-                                span.red &nbsp;(#{val.reg.doubles})
+                                span.text-danger &nbsp;(#{val.reg.doubles})
                             td #{val.dep.value}
                               if val.dep.doubles
-                                span.red &nbsp;(#{val.dep.doubles})
+                                span.text-danger &nbsp;(#{val.dep.doubles})
                             td #{val.qua.value}
                               if val.qua.doubles
-                                span.red &nbsp;(#{val.qua.doubles})
+                                span.text-danger &nbsp;(#{val.qua.doubles})
 
-  footer
-    include ../layout/footer
+  include ../layout/footer
