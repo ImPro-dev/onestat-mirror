@@ -6,7 +6,6 @@ block variables
   -
     htmlClass[ htmlClass.indexOf( 'rd-navbar-sidebar-active' ) ] = '';
     pageName = title;
-
 block page
   #particles-container
   section.section-lg.section-one-screen
@@ -44,6 +43,8 @@ block page
                       input#password.form-control( type='password', name='password', placeholder='Пароль', autocomplete='on', required )
             .panel-footer
               .row.row-10
+                .col-12
+                  p !{captcha}
                 .col-sm-6
                   +switch({ id: 'rememberme', name: 'rememberme'}).custom-switch-lg.custom-switch-primary Запамʼятати мене
                 .col-sm-6.text-sm-right
