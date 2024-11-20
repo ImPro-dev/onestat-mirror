@@ -98,10 +98,20 @@ router.post('/',
                   doubles: 0
                 },
                 subId14: '',
+                '_': {
+                  value: 0,
+                  subId14: [],
+                  doubles: 0
+                },
               };
             }
 
             aggregatedData[subId1].subId = subId;
+
+            // Ignore all the other statuses (empty, '1', etc.)
+            if ([newStatus, regStatus, depStatus, quaStatus].indexOf(origStatus) === -1) {
+              origStatus = '_';
+            }
 
             if (aggregatedData[subId1][origStatus].subId14.indexOf(subId14) === -1) {
               aggregatedData[subId1][origStatus].subId14.push(subId14);
