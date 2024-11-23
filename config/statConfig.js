@@ -4,6 +4,8 @@ module.exports = {
         adColumnName_ua: 'Назва реклами',
         spendColumnName: 'Сумма затрат (USD)',
         spendColumnName_ua: 'Сума витрат (USD)',
+        spendRegex: /^Сумма затрат \([A-Z]{3}\)$/,
+        spendRegex_ua: /^Сума витрат \([A-Z]{3}\)$/,
     },
     Keitaro: {
         subId: 'SubId',
