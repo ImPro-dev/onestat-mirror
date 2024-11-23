@@ -121,7 +121,6 @@ router.post('/',
             }
           }
         }
-        console.log(row);
         KTcvsRow++;
       })
       .on("end", function () {
@@ -132,7 +131,8 @@ router.post('/',
         var adColumnName = config.FB.adColumnName;
         var adColumnName_ua = config.FB.adColumnName_ua;
         var spendColumnName = config.FB.spendColumnName;
-        var spendColumnName_ua = config.FB.spendColumnName_ua;
+        var spendRegex = config.FB.spendRegex;
+        var spendRegex_ua = config.FB.spendRegex_ua;
 
         // var FBreader = fs.createReadStream("uploads/___FB.csv");
         var FBreader = fs.createReadStream(path.join(__dirname, '..', 'uploads', webID, "___FB.csv"));
@@ -147,8 +147,7 @@ router.post('/',
                   adFound = adIndex === '' ? false : true;
                 }
                 if (!spendFound) {
-                  spendIndex = (columnName.toLowerCase() === spendColumnName.toLowerCase()
-                    || columnName.toLowerCase() === spendColumnName_ua.toLowerCase()) ? index : '';
+                  spendIndex = (spendRegex.test(columnName) || spendRegex_ua.test(columnName)) ? index : '';
                   spendFound = spendIndex === '' ? false : true;
                 }
               });
@@ -186,7 +185,6 @@ router.post('/',
                 }
               }
             }
-            console.log(row);
             FBcvsRow++;
           })
           .on("end", async () => {
