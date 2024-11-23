@@ -98,11 +98,6 @@ router.post('/',
               };
             }
 
-            // Ignore all the other statuses (empty, '1', etc.)
-            if ([newStatus, regStatus, depStatus, quaStatus].indexOf(installStatus) === -1) {
-              installStatus = '_';
-            }
-
             // aggregatedData[subId1].subId = subId;
             if (aggregatedData[subId1][installStatus].subId.indexOf(subId) === -1) {
               aggregatedData[subId1][installStatus].subId.push(subId);
@@ -112,7 +107,6 @@ router.post('/',
             }
           }
         }
-        console.log(row);
         KTClicksCvsRow++;
       })
       .on("end", function () {
@@ -190,7 +184,7 @@ router.post('/',
                   }
 
                   // Ignore all the other statuses (empty, '1', etc.)
-                  if ([newStatus, regStatus, depStatus, quaStatus].indexOf(origStatus) === -1) {
+                  if ([installStatus, newStatus, regStatus, depStatus, quaStatus].indexOf(origStatus) === -1) {
                     origStatus = '_';
                   }
                   // aggregatedData[subId1].subId = subId;
@@ -205,7 +199,6 @@ router.post('/',
             } catch (error) {
               console.error(error);
             }
-            console.log(row);
             KTConvCvsRow++;
           })
           .on("end", function () {
@@ -214,7 +207,8 @@ router.post('/',
             var adColumnName = config.FB.adColumnName;
             var adColumnName_ua = config.FB.adColumnName_ua;
             var spendColumnName = config.FB.spendColumnName;
-            var spendColumnName_ua = config.FB.spendColumnName_ua;
+            var spendRegex = config.FB.spendRegex;
+            var spendRegex_ua = config.FB.spendRegex_ua;
 
             // var FBreader = fs.createReadStream("uploads/___FB.csv");
             var FBreader = fs.createReadStream(path.join(__dirname, '..', 'uploads', webID, "___FB.csv"));
@@ -229,8 +223,7 @@ router.post('/',
                       adFound = adIndex === '' ? false : true;
                     }
                     if (!spendFound) {
-                      spendIndex = (columnName.toLowerCase() === spendColumnName.toLowerCase()
-                        || columnName.toLowerCase() === spendColumnName_ua.toLowerCase()) ? index : '';
+                      spendIndex = (spendRegex.test(columnName) || spendRegex_ua.test(columnName)) ? index : '';
                       spendFound = spendIndex === '' ? false : true;
                     }
                   });
@@ -241,38 +234,48 @@ router.post('/',
                   if (aggregatedData[adname]) {
                     aggregatedData[adname].spend = spend.replace('.', ',');
                   } else {
-                    aggregatedData[adname] = {
-                      subId: '',
-                      spend: spend.replace('.', ','),
-                      install: {
-                        value: 0,
-                        subId: [],
-                        doubles: 0
-                      },
-                      new: {
-                        value: 0,
-                        subId: [],
-                        doubles: 0
-                      },
-                      reg: {
-                        value: 0,
-                        subId: [],
-                        doubles: 0
-                      },
-                      dep: {
-                        value: 0,
-                        subId: [],
-                        doubles: 0
-                      },
-                      qua: {
-                        value: 0,
-                        subId: [],
-                        doubles: 0
-                      },
+                    try {
+                      aggregatedData[adname] = {
+                        subId: '',
+                        spend: spend.replace('.', ','),
+                        install: {
+                          value: 0,
+                          subId: [],
+                          doubles: 0
+                        },
+                        new: {
+                          value: 0,
+                          subId: [],
+                          doubles: 0
+                        },
+                        reg: {
+                          value: 0,
+                          subId: [],
+                          doubles: 0
+                        },
+                        dep: {
+                          value: 0,
+                          subId: [],
+                          doubles: 0
+                        },
+                        qua: {
+                          value: 0,
+                          subId: [],
+                          doubles: 0
+                        },
+                        '_': {
+                          value: 0,
+                          subId: [],
+                          doubles: 0
+                        },
+                      }
+                    } catch (error) {
+                      console.log(error.message);
+                      return;
+                      // throw new Error('Переконайся, що в файлі з Facebook є колонка зі спендами.');
                     }
                   }
                 }
-                console.log(row);
                 FBcvsRow++;
               })
               .on("end", async () => {
