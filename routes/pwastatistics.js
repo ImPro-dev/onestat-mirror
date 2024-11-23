@@ -90,7 +90,17 @@ router.post('/',
                   subId: [],
                   doubles: 0
                 },
+                '_': {
+                  value: 0,
+                  subId: [],
+                  doubles: 0
+                },
               };
+            }
+
+            // Ignore all the other statuses (empty, '1', etc.)
+            if ([newStatus, regStatus, depStatus, quaStatus].indexOf(installStatus) === -1) {
+              installStatus = '_';
             }
 
             // aggregatedData[subId1].subId = subId;
@@ -171,9 +181,18 @@ router.post('/',
                         subId: [],
                         doubles: 0
                       },
+                      '_': {
+                        value: 0,
+                        subId: [],
+                        doubles: 0
+                      },
                     };
                   }
 
+                  // Ignore all the other statuses (empty, '1', etc.)
+                  if ([newStatus, regStatus, depStatus, quaStatus].indexOf(origStatus) === -1) {
+                    origStatus = '_';
+                  }
                   // aggregatedData[subId1].subId = subId;
                   if (aggregatedData[subId1][origStatus].subId.indexOf(subId) === -1) {
                     aggregatedData[subId1][origStatus].subId.push(subId);
