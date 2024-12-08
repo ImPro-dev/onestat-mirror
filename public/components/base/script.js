@@ -2396,16 +2396,36 @@ let components = {
 			'./components/bootstrap/js/bootstrap.min.js'
 		],
 		init: function (nodes) {
-			console.log(123);
-			$(nodes).on('click', function (e) {
-				alert(1);
-				e.preventDefault();
-			})
+			let
+				modalDynamic = $('#modal-dynamic'),
+				decline = document.querySelector('[data-modal-decline]'),
+				confirm = document.querySelector('[data-modal-confirm]');
+
 			nodes.forEach(function (node) {
-				$(node).modal({
-					show: false,
-					focus: false
+				// $('body').on('click', '.blah', function () {
+				// 	console.log('jquery_' + $(this).text());
+				// });
+				$(node).on('click', function (e) {
+					e.preventDefault();
+					var _this = $(this);
+					let data = _this.data('confirmation');
+					modalDynamic.find('.modal-title').text(data.title);
+					modalDynamic.find('.modal-text').text(data.content);
+					modalDynamic.find('.modal-action').data('href', _this[0].href);
+					modalDynamic.modal('show');
+					return false;
 				});
+			});
+			$(decline).on('click', function (event) {
+				event.preventDefault();
+				modalDynamic.modal('hide');
+				return false;
+			});
+
+			$(confirm).on('click', function (event) {
+				event.preventDefault();
+				location.href = $(this).data('href');
+				return false;
 			});
 		}
 	},

@@ -1,0 +1,12 @@
+mixin modal-dynamic
+	#modal-dynamic.modal.fade.slide-up
+		.modal-dialog
+			.modal-content
+				.modal-header
+					h6.modal-title
+					button.close( data-dismiss='modal' ): span ×
+				.modal-body
+					p.modal-text
+				.modal-footer
+					button.btn.btn-outline-primary.pr-4.pl-4( data-modal-decline ) Ні
+					button.btn.btn-primary.modal-action( data-modal-confirm, data-href ) Так

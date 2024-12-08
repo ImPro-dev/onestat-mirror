@@ -85,7 +85,13 @@ block page
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-users2
-                        input#position.form-control(type='text', name='position', required)
+                        select#position.form-control(name='position', required)
+                          option(name='head_of_media_buying', value='Head of Media Buying') Head of Media Buying
+                          option(name='team_lead', value='Team Lead') Team Lead
+                          option(name='media_buyer', value='Media Buyer') Media Buyer
+                          option(name='junior_media_buyer', value='Junior Media Buyer') Junior Media Buyer
+                          option(name='assistant', value='Assistant' selected='selected') Assistant
+                        //- input#position.form-control(type='text', name='position', required)
 
                   .col-12.mt-4
                     button.btn.btn-primary.submit-btn.w-100.mb-4(type="submit") Створити

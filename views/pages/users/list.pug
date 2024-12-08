@@ -1,5 +1,6 @@
 extends ../../components/base/_skeleton
 include ../../components/rd-navbar/_rd-navbar
+include ../../components/modal-dynamic/_modal-dynamic
 include ../../components/helpers/_helpers
 //- include ../components/breadcrumbs/_breadcrumbs
 
@@ -52,16 +53,21 @@ block page
                       td #{val.position}
                       td #{val.role}
                       td
-                        a.mr-3(href='/users/edit/' + val.id + '?allow=true', data-toggle='tooltip', data-original-title="Редагувати")
+                        a.mr-3(href='/users/edit/' + val.id + '?allow=true',
+                          data-toggle='tooltip',
+                          data-original-title="Редагувати"
+                          data-confirmation='{"title": "Редагувати дані користувача", "content": "' + val.firstname + ' ' + val.lastname + '"}')
                           span.fa-edit
                         if (myID == val.id)
                           span.fa-trash-o( data-toggle='tooltip', data-original-title="Неможливо видалити свій профіль")
                         else
-                          a(href='/users/remove/' + val.id, data-toggle='tooltip', data-original-title="Видалити")
+                          a(href='/users/remove/' + val.id, data-toggle='tooltip', data-original-title="Видалити"
+                            data-confirmation='{"title": "Видалити користувача", "content": "' + val.firstname + ' ' + val.lastname + '. Відновити користувача буде неможливо!"}')
                             span.fa-trash-o.text-danger
 
               a.btn.btn-primary(href="/users/add")
                 span.fa-plus-circle.mr-2
                 span= 'Створити користувача'
+    +modal-dynamic
   include ../layout/footer
 
