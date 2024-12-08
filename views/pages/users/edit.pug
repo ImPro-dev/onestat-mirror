@@ -80,10 +80,20 @@ block page
                   .col-xl-9.mt-3
                     div.form-group
                       label(class='form-label' for='position') Позиція:
+                      - var isAssistantSelected = user.position==='Assistant' ? 'selected="selected"' : ''
+                      - var isJuniorSelected= user.position==='Junior Media Buyer' ? 'selected="selected"' : ''
+                      - var isBuyerSelected= user.position==='Media Buyer' ? 'selected="selected"' : ''
+                      - var isTeamLeadSelected= user.position==='Team Lead' ? 'selected="selected"' : ''
+                      - var isHeadSelected= user.position==='Head of Media Buying' ? 'selected="selected"' : ''
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-users2
-                        input#position.form-control(type='text', name='position', required, value=user.position)
+                        select#position.form-control(name='position', required)
+                          <option name='head_of_media_buying' value='Head of Media Buying' #{isHeadSelected}>Head of Media Buying</option>
+                          <option name='team_lead' value='Team Lead' #{isTeamLeadSelected}>Team Lead</option>
+                          <option name='media_buyer' value='Media Buyer' #{isBuyerSelected}>Media Buyer</option>
+                          <option name='junior_media_buyer' value='Junior Media Buyer' #{isJuniorSelected}>Junior Media Buyer</option>
+                          <option name='assistant' value='Assistant' #{isAssistantSelected}>Assistant</option>
 
                   .col-12.mt-4
                     input#id.form-control(type='hidden', name='id', value=user.id)
