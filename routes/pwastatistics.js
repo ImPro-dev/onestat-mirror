@@ -204,11 +204,9 @@ router.post('/',
           .on("end", function () {
             console.log("Keitaro stat finished");
             // FB data
-            var adColumnName = config.FB.adColumnName;
-            var adColumnName_ua = config.FB.adColumnName_ua;
+            var adColumnNameRegex = config.FB.adColumnNameRegex;
+            var spendColumnNameRegex = config.FB.spendColumnNameRegex;
             var spendColumnName = config.FB.spendColumnName;
-            var spendRegex = config.FB.spendRegex;
-            var spendRegex_ua = config.FB.spendRegex_ua;
 
             // var FBreader = fs.createReadStream("uploads/___FB.csv");
             var FBreader = fs.createReadStream(path.join(__dirname, '..', 'uploads', webID, "___FB.csv"));
@@ -218,12 +216,11 @@ router.post('/',
                 if (FBcvsRow == 1) {
                   row.forEach((columnName, index) => {
                     if (!adFound) {
-                      adIndex = (columnName.toLowerCase() === adColumnName.toLowerCase()
-                        || columnName.toLowerCase() === adColumnName_ua.toLowerCase()) ? index : '';
+                      adIndex = adColumnNameRegex.test(columnName) ? index : '';
                       adFound = adIndex === '' ? false : true;
                     }
                     if (!spendFound) {
-                      spendIndex = (spendRegex.test(columnName) || spendRegex_ua.test(columnName)) ? index : '';
+                      spendIndex = spendColumnNameRegex.test(columnName) ? index : '';
                       spendFound = spendIndex === '' ? false : true;
                     }
                   });
