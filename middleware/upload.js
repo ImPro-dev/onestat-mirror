@@ -5,28 +5,35 @@ const fs = require('fs');
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const { webID } = req.session.user;
-    const path = `./uploads/${webID}`
-    fs.mkdirSync(path, { recursive: true })
-    return cb(null, path)
+    const path = `./uploads/${webID}`;
+    fs.mkdirSync(path, { recursive: true });
+    return cb(null, path);
   },
   filename: (req, file, cb) => {
-    let fileName;
+    let prefix;
+    const ext = file.originalname.split('.').pop();
+    const counter = req.fileCounter = (req.fileCounter || 0) + 1;
+
     switch (file.fieldname) {
       case 'fb_stat':
-        fileName = '___FB'
+        prefix = '___FB';
+
+        cb(null, `${prefix}_${counter}.${ext}`);
         break;
       case 'keitaro_stat_conversions':
-        fileName = '___keitaroConversions'
+        prefix = '___keitaroConversions';
+        cb(null, `${prefix}.${ext}`);
         break;
       case 'keitaro_stat_clicks':
-        fileName = '___keitaroClicks'
+        prefix = '___keitaroClicks';
+        cb(null, `${prefix}.${ext}`);
         break;
       default:
-        break;
+        prefix = 'file';
     }
-    cb(null, fileName + '.csv');
   }
 });
+
 
 // Create the multer instance
 const upload = multer({ storage: storage });

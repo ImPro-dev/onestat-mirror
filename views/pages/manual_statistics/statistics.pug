@@ -48,10 +48,13 @@ block page
                       .tab-content
                         #onebot.tab-pane.fade.show.active( role='tabpanel' )
                           form(role='form' class='stat-form' method='POST' action='/botstatistics' enctype="multipart/form-data")
-                            div.form-group.mb-4
-                              label(class='form-label' for='fb_stat_bot') Файл з Facebook:
-                              .form-control-wrapper.custom-file
-                                input#fb_stat_bot.form-control(type='file', name='fb_stat', required)
+                            div.form-group.mb-1
+                              div.fields-wrapper
+                                label(class='form-label' for='fb_stat_bot') Файл з Facebook:
+                                .form-control-wrapper.custom-file
+                                  input#fb_stat_bot.form-control(type='file', name='fb_stat', required)
+                              button.btn.btn-light.btn-sm.w-25.mt-2.add-input-button(type="button")
+                                span.linearicons-plus
                             div.form-group.mb-5
                               label(class='form-label' for='keitaro_stat_conversions') Файл з Keitaro:
                               .form-control-wrapper.custom-file
@@ -60,9 +63,12 @@ block page
                         #pwa.tab-pane.fade( role='tabpanel' )
                           form(role='form' class='stat-form' method='POST' action='/pwastatistics' enctype="multipart/form-data")
                             div.form-group.mb-4
-                              label(class='form-label' for='fb_stat_pwa') Файл з Facebook:
-                              .form-control-wrapper.custom-file
-                                input#fb_stat_pwa.form-control(type='file', name='fb_stat', required)
+                              div.fields-wrapper
+                                label(class='form-label' for='fb_stat_pwa') Файл з Facebook:
+                                .form-control-wrapper.custom-file
+                                  input#fb_stat_pwa.form-control(type='file', name='fb_stat', required)
+                              button.btn.btn-light.btn-sm.w-25.mt-2.add-input-button(type="button")
+                                span.linearicons-plus
                             div.form-group.mb-4
                               label(class='form-label' for='keitaro_stat_clicks') Файл з Keitaro (Clicks):
                               .form-control-wrapper.custom-file
