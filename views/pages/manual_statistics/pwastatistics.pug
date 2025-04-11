@@ -34,6 +34,7 @@ block page
                     table.table.table-striped.mt-1.text-center
                       thead
                         tr
+                          th
                           th.text-left= headers.adname
                           th= headers.spend
                           th= headers.install
@@ -41,8 +42,11 @@ block page
                           th= headers.dep
                           th= headers.qua
                       tbody
+                        - var count = 0;
                         each val, key in JSON.parse(data)
+                          - count++
                           tr
+                            td= count
                             td.text-left #{key}
                             td #{val.spend}
                             td #{val.install.value + val.new.value}

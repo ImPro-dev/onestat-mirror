@@ -188,6 +188,9 @@
   height: calc(1.47em + 1.625rem + 2px);
   margin-bottom: 0;
 }
+.custom-file.w-shorten {
+  width: 90%;
+}
 
 .custom-file-input {
   position: relative;
@@ -265,6 +268,11 @@
   background-color: #0052ff !important;
   border-color: #0052ff;
   color: #fff;
+}
+.custom-file .remove-input-button {
+  position: absolute;
+  top: 0;
+  left: 103%;
 }
 
 .custom-range {
