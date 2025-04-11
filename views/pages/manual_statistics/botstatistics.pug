@@ -34,6 +34,7 @@ block page
                     table.table.table-striped.mt-1
                       thead
                         tr
+                          th
                           th= headers.adname
                           th= headers.spend
                           th= headers.new
@@ -41,8 +42,11 @@ block page
                           th= headers.dep
                           th= headers.qua
                       tbody
+                        - var count = 0;
                         each val, key in JSON.parse(data)
+                          - count++
                           tr
+                            td= count
                             td #{key}
                             td #{val.spend}
                             td #{val.new.value}
