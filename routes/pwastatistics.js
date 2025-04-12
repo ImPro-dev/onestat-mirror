@@ -57,7 +57,11 @@ router.post('/',
           });
         } else {
           // Fill out data rows
-          subId1 = decodeURI(row[subId1Index]); // adname
+          try {
+            subId1 = decodeURI(row[subId1Index].split('_Group_')[0]); // adname
+          } catch (error) {
+            subId1 = row[subId1Index].split('_Group_')[0]; // adname
+          }
           subId = row[subIdIndex];
 
           if (subId1) {
@@ -65,6 +69,7 @@ router.post('/',
               aggregatedData[subId1] = {
                 subId: '',
                 spend: 0,
+                adStatus: '',
                 install: {
                   value: 0,
                   subId: [],
@@ -121,6 +126,7 @@ router.post('/',
 
         var adname, adIndex, adFound;
         var spend, spendIndex, spendFound;
+        var adStatus, adStatusIndex, adStatusFound;
         subIdIndex = null;
         subIdFound = null;
         subId1Index = null;
@@ -149,7 +155,11 @@ router.post('/',
                 });
               } else {
                 // Fill out data rows
-                subId1 = decodeURI(row[subId1Index]); // adname
+                try {
+                  subId1 = decodeURI(row[subId1Index].split('_Group_')[0]); // adname
+                } catch (error) {
+                  subId1 = row[subId1Index].split('_Group_')[0]; // adname
+                }
                 subId = row[subIdIndex];
                 origStatus = row[origStatusIndex];
 
@@ -158,6 +168,7 @@ router.post('/',
                     aggregatedData[subId1] = {
                       subId: '',
                       spend: 0,
+                      adStatus: '',
                       install: {
                         value: 0,
                         subId: [],
@@ -222,7 +233,9 @@ router.post('/',
             // FB data
             var adColumnNameRegex = config.FB.adColumnNameRegex;
             var spendColumnNameRegex = config.FB.spendColumnNameRegex;
+            var adStatusColumnNameRegex = config.FB.adStatusColumnNameRegex;
             var spendColumnName = config.FB.spendColumnName;
+            var adStatusColumnName = config.FB.adStatusColumnName;
 
             // Get all files in DIR
             const uploadDir = path.join(__dirname, "..", "uploads", webID);
@@ -247,18 +260,29 @@ router.post('/',
                             spendIndex = spendColumnNameRegex.test(columnName) ? index : '';
                             spendFound = spendIndex === '' ? false : true;
                           }
+                          if (!adStatusFound) {
+                            adStatusIndex = adStatusColumnNameRegex.test(columnName) ? index : '';
+                            adStatusFound = adStatusIndex === '' ? false : true;
+                          }
                         });
                       } else {
-                        adname = decodeURI(row[adIndex]);
+                        try {
+                          adname = decodeURI(row[adIndex].split('_Group_')[0]);
+                        } catch (error) {
+                          adname = row[adIndex].split('_Group_')[0];
+                        }
                         spend = row[spendIndex];
+                        adStatus = row[adStatusIndex];
 
                         if (aggregatedData[adname]) {
                           aggregatedData[adname].spend = spend.replace('.', ',');
+                          aggregatedData[adname].adStatus = adStatus;
                         } else {
                           try {
                             aggregatedData[adname] = {
                               subId: '',
                               spend: spend.replace('.', ','),
+                              adStatus: adStatus,
                               install: {
                                 value: 0,
                                 subId: [],
@@ -331,6 +355,7 @@ router.post('/',
                 path: downloadDir + '/' + config.OneStatFileName,
                 header: [
                   { id: 'subId1', title: 'Adname' },
+                  { id: 'adStatus', title: 'Status' },
                   { id: 'spend', title: 'Spend' },
                   { id: 'install', title: 'Install' },
                   { id: 'reg', title: 'Reg' },
@@ -345,6 +370,7 @@ router.post('/',
               for (const property in aggregatedData) {
                 records.push({
                   subId1: property,
+                  adStatus: config.FB.statusMapping[aggregatedData[property].adStatus],
                   spend: aggregatedData[property].spend,
                   install: (aggregatedData[property].install.value + aggregatedData[property].new.value)
                     + (aggregatedData[property].install.doubles || aggregatedData[property].new.double ? '|' + (aggregatedData[property].install.doubles + aggregatedData[property].new.doubles) * 1 : ''),
@@ -362,6 +388,7 @@ router.post('/',
                 resultTitle: 'Зведені дані:',
                 headers: {
                   adname: subId1ColumnName,
+                  adStatus: adStatusColumnName,
                   subID: subIdColumnName,
                   spend: spendColumnName,
                   install: installStatus + '(+' + newStatus + ')',

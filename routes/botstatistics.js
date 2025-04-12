@@ -68,7 +68,11 @@ router.post('/',
           });
         } else {
           // Fill out data rows
-          subId1 = decodeURI(row[subId1Index]); // adname
+          try {
+            subId1 = decodeURI(row[subId1Index].split('_Group_')[0]); // adname
+          } catch (error) {
+            subId1 = row[subId1Index].split('_Group_')[0]; // adname
+          }
           subId = row[subIdIndex];
           origStatus = row[origStatusIndex];
           subId14 = row[subId14Index]
@@ -78,6 +82,7 @@ router.post('/',
               aggregatedData[subId1] = {
                 subId: '',
                 spend: 0,
+                adStatus: '',
                 new: {
                   value: 0,
                   subId14: [],
@@ -137,9 +142,12 @@ router.post('/',
         // FB data
         var adname, adIndex, adFound;
         var spend, spendIndex, spendFound;
+        var adStatus, adStatusIndex, adStatusFound;
         var adColumnNameRegex = config.FB.adColumnNameRegex;
         var spendColumnNameRegex = config.FB.spendColumnNameRegex;
         var spendColumnName = config.FB.spendColumnName;
+        var adStatusColumnNameRegex = config.FB.adStatusColumnNameRegex;
+        var adStatusColumnName = config.FB.adStatusColumnName;
 
         // Get all files in DIR
         const uploadDir = path.join(__dirname, "..", "uploads", webID);
@@ -164,17 +172,28 @@ router.post('/',
                         spendIndex = spendColumnNameRegex.test(columnName) ? index : '';
                         spendFound = spendIndex === '' ? false : true;
                       }
+                      if (!adStatusFound) {
+                        adStatusIndex = adStatusColumnNameRegex.test(columnName) ? index : '';
+                        adStatusFound = adStatusIndex === '' ? false : true;
+                      }
                     });
                   } else {
-                    adname = decodeURI(row[adIndex]);
+                    try {
+                      adname = decodeURI(row[adIndex].split('_Group_')[0]);
+                    } catch (error) {
+                      adname = row[adIndex].split('_Group_')[0];
+                    }
                     spend = row[spendIndex];
+                    adStatus = row[adStatusIndex];
 
                     if (aggregatedData[adname]) {
                       aggregatedData[adname].spend = spend.replace('.', ',');
+                      aggregatedData[adname].adStatus = adStatus;
                     } else {
                       aggregatedData[adname] = {
                         subId: '',
                         spend: spend.replace('.', ','),
+                        adStatus: adStatus,
                         new: {
                           value: 0,
                           subId14: [],
@@ -233,6 +252,7 @@ router.post('/',
             path: downloadDir + '/' + config.OneStatFileName,
             header: [
               { id: 'subId1', title: 'Adname' },
+              { id: 'adStatus', title: 'Status' },
               { id: 'spend', title: 'Spend' },
               { id: 'new', title: 'New' },
               { id: 'reg', title: 'Reg' },
@@ -247,6 +267,7 @@ router.post('/',
           for (const property in aggregatedData) {
             records.push({
               subId1: property,
+              adStatus: config.FB.statusMapping[aggregatedData[property].adStatus],
               spend: aggregatedData[property].spend,
               new: aggregatedData[property].new.value + (aggregatedData[property].new.doubles ? '|' + aggregatedData[property].new.doubles : ''),
               reg: aggregatedData[property].reg.value + (aggregatedData[property].reg.doubles ? '|' + aggregatedData[property].reg.doubles : ''),
@@ -261,6 +282,7 @@ router.post('/',
             resultTitle: 'Зведені дані:',
             headers: {
               adname: subId1ColumnName,
+              adStatus: adStatusColumnName,
               subID: subIdColumnName,
               spend: spendColumnName,
               new: newStatus,

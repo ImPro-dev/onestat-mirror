@@ -36,6 +36,7 @@ block page
                         tr
                           th
                           th= headers.adname
+                          th= headers.adStatus
                           th= headers.spend
                           th= headers.new
                           th= headers.reg
@@ -48,6 +49,7 @@ block page
                           tr
                             td= count
                             td #{key}
+                            td #{val.adStatus}
                             td #{val.spend}
                             td #{val.new.value}
                               if val.new.doubles
