@@ -2,7 +2,18 @@ module.exports = {
     FB: {
         adColumnNameRegex: /(Название объявления|Назва реклами|Назва оголошення|Ad name)/u,
         spendColumnNameRegex: /(Сумма затрат|Сума витрат|Витрачена сума|Amount spent) \(\w{3}\)/u,
+        adStatusColumnNameRegex: /(Показ рекламы|Показ реклами|Ad delivery)/u,
         spendColumnName: 'Сумма затрат',
+        adStatusColumnName: 'Статус',
+        statusMapping: {
+            'active': 'active',
+            'inactive': 'stop',
+            'not_delivering': 'stop',
+            'recently_rejected': 'rjctst',
+            'rejected': 'rjctst',
+            'pending_review': 'pending',
+            'pending_process': 'pending',
+        }
     },
     Keitaro: {
         subId: 'SubId',
