@@ -1,21 +1,44 @@
-name: Mirror deletions
-on: { delete: {} }
+# .github/workflows/mirror-delete.yml
+name: Mirror deletes to Public
+
+on:
+  delete:
+    branches:
+      - '**'
+    tags:
+      - '*'
+
 jobs:
   mirror-delete:
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          git init .
-          git config user.name  "mirror-bot"
+      - name: Checkout private repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "mirror-bot"
           git config user.email "mirror-bot@users.noreply.github.com"
-      - env: { PUB_URL: ${{ secrets.PUBLIC_MIRROR_URL }} }
-        run: git remote add public "$PUB_URL"
-      - env:
+
+      - name: Add public mirror remote (sanitize URL)
+        env:
+          PUB_URL_RAW: ${{ secrets.PUBLIC_MIRROR_URL }}
+        run: |
+          PUB_URL="$(printf '%s' "$PUB_URL_RAW" | tr -d '\r\n' | sed 's/[[:space:]]\+$//')"
+          git remote add public "$PUB_URL"
+          git remote -v
+
+      - name: Delete ref in mirror
+        env:
           REF_TYPE: ${{ github.event.ref_type }}
-          REF_NAME: ${{ github.event.ref }}
+          REF: ${{ github.event.ref }}
         run: |
           if [ "$REF_TYPE" = "branch" ]; then
-            git push public :refs/heads/"$REF_NAME"
-          else
-            git push public :refs/tags/"$REF_NAME"
+            echo "Deleting branch $REF"
+            git push public --delete "$REF" || true
+          elif [ "$REF_TYPE" = "tag" ]; then
+            echo "Deleting tag $REF"
+            git push public --delete "refs/tags/$REF" || true
           fi
