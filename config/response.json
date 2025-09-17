@@ -1,0 +1,84 @@
+[
+    {
+        "campaign": "app[PWASkak] MostBet 30FS [PL] #043",
+        "clicks": [
+            {
+                "Subid": "uqph0o12q16s",
+                "Sub_ID_1": "RimmaNazarova_crMOSTBETPL_30FS_VULKANO_27_11_2024(1)_t1_07",
+                "Count": 123
+            },
+            {
+                "Subid": "uqph0o1yh76t",
+                "Sub_ID_1": "RimmaNazarova_crMOSTBETPL_30FS_VULKANO_27_11_2024(1)_t1_08",
+                "Count": 643
+            }
+        ],
+        "conversions": [
+            {
+                "Subid": "uqph0o12q16s",
+                "Sub_ID_1": "RimmaNazarova_crMOSTBETPL_30FS_VULKANO_27_11_2024(1)_t1_07",
+                "ConversionTime": "10 марта 2025, 22:42",
+                "Sub_ID_14": "3096043",
+                "OriginStatus": "dep",
+                "SalesPeriod": "1ч. 26м. 25с."
+            },
+            {
+                "Subid": "sdg5445werdf",
+                "Sub_ID_1": "RimmaNazarova_crMOSTBETPL_30FS_VULKANO_27_11_2024(13)_t2_01",
+                "ConversionTime": "09 марта 2025, 20:40",
+                "Sub_ID_14": "3346643",
+                "OriginStatus": "reg",
+                "SalesPeriod": ""
+            },
+            {
+                "Subid": "uqph0o12q16s",
+                "Sub_ID_1": "RimmaNazarova_crMOSTBETPL_30FS_VULKANO_27_11_2024(12)_t1_08",
+                "ConversionTime": "10 марта 2025, 23:42",
+                "Sub_ID_14": "3096043",
+                "OriginStatus": "qua",
+                "SalesPeriod": "1ч. 26м. 25с."
+            }
+        ]
+    },
+    {
+        "campaign": "bot[onebot] Casino.ua 20FS [UA] #043",
+        "clicks": [
+            {
+                "Subid": "uqph0o12q16s",
+                "Sub_ID_1": "MadinaMartinenko_crCASINOUAS_01_08_2024(10)_t3_L1_26",
+                "Count": 363
+            },
+            {
+                "Subid": "uqph0o1yh76t",
+                "Sub_ID_1": "MadinaMartinenko_crCASINOUAS_01_08_2024(15)_t1_L2_06",
+                "Count": 98
+            }
+        ],
+        "conversions": [
+            {
+                "Subid": "uqph0o12q16s",
+                "Sub_ID_1": "MadinaMartinenko_crCASINOUAS_01_08_2024(10)_t3_L1_26",
+                "ConversionTime": "10 марта 2025, 22:42",
+                "Sub_ID_14": "3096043",
+                "OriginStatus": "dep",
+                "SalesPeriod": "1ч. 26м. 25с."
+            },
+            {
+                "Subid": "sdg5445werdf",
+                "Sub_ID_1": "MadinaMartinenko_crCASINOUAS_01_08_2024(15)_t1_L2_06",
+                "ConversionTime": "09 марта 2025, 20:40",
+                "Sub_ID_14": "3346643",
+                "OriginStatus": "reg",
+                "SalesPeriod": ""
+            },
+            {
+                "Subid": "uqph0o12q16s",
+                "Sub_ID_1": "MadinaMartinenko_crCASINOUAS_01_08_2024(10)_t3_L1_26",
+                "ConversionTime": "10 марта 2025, 23:42",
+                "Sub_ID_14": "3096043",
+                "OriginStatus": "qua",
+                "SalesPeriod": "1ч. 26м. 25с."
+            }
+        ]
+    }
+]

@@ -4,6 +4,8 @@ const express = require('express');
 const userController = require('../controllers/userController');
 const router = express.Router();
 const auth = require('../middleware/auth');
+const { requireAny, requireAll } = require('../middleware/requireScopes');
+const { SCOPES } = require('../scripts/permissions/scopes');
 const role = require('../middleware/role');
 
 /**
@@ -11,7 +13,7 @@ const role = require('../middleware/role');
  */
 router.get('/',
   auth,
-  role('admin', 'manager'),
+  requireAny([SCOPES.ORG_USERS_READ_ANY]),
   userController.UserList
 );
 
@@ -20,7 +22,7 @@ router.get('/',
  */
 router.get('/add',
   auth,
-  role('admin', 'manager'),
+  requireAny([SCOPES.ORG_USERS_WRITE_ANY]),
   userController.AddUserPage
 );
 
@@ -29,7 +31,7 @@ router.get('/add',
  */
 router.post('/add',
   auth,
-  role('admin', 'manager'),
+  requireAny([SCOPES.ORG_USERS_WRITE_ANY]),
   userController.AddUser
 );
 
@@ -38,7 +40,7 @@ router.post('/add',
  */
 router.get('/edit/:id',
   auth,
-  role('admin', 'manager'),
+  requireAny([SCOPES.ORG_USERS_WRITE_ANY]),
   userController.EditUserPage
 );
 
@@ -47,7 +49,7 @@ router.get('/edit/:id',
  */
 router.post('/edit',
   auth,
-  role('admin', 'manager'),
+  requireAny([SCOPES.ORG_USERS_WRITE_ANY]),
   userController.EditUser
 );
 
@@ -56,7 +58,7 @@ router.post('/edit',
  */
 router.get('/:id',
   auth,
-  role('admin', 'manager', 'user'),
+  requireAny([SCOPES.ORG_USERS_READ_ANY]),
   userController.ProfilePage
 );
 
@@ -65,7 +67,7 @@ router.get('/:id',
  */
 router.get('/remove/:id',
   auth,
-  role('admin', 'manager'),
+  requireAny([SCOPES.ORG_USERS_WRITE_ANY]),
   userController.RemoveUser
 );
 
