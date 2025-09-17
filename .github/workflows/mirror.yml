@@ -29,17 +29,30 @@ jobs:
           git config user.name "mirror-bot"
           git config user.email "mirror-bot@users.noreply.github.com"
 
-      - name: Add public mirror remote
+      - name: Add public mirror remote (sanitize URL)
         env:
-          PUB_URL: ${{ secrets.PUBLIC_MIRROR_URL }}
+          PUB_URL_RAW: ${{ secrets.PUBLIC_MIRROR_URL }}
         run: |
+          # прибираємо CR/LF, пробіли
+          PUB_URL="$(printf '%s' "$PUB_URL_RAW" | tr -d '\r\n' | sed 's/[[:space:]]\+$//')"
+          if [ -z "$PUB_URL" ]; then
+            echo "Empty PUB_URL after sanitize"; exit 1
+          fi
           git remote add public "$PUB_URL"
+          git remote -v
 
-      - name: Push current branch
+      - name: Push branch if event is branch
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-          git push -f public "$CURRENT_BRANCH:$CURRENT_BRANCH"
+          if [ "$REF_TYPE" = "branch" ]; then
+            echo "Pushing branch $REF_NAME"
+            git push -f public "$REF_NAME:$REF_NAME"
+          else
+            echo "Not a branch push (type=$REF_TYPE), skipping branch push"
+          fi
 
-      - name: Push tags
+      - name: Push tags (always)
         run: |
           git push -f public --tags
