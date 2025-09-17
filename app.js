@@ -22,6 +22,7 @@ const botStatisticsRouter = require('./routes/botstatistics');
 const pwaStatisticsRouter = require('./routes/pwastatistics');
 const statisticsRouter = require('./routes/statistics');
 const downloadRouter = require('./routes/download');
+const buyingTeamRouter = require('./routes/buying-team');
 
 // DB Connection
 const { MONGODB_URI, SESSION_SECRET, COOKIE_AGE } = process.env;
@@ -69,10 +70,11 @@ app.use('/botstatistics', botStatisticsRouter);
 app.use('/pwastatistics', pwaStatisticsRouter);
 app.use('/statistics', statisticsRouter);
 app.use('/download', downloadRouter);
+app.use('/buying-team', buyingTeamRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
-  next(createError(404));
+  next(createError(404, 'Сторінку не знайдено!'));
 });
 
 // error handler

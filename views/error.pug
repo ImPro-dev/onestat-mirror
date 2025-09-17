@@ -1,6 +1,19 @@
-extends pages/layout/layout
+extends components/base/_skeleton
 
-block content
-  h1= message
-  h2= error.status
-  pre #{error.stack}
+block variables
+  -
+    htmlClass[ htmlClass.indexOf( 'rd-navbar-sidebar-active' ) ] = '';
+    pageName = '404';
+
+block page
+  #particles-container
+  section.section-one-screen.section-lg
+    .container
+      .row.justify-content-center
+        .col-lg-8.col-xl-7
+          p.text-center
+            a( href='/' ): img( src='/images/logo_' + process.env.NODE_ENV + '.svg', alt='' )
+          h1.text-center= 404
+          h3.text-center= message
+
+block sidebar

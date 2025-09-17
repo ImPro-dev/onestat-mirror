@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node ./bin/www",
     "dev": "nodemon ./bin/www & npm run scss",
-    "scss": "sass --watch src/components/base/base.scss public/stylesheets/main.css"
+    "scss": "sass --watch src/components/base/base.scss public/stylesheets/main.css",
+    "seed:enums": "node scripts/seedEnums.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

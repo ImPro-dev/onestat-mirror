@@ -2,11 +2,10 @@ extends ../../components/base/_skeleton
 include ../../components/rd-navbar/_rd-navbar
 include ../../components/modal-dynamic/_modal-dynamic
 include ../../components/helpers/_helpers
-//- include ../components/breadcrumbs/_breadcrumbs
 
 block variables
   - pageName = title;
-  - htmlClass.push( 'page-small-footer' );
+  - htmlClass.push('page-small-footer');
 
 block page
   header.section.page-header
@@ -23,51 +22,134 @@ block page
                 = ' '
                 span= title
             .panel-body
+              .d-flex.flex-wrap.justify-content-between.align-items-center.mb-3
+                a.btn.btn-primary.mb-3(href="/users/add")
+                  span.fa-plus-circle.mr-2
+                  | Створити користувача
+
+                // Форма фільтрів/пошуку
+                form.form-inline(method='GET', action='/users')
+                  .form-group.mb-2.mr-2
+                    input.form-control(type='text', name='q', placeholder='Пошук (імʼя/емейл/webId)', value=(query && query.q || ''))
+                  .form-group.mb-2.mr-2
+                    select.form-control(name='department')
+                      option(value='') Всі департаменти
+                      if departments && departments.length
+                        each d in departments
+                          option(value=d.value selected=(query && query.department===d.value))= d.label
+                  .form-group.mb-2.mr-2
+                    select.form-control(name='orgRole')
+                      option(value='') Всі orgRole
+                      if orgRoles && orgRoles.length
+                        each r in orgRoles
+                          option(value=r.value selected=(query && query.orgRole===r.value))= r.label
+                  .form-group.mb-2.mr-2
+                    select.form-control(name='teamRole')
+                      option(value='') Всі teamRole
+                      if teamRoles && teamRoles.length
+                        each t in teamRoles
+                          option(value=t.value selected=(query && query.teamRole===t.value))= t.label
+                  .form-group.mb-2.mr-2
+                    select.form-control(name='active')
+                      option(value='') Статус: всі
+                      option(value='true' selected=(query && query.active==='true')) Активні
+                      option(value='false' selected=(query && query.active==='false')) Деактивовані
+                  .form-group.mb-2.mr-2
+                    select.form-control(name='limit')
+                      - const __limit = (typeof limit !== 'undefined' ? limit : 20);
+                      option(value='10' selected=(+__limit===10)) 10
+                      option(value='20' selected=(+__limit===20)) 20
+                      option(value='50' selected=(+__limit===50)) 50
+                    button.btn.btn-light.ml-2.mb-2(type='submit')
+                      span.linearicons-magnifier
+
               if userError && userError.length
-                .col-12.mb-4
-                  +alert( {close: false} ).alert-danger.alert-sm
-                    span.alert-icon.fa-exclamation-triangle
-                    span= userError
-              table.table.table-striped.mt-1.mb-4
+                +alert({close:false}).alert-danger.alert-sm
+                  span.alert-icon.fa-exclamation-triangle
+                  span= userError
+
+              if userSuccess && userSuccess.length
+                +alert({close:false}).alert-success.alert-sm
+                  span.alert-icon.linearicons-checkmark-circle
+                  span= userSuccess
+
+              // Таблиця
+              table.table.table-striped.mt-3.mb-4
                 thead
                   tr
-                    th= 'No'
-                    th= 'Імʼя'
-                    th= 'Емейл'
-                    th= 'Телеграм'
-                    th= 'Web ID'
-                    th= 'Позиція'
-                    th= 'Доступ'
-                    th= 'Дія'
+                    th №
+                    th Імʼя
+                    th Емейл
+                    th Телеграм
+                    th WebID
+                    th Департамент
+                    th orgRole
+                    th teamRole
+                    th Позиція
+                    th Дія
                 tbody
-                  each val, key in users
+                  - const __page = (typeof page !== 'undefined' ? page : 1);
+                  - const __lim  = (typeof limit !== 'undefined' ? limit : 20);
+                  - const __start = ((__page - 1) * __lim) + 1;
+                  if users && users.length
+                    each val, idx in users
+                      tr
+                        td #{__start + idx}
+                        td
+                          a(href='/users/' + val._id)!= `${val.firstName || ''} ${val.lastName || ''}`.trim()
+                        td= val.email
+                        td
+                          if val.telegramUsername
+                            +telegramFormat(val.telegramUsername)
+                          else
+                            +telegramFormat('')
+                        td= val.webId || ''
+                        td= val.department || ''
+                        td= val.orgRole || ''
+                        td= val.teamRole || ''
+                        td= val.position || ''
+                        td
+                          a.mr-3(
+                            href='/users/edit/' + val._id + '?allow=1',
+                            data-toggle='tooltip',
+                            data-original-title='Редагувати',
+                            data-confirmation='{"title": "Редагувати дані користувача", "content": "' + val.firstName + ' ' + val.lastName + '"}'
+                          )
+                            span.fa-edit
+                          if typeof myID !== 'undefined' && (String(myID) === String(val._id))
+                            span.fa-trash-o(
+                              data-toggle='tooltip',
+                              data-original-title='Неможливо видалити свій профіль'
+                            )
+                          else
+                            a(
+                              href='/users/remove/' + val._id,
+                              data-toggle='tooltip',
+                              data-original-title='Видалити',
+                              data-confirmation='{"title": "Видалити користувача", "content": "' + val.firstName + ' ' + val.lastName + '. Відновити користувача буде неможливо!"}'
+                            )
+                              span.fa-trash-o.text-danger
+                  else
                     tr
-                      td #{key + 1}
-                      td
-                        a(href='/users/' + val.id) #{val.firstname} #{val.lastname}
-                      td #{val.email}
-                      td
-                        if val.telegram
-                          +telegramFormat(val.telegram)
-                      td #{val.webID}
-                      td #{val.position}
-                      td #{val.role}
-                      td
-                        a.mr-3(href='/users/edit/' + val.id + '?allow=true',
-                          data-toggle='tooltip',
-                          data-original-title="Редагувати"
-                          data-confirmation='{"title": "Редагувати дані користувача", "content": "' + val.firstname + ' ' + val.lastname + '"}')
-                          span.fa-edit
-                        if (myID == val.id)
-                          span.fa-trash-o( data-toggle='tooltip', data-original-title="Неможливо видалити свій профіль")
-                        else
-                          a(href='/users/remove/' + val.id, data-toggle='tooltip', data-original-title="Видалити"
-                            data-confirmation='{"title": "Видалити користувача", "content": "' + val.firstname + ' ' + val.lastname + '. Відновити користувача буде неможливо!"}')
-                            span.fa-trash-o.text-danger
+                      td(colspan='10')
+                        em Немає користувачів за обраними фільтрами.
 
-              a.btn.btn-primary(href="/users/add")
-                span.fa-plus-circle.mr-2
-                span= 'Створити користувача'
-    +modal-dynamic
+              // Пагінація
+              - const __totalPages = (typeof totalPages !== 'undefined' ? totalPages : 1);
+              if __totalPages > 1
+                nav
+                  ul.pagination.pagination-sm
+                    - const baseUrl = '/users';
+                    - function qparam(obj){ const p=new URLSearchParams(obj); return p.toString(); }
+                    - const queryBase = {q: (query && query.q) || '', department: (query && query.department) || '', orgRole: (query && query.orgRole) || '', teamRole: (query && query.teamRole) || '', active: (query && query.active) || '', limit: (typeof limit !== 'undefined' ? String(limit) : '20')};
+                    li.page-item(class=(__page<=1 ? 'disabled' : ''))
+                      a.page-link(href= baseUrl + '?' + qparam(Object.assign({}, queryBase, {page: Math.max(__page-1,1)})) ) «
+                    - for (let p = 1; p <= __totalPages; p++)
+                      li.page-item(class=(p===__page ? 'active' : ''))
+                        a.page-link(href= baseUrl + '?' + qparam(Object.assign({}, queryBase, {page: p})) )= p
+                    li.page-item(class=(__page>=__totalPages ? 'disabled' : ''))
+                      a.page-link(href= baseUrl + '?' + qparam(Object.assign({}, queryBase, {page: Math.min(__page+1,__totalPages)})) ) »
+
+  +modal-dynamic
+
   include ../layout/footer
-

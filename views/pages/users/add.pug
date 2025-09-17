@@ -1,13 +1,9 @@
 extends ../../components/base/_skeleton
 include ../../components/rd-navbar/_rd-navbar
-//- include ../components/breadcrumbs/_breadcrumbs
-//- include ../components/input/_input
-//- include ../components/progress-circle/_progress-circle
-//- include ../components/progress/_progress
 
 block variables
   - pageName = title;
-  - htmlClass.push( 'page-small-footer' );
+  - htmlClass.push('page-small-footer');
 
 block page
   header.section.page-header
@@ -28,76 +24,152 @@ block page
                 .row
                   if userError && userError.length
                     .col-12.mb-4
-                      +alert( {close: false} ).alert-danger.alert-sm
+                      +alert({close: false}).alert-danger.alert-sm
                         span.alert-icon.fa-exclamation-triangle
                         span= userError
+                  if userSuccess && userSuccess.length
+                    .col-12.mb-4
+                      +alert({close: false}).alert-success.alert-sm
+                        span.alert-icon.linearicons-checkmark-circle
+                        span= userSuccess
+
+                  // Ліва колонка
                   .col-xl-6
-                    div.form-group
-                      label(class='form-label' for='firstname') Імʼя:
+                    .form-group
+                      label.form-label(for='firstName') Імʼя:
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-user
-                        input#firstname.form-control(type='text', name='firstname', required)
-                    div.form-group
-                      label(class='form-label' for='email') Емейл:
+                        input#firstName.form-control(type='text', name='firstName', required)
+
+                    .form-group
+                      label.form-label(for='email') Емейл:
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-envelope
-                        input#email.form-control(type='text', name='email', required)
-                    div.form-group
-                      label(class='form-label' for='telegram') Телеграм аккаунт:
+                        input#email.form-control(type='email', name='email', required)
+
+                    .form-group
+                      label.form-label(for='telegramUsername') Телеграм:
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-paper-plane
-                        input#telegram.form-control(type='text', name='telegram')
+                        input#telegramUsername.form-control(type='text', name='telegramUsername', placeholder='@username')
+
+                  // Права колонка
                   .col-xl-6
-                    div.form-group
-                      label(class='form-label' for='lastname') Прізвище:
+                    .form-group
+                      label.form-label(for='lastName') Прізвище:
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-user
-                        input#lastname.form-control(type='text', name='lastname', required)
-                    div.form-group
-                      label(class='form-label' for='password') Пароль:
+                        input#lastName.form-control(type='text', name='lastName', required)
+
+                    .form-group
+                      label.form-label(for='password') Пароль:
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-lock
                         input#password.form-control(type='password', name='password', required)
-                    div.form-group
-                      label(class='form-label' for='role') Рівень доступу:
+
+                    .form-group
+                      label.form-label(for='orgRole') Рівень доступу (orgRole):
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-database-lock
-                        select#role.form-control(type='text', name='role', required)
-                          option(name='user', value='user' selected='selected') user
-                          option(name='manager', value='manager') manager
-                          option(name='admin', value='admin') admin
-                  .col-xl-3.mt-3
-                    div.form-group
-                      label(class='form-label' for='webID') WebID:
+                        select#orgRole.form-control(name='orgRole', required)
+                          if orgRoles && orgRoles.length
+                            each r in orgRoles
+                              // r: { value, label }
+                              option(value=r.value selected=(r.value==='user'))= r.label
+                          else
+                            option(value='user' selected) user111
+
+                  // Департамент
+                  .col-xl-6.mt-3
+                    .form-group
+                      label.form-label(for='department') Відділ:
                       .input-group
                         .input-group-prepend
-                          span.input-group-text.linearicons-briefcase
-                        input#webid.form-control(type='text', name='webID', required)
-                  .col-xl-9.mt-3
-                    div.form-group
-                      label(class='form-label' for='position') Позиція:
+                          span.input-group-text.linearicons-lan
+                        select#department.form-control(name='department', required, onchange='onDeptChange(this.value)')
+                          if departments && departments.length
+                            each d in departments
+                              // d: { value, label }
+                              option(value=d.value selected=(currentDept && currentDept===d.value))= d.label
+                          else
+                            option(value='Media Buying' selected) Media Buying111
+
+                  // TeamRole
+                  .col-xl-6.mt-3
+                    .form-group
+                      label.form-label(for='teamRole') Роль у команді (teamRole):
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-users2
-                        select#position.form-control(name='position', required)
-                          option(name='head_of_media_buying', value='Head of Media Buying') Head of Media Buying
-                          option(name='team_lead', value='Team Lead') Team Lead
-                          option(name='media_buyer', value='Media Buyer') Media Buyer
-                          option(name='junior_media_buyer', value='Junior Media Buyer') Junior Media Buyer
-                          option(name='assistant', value='Assistant' selected='selected') Assistant
-                        //- input#position.form-control(type='text', name='position', required)
+                        select#teamRole.form-control(name='teamRole', required)
+                          if teamRoles && teamRoles.length
+                            each t in teamRoles
+                              // t: { value, label }
+                              option(value=t.value)= t.label
+                          else
+                            option(value='lead') lead111
+                            option(value='member') member111
+                            option(value='assistant') assistant111
+
+                  // Позиція (людський лейбл, не впливає на доступи)
+                  .col-xl-8.mt-3
+                    .form-group
+                      label.form-label(for='position') Позиція (лейбл для UI/HR):
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text.linearicons-user
+                        input#position.form-control(type='text', name='position', placeholder='Team Lead / Buyer / Marketer ...')
+                  // WebID (тільки для member)
+                  .col-xl-4.mt-3
+                    .form-group#webid_group(style='display:none')
+                      label.form-label(for='webId') WebID (для buyer):
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text.linearicons-briefcase
+                        input#webId.form-control(
+                          type='text',
+                          name='webId',
+                          placeholder='w000',
+                          pattern='^w\\d{3,}$'
+                        )
 
                   .col-12.mt-4
-                    button.btn.btn-primary.submit-btn.w-100.mb-4(type="submit") Створити
-                    a.btn.btn-light(href="/users")
+                    button.btn.btn-primary.submit-btn.w-100.mb-4(type='submit') Створити
+                    a.btn.btn-light(href='/users')
                       span.mdi-keyboard-backspace.mr-2
-                      span= 'До списку'
+                      span До списку
 
   include ../layout/footer
 
+  // === Simple client-side logic ===
+  block scripts
+    script.
+      function isMediaBuying(dept) {
+        return String(dept).toLowerCase() === 'media buying'.toLowerCase();
+      }
+      function syncWebIdVisibility() {
+        var deptSel = document.getElementById('department');
+        var dept = deptSel ? deptSel.value : '';
+        var grp = document.getElementById('webid_group');
+        var input = document.getElementById('webId');
+        var needs = isMediaBuying(dept);
+        if (grp) grp.style.display = needs ? '' : 'none';
+        if (input) input.required = !!needs;
+      }
+      function onDeptChange(dept) {
+        // миттєво оновлюємо видимість webId (без очікування перерендеру)
+        syncWebIdVisibility();
+
+        // якщо у тебе залежні позиції від департаменту через сервер — лишаємо перезавантаження:
+        //- var url = new URL(window.location.href);
+        //- url.searchParams.set('department', dept);
+        //- window.location.href = url.toString();
+      }
+      // init
+      (function(){ syncWebIdVisibility(); })();

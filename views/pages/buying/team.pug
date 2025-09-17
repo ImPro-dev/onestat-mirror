@@ -1,0 +1,242 @@
+extends ../../components/base/_skeleton
+include ../../components/rd-navbar/_rd-navbar
+include ../../components/modal-dynamic/_modal-dynamic
+include ../../components/dropdown/_dropdown
+include ../../components/select2/_select2
+include ../../components/helpers/_helpers
+//- include ../components/breadcrumbs/_breadcrumbs
+
+block variables
+  - pageName = title;
+  - htmlClass.push( 'page-small-footer' );
+
+block page
+  header.section.page-header
+    +rd-navbar
+
+  section.section-xs
+    .container-fluid
+      .row
+        .col-12
+          .panel
+            .panel-header
+              h5.panel-title
+                span.panel-icon.linearicons-site-map
+                = ' '
+                span= title
+            .panel-body
+              section
+                - var teamLeadNames = [];
+                - teamLeadNames[0] = '--';
+                .tabs.tabs-vertical-top.tabs-border
+                  ul.nav.nav-tabs( role='tablist' )
+                    each val, key in teamLeads
+                      - teamLeadNames[key + 1] = val.firstname + ' ' + val.lastname;
+                      li.nav-item: a.nav-link( data-toggle='tab', href='#panelTab12-'+key, role='tab', aria-selected='false' ) #{val.firstname} #{val.lastname}
+                  .tab-content
+                    each val, key in teamLeads
+                      .tab-pane.fade( id='panelTab12-'+key role='tabpanel' ) #{val.firstname}  Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur.
+              section.mt-5
+                .table
+                  table.table.table-vertical-align
+                    thead
+                      tr
+                        th
+                        th Імʼя
+                        th Емейл
+                        th Телеграм
+                        th Тімлід
+                    tbody
+                      each val, key in buyers
+                        tr
+                          td
+                            img.rounded-circle(src='/images/users/user-01-165x165.png', width='50', height='50', alt='')
+                          td #{val.firstname} #{val.lastname}
+                          td #{val.email}
+                          td
+                            if val.telegram
+                              +telegramFormat(val.telegram)
+                          td
+                            +select2({
+                              theme: 'success',
+                              options: teamLeadNames
+                            })
+                            //- +button-dropdown({
+                            //-   buttonText: 'Active',
+                            //-   list: [
+                            //-     {text: 'Edit'},
+                            //-     {text: 'Contact'},
+                            //-     {divider: true},
+                            //-     {text: 'Active'},
+                            //-     {text: 'Suspend'},
+                            //-     {text: 'Remove'}
+                            //-   ]
+                            //- }).btn-success.btn-sm
+                each val, key in assistances
+                  div #{val.firstname} #{val.lastname}
+
+
+    .container
+      .nestable-menu.text-right
+        button.btn.btn-primary( type='button', data-nestable-action!={expandAll: '.dd'} ) Expand all
+        button.btn.btn-primary( type='button', data-nestable-action!={collapseAll: '.dd'} ) Collapse all
+      .row.row-50
+        .col-md-12
+          h4 Nestable list only with titles
+          hr.divider.divider-dashed
+          .dd.nestable
+            //- list
+            ol.dd-list
+              li.dd-item
+                .dd-handle LifeStyle
+              li.dd-item
+                .dd-handle Sports
+              li.dd-item
+                .dd-handle Gossip
+                //- list
+                ol.dd-list
+                  li.dd-item
+                    .dd-handle Item 4
+                    //- list
+                    ol.dd-list
+                      li.dd-item
+                        .dd-handle Item 5
+                      li.dd-item
+                        .dd-handle Item 6
+                      li.dd-item
+                        .dd-handle Item 7
+                  li.dd-item
+                    .dd-handle Item 8
+                  li.dd-item
+                    .dd-handle Item 9
+
+        .col-md-12
+          h4 Example Styled Nestable List
+          hr.divider.divider-dashed
+          .dd.nestable
+            //- list
+            ol.dd-list
+              li.dd-item
+                .dd-handle LifeStyle
+                //- list
+                ol.dd-list
+                  li.dd-item
+                    .dd-handle Camping trips for Girls
+                    .dd-content
+                      .media.group-10
+                        .media-item
+                          img( src='images/users/user-02-50x50.jpg', width='50', height='50', alt='' )
+                        .media-body
+                          h6 Sara Downs #[small - 08/16/22]
+                          .mt-1
+                            span Last Updated 36 days ago by
+                            = ' '
+                            a( href='#' ) Max
+                      .border-top.pt-2.mt-2
+                        div
+                          span.h6 Attachments
+                          .badge.badge-success Updated
+                        ul.list-unstyled.list-md.mt-2
+                          li
+                            span.fa-paperclip.pr-2
+                            | The-Grand-Canyon_Cover.jpeg
+                          li
+                            span.fa-paperclip.pr-2
+                            | military_vet_interview-questions.text
+              li.dd-item
+                .dd-handle Sports
+                //- list
+                ol.dd-list
+                  li.dd-item
+                    .dd-handle Camping trips for Girls
+                    .dd-content
+                      .media.group-10
+                        .media-item
+                          img( src='images/users/user-02-50x50.jpg', width='50', height='50', alt='' )
+                        .media-body
+                          h6 Sara Downs #[small - 08/16/22]
+                          .mt-1
+                            span Last Updated 36 days ago by
+                            = ' '
+                            a( href='#' ) Max
+                  li.dd-item
+                    .dd-handle What Women Love
+                    .dd-content
+                      .media.group-10
+                        .media-item
+                          img( src='images/users/user-02-50x50.jpg', width='50', height='50', alt='' )
+                        .media-body
+                          h6 Sara Downs #[small - 08/16/22]
+                          .mt-1
+                            span Last Updated 36 days ago by
+                            = ' '
+                            a( href='#' ) Max
+
+        .col-md-12
+          h4 Example with Contextual Nodes
+          hr.divider.divider-dashed
+          .dd.nestable
+            //- list
+            ol.dd-list
+              li.dd-item.dd-item-primary
+                .dd-handle LifeStyle
+                //- list
+                ol.dd-list
+                  li.dd-item.dd-item-primary
+                    .dd-handle Camping trips for Girls
+                    .dd-content
+                      .media.group-10
+                        .media-item
+                          img( src='images/users/user-02-50x50.jpg', width='50', height='50', alt='' )
+                        .media-body
+                          h6 Sara Downs #[small - 08/16/22]
+                          .mt-1
+                            span Last Updated 36 days ago by
+                            = ' '
+                            a( href='#' ) Max
+                      .border-top.pt-2.mt-2
+                        div
+                          span.h6 Attachments
+                          .badge.badge-success Updated
+                        ul.list-unstyled.list-md.mt-2
+                          li
+                            span.fa-paperclip.pr-2
+                            | The-Grand-Canyon_Cover.jpeg
+                          li
+                            span.fa-paperclip.pr-2
+                            | military_vet_interview-questions.text
+              li.dd-item.dd-item-info
+                .dd-handle Sports
+                //- list
+                ol.dd-list
+                  li.dd-item.dd-item-info
+                    .dd-handle Camping trips for Girls
+                    .dd-content
+                      .media.group-10
+                        .media-item
+                          img( src='images/users/user-02-50x50.jpg', width='50', height='50', alt='' )
+                        .media-body
+                          h6 Sara Downs #[small - 08/16/22]
+                          .mt-1
+                            span Last Updated 36 days ago by
+                            = ' '
+                            a( href='#' ) Max
+                  li.dd-item.dd-item-info
+                    .dd-handle What Women Love
+                    .dd-content
+                      .media.group-10
+                        .media-item
+                          img( src='images/users/user-02-50x50.jpg', width='50', height='50', alt='' )
+                        .media-body
+                          h6 Sara Downs #[small - 08/16/22]
+                          .mt-1
+                            span Last Updated 36 days ago by
+                            = ' '
+                            a( href='#' ) Max
+
+          a.btn.btn-primary(href="/users/add")
+                span.fa-plus-circle.mr-2
+                span= 'Створити користувача'
+    +modal-dynamic
+  include ../layout/footer
+
