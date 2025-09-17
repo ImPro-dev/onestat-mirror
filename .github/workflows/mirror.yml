@@ -1,30 +1,45 @@
+# .github/workflows/mirror.yml
 name: Mirror to Public (branches & tags)
+
 on:
   push:
-    branches: ['**']
-    tags: ['*']
+    branches:
+      - '**'
+    tags:
+      - '*'
+
 jobs:
   mirror:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+      - name: Checkout private repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Remove secrets and noise
         run: |
           rm -f .env .env.* || true
           rm -rf secrets config/private tokens || true
           rm -rf node_modules dist build coverage || true
           find . -name ".DS_Store" -type f -delete || true
+
       - name: Configure Git
         run: |
-          git config user.name  "mirror-bot"
+          git config user.name "mirror-bot"
           git config user.email "mirror-bot@users.noreply.github.com"
+
       - name: Add public mirror remote
-        env: { PUB_URL: ${{ secrets.PUBLIC_MIRROR_URL }} }
-        run: git remote add public "$PUB_URL"
+        env:
+          PUB_URL: ${{ secrets.PUBLIC_MIRROR_URL }}
+        run: |
+          git remote add public "$PUB_URL"
+
       - name: Push current branch
         run: |
           CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
           git push -f public "$CURRENT_BRANCH:$CURRENT_BRANCH"
+
       - name: Push tags
-        run: git push -f public --tags
+        run: |
+          git push -f public --tags
