@@ -1,0 +1,21 @@
+name: Mirror deletions
+on: { delete: {} }
+jobs:
+  mirror-delete:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          git init .
+          git config user.name  "mirror-bot"
+          git config user.email "mirror-bot@users.noreply.github.com"
+      - env: { PUB_URL: ${{ secrets.PUBLIC_MIRROR_URL }} }
+        run: git remote add public "$PUB_URL"
+      - env:
+          REF_TYPE: ${{ github.event.ref_type }}
+          REF_NAME: ${{ github.event.ref }}
+        run: |
+          if [ "$REF_TYPE" = "branch" ]; then
+            git push public :refs/heads/"$REF_NAME"
+          else
+            git push public :refs/tags/"$REF_NAME"
+          fi
