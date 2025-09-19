@@ -6,6 +6,7 @@ on:
         description: "Тип релізу (auto|patch|minor|major|prebeta|prerc)"
         required: true
         default: "auto"
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -13,34 +14,33 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
       - uses: actions/setup-node@v4
         with: { node-version: '18' }
       - run: npm ci
 
-      - name: Git identity
+      - name: Git identity + auth
         run: |
           git config user.name "onestat-release-bot"
           git config user.email "release-bot@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/ImPro-dev/onestat-mirror.git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run standard-version
         run: |
-          if [ "${{ github.event.inputs.releaseAs }}" = "auto" ]; then
-            npx standard-version
-          elif [ "${{ github.event.inputs.releaseAs }}" = "patch" ]; then
-            npx standard-version --release-as patch
-          elif [ "${{ github.event.inputs.releaseAs }}" = "minor" ]; then
-            npx standard-version --release-as minor
-          elif [ "${{ github.event.inputs.releaseAs }}" = "major" ]; then
-            npx standard-version --release-as major
-          elif [ "${{ github.event.inputs.releaseAs }}" = "prebeta" ]; then
-            npx standard-version --prerelease beta
-          elif [ "${{ github.event.inputs.releaseAs }}" = "prerc" ]; then
-            npx standard-version --prerelease rc
-          else
-            echo "Unknown releaseAs"; exit 1
-          fi
+          case "${{ github.event.inputs.releaseAs }}" in
+            auto)    npx standard-version ;;
+            patch)   npx standard-version --release-as patch ;;
+            minor)   npx standard-version --release-as minor ;;
+            major)   npx standard-version --release-as major ;;
+            prebeta) npx standard-version --prerelease beta ;;
+            prerc)   npx standard-version --prerelease rc ;;
+            *) echo "Unknown releaseAs"; exit 1 ;;
+          esac
 
       - name: Push commit and tags
-        run: |
-          git push --follow-tags origin HEAD:${GITHUB_REF_NAME}
+        run: git push --follow-tags origin HEAD:${GITHUB_REF_NAME}
