@@ -1,0 +1,46 @@
+name: Release (manual)
+on:
+  workflow_dispatch:
+    inputs:
+      releaseAs:
+        description: "Тип релізу (auto|patch|minor|major|prebeta|prerc)"
+        required: true
+        default: "auto"
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '18' }
+      - run: npm ci
+
+      - name: Git identity
+        run: |
+          git config user.name "onestat-release-bot"
+          git config user.email "release-bot@users.noreply.github.com"
+
+      - name: Run standard-version
+        run: |
+          if [ "${{ github.event.inputs.releaseAs }}" = "auto" ]; then
+            npx standard-version
+          elif [ "${{ github.event.inputs.releaseAs }}" = "patch" ]; then
+            npx standard-version --release-as patch
+          elif [ "${{ github.event.inputs.releaseAs }}" = "minor" ]; then
+            npx standard-version --release-as minor
+          elif [ "${{ github.event.inputs.releaseAs }}" = "major" ]; then
+            npx standard-version --release-as major
+          elif [ "${{ github.event.inputs.releaseAs }}" = "prebeta" ]; then
+            npx standard-version --prerelease beta
+          elif [ "${{ github.event.inputs.releaseAs }}" = "prerc" ]; then
+            npx standard-version --prerelease rc
+          else
+            echo "Unknown releaseAs"; exit 1
+          fi
+
+      - name: Push commit and tags
+        run: |
+          git push --follow-tags origin HEAD:${GITHUB_REF_NAME}

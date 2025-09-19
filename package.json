@@ -7,7 +7,15 @@
     "start": "node ./bin/www",
     "dev": "nodemon ./bin/www & npm run scss",
     "scss": "sass --watch src/components/base/base.scss public/stylesheets/main.css",
-    "seed:enums": "node scripts/seedEnums.js"
+    "seed:enums": "node scripts/seedEnums.js",
+    "release": "standard-version",
+    "release:patch": "standard-version --release-as patch",
+    "release:minor": "standard-version --release-as minor",
+    "release:major": "standard-version --release-as major",
+    "release:prebeta": "standard-version --prerelease beta",
+    "release:prerc": "standard-version --prerelease rc",
+    "postrelease": "git push --follow-tags origin $(git branch --show-current)",
+    "version": "echo 'Use npm run release instead of npm version' && exit 1"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -43,6 +51,7 @@
     "gulp-sass": "^5.1.0",
     "gulp-sourcemaps": "2.0.0",
     "nodemon": "^3.1.7",
-    "sass": "^1.80.4"
+    "sass": "^1.80.4",
+    "standard-version": "^9.5.0"
   }
 }
