@@ -10,27 +10,29 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    # Потрібні права на запис лише якщо крок пушу виконається (на master)
     permissions:
       contents: write
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: true
+          persist-credentials: true  # дозволяє пушити через GITHUB_TOKEN
 
       - uses: actions/setup-node@v4
-        with: { node-version: '18' }
+        with:
+          node-version: '18'
+
       - run: npm ci
 
-      - name: Git identity + auth
+      - name: Git identity
         run: |
           git config user.name "onestat-release-bot"
           git config user.email "release-bot@users.noreply.github.com"
-          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/ImPro-dev/onestat-mirror.git
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run standard-version
+      - name: Run standard-version (manual only on master)
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'
         run: |
           case "${{ github.event.inputs.releaseAs }}" in
             auto)    npx standard-version ;;
@@ -42,5 +44,7 @@ jobs:
             *) echo "Unknown releaseAs"; exit 1 ;;
           esac
 
-      - name: Push commit and tags
-        run: git push --follow-tags origin HEAD:${GITHUB_REF_NAME}
+      - name: Push commit and tags (master only)
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'
+        run: |
+          git push --follow-tags origin HEAD:${{ github.ref_name }}
