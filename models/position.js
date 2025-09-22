@@ -1,7 +1,8 @@
+'use strict';
+
 const { Schema, model } = require('mongoose');
 
-
-const positionSchema = new Schema({
+const offerSchema = new Schema({
   firstname: {
     type: String,
     unique: false,
@@ -10,4 +11,4 @@ const positionSchema = new Schema({
 });
 
 
-module.exports = model('UserPosition', positionSchema);
+module.exports = model('Offer', offerSchema);

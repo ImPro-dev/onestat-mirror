@@ -1,0 +1,37 @@
+{
+    "header": "# Changelog\n\nУсі суттєві зміни в цьому проєкті документуються в цьому файлі.",
+    "types": [
+        {
+            "type": "feat",
+            "section": "Features"
+        },
+        {
+            "type": "fix",
+            "section": "Bug Fixes"
+        },
+        {
+            "type": "perf",
+            "section": "Performance"
+        },
+        {
+            "type": "refactor",
+            "section": "Refactoring"
+        },
+        {
+            "type": "docs",
+            "section": "Documentation"
+        },
+        {
+            "type": "test",
+            "section": "Tests"
+        },
+        {
+            "type": "chore",
+            "section": "Chores"
+        }
+    ],
+    "skip": {
+        "commit": false,
+        "tag": false
+    }
+}

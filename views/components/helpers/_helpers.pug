@@ -2,7 +2,42 @@
 	@param {object|string} data - alert parameters or alert text
 	@param {string} data.icon - alert icon class
 	@param {boolean} data.close - enable close button
-mixin telegramFormat ( telegram )
-	a(href='https://t.me/' + telegram.replace('@', '') target='_blank') #{telegram.slice(0, 20)}
-		if telegram.length > 20
-			|...
+	Рендерить Telegram-юзернейм посиланням:
+	- приймає: "@user", "user", "https://t.me/user"
+	- валідує формат [a-zA-Z0-9_]{2,32}
+	- якщо невалідне, рендерить як простий текст
+
+//- Telegram формат (без змін)
+mixin telegramFormat(raw)
+	- const val = (raw || '').toString().trim();
+	if !val
+		span.text-muted &mdash;
+	else
+		- let username = val.replace(/^https?:\/\/t\.me\//i, '').replace(/^@/, '').trim();
+		- const valid = /^[a-zA-Z0-9_]{2,32}$/.test(username);
+		if valid
+			a(href=`https://t.me/${username}`, target='_blank', rel='noopener noreferrer')
+				| @#{username}
+		else
+			if /^https?:\/\//i.test(val)
+				a(href=val, target='_blank', rel='noopener noreferrer')= val
+			else
+				span= val
+
+//- Бейдж для orgRole
+mixin orgRoleBadge(role)
+	- const map = { admin: 'danger', manager: 'primary', user: 'secondary' };
+	- const color = map[role] || 'light';
+	span(class='badge badge-' + color)= role || '-'
+
+//- Бейдж для teamRole
+mixin teamRoleBadge(role)
+	- const map = { lead: 'warning', member: 'success', assistant: 'light' };
+	- const color = map[role] || 'light';
+	span(class='badge badge-' + color)= role || '-'
+
+//- Бейдж для department
+mixin departmentBadge(dept)
+	- const map = { 'Media Buying': 'info', 'Marketing': 'info' };
+	- const color = map[dept] || 'light';
+	span(class='badge badge-' + color)= dept || '-'

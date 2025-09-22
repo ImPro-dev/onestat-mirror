@@ -7,6 +7,7 @@ const session = require('express-session');
 const flash = require('connect-flash');
 const dbHelper = require('./helpers/dbHelper');
 const MongoStore = require('connect-mongodb-session')(session);
+const csurf = require('csurf');
 const logger = require('morgan');
 const dotenv = require('dotenv').config();
 
@@ -22,6 +23,7 @@ const botStatisticsRouter = require('./routes/botstatistics');
 const pwaStatisticsRouter = require('./routes/pwastatistics');
 const statisticsRouter = require('./routes/statistics');
 const downloadRouter = require('./routes/download');
+const buyingTeamRouter = require('./routes/buying-team');
 
 // DB Connection
 const { MONGODB_URI, SESSION_SECRET, COOKIE_AGE } = process.env;
@@ -69,21 +71,37 @@ app.use('/botstatistics', botStatisticsRouter);
 app.use('/pwastatistics', pwaStatisticsRouter);
 app.use('/statistics', statisticsRouter);
 app.use('/download', downloadRouter);
+app.use('/buying-team', buyingTeamRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
-  next(createError(404));
+  next(createError(404, 'Сторінку не знайдено!'));
 });
 
 // error handler
-app.use(function (err, req, res, next) {
+app.use((err, req, res, next) => {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
+  if (err && err.code === 'EBADCSRFTOKEN') {
+    req.flash('error', 'Невалідний CSRF токен. Онови сторінку й спробуй ще раз.');
+    return res.status(403).redirect('/auth');   // або куди логічно
+  }
+
   // render the error page
   res.status(err.status || 500);
   res.render('error');
+});
+
+app.use(csurf());
+// зробимо csrfToken доступним у всіх шаблонах
+app.use((req, res, next) => {
+  res.locals.csrfToken = req.csrfToken();
+  // уніфікуємо flash
+  res.locals.userError = req.flash('userError');
+  res.locals.userSuccess = req.flash('userSuccess');
+  next();
 });
 
 // async function connectDB() {

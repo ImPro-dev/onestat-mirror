@@ -1,46 +1,79 @@
-const { Schema, model } = require('mongoose');
+// models/User.js
+'use strict';
 
+const { Schema, model, Types } = require('mongoose');
 
-const userSchema = new Schema({
-  firstname: {
-    type: String,
-    unique: false,
-    required: [true, 'Please enter FirstName']
+const userSchema = new Schema(
+  {
+    firstName: { type: String, required: true, trim: true, minlength: 2, maxlength: 64 },
+    lastName: { type: String, required: true, trim: true, minlength: 2, maxlength: 64 },
+
+    email: {
+      type: String, required: true, lowercase: true, trim: true,
+      validate: { validator: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), message: 'Invalid email format' },
+    },
+
+    passwordHash: { type: String, required: true, select: false },
+    lastPasswordChangeAt: { type: Date },
+
+    telegramUsername: {
+      type: String, trim: true, default: null,
+      validate: { validator: v => v == null || /^@?[a-zA-Z0-9_]{5,32}$/.test(v), message: 'Invalid Telegram username' },
+    },
+
+    position: { type: String, trim: true, default: null, maxlength: 128 },
+
+    // Org-level
+    orgRole: { type: String, required: true },   // валідуємо по БД-довіднику
+    department: { type: String, required: true, trim: true },
+
+    // Dept-level
+    deptRole: { type: String, default: 'none', trim: true }, // 'head'|'deputy'|'coordinator'|'none' (валідуємо по БД)
+
+    // Team-level
+    team: { type: Types.ObjectId, ref: 'Team', default: null },
+    teamRole: { type: String, default: null }, // 'lead'|'member'|'assistant'|null
+
+    // Наставництво
+    assistantOf: { type: Types.ObjectId, ref: 'User', default: null },
+
+    // Media Buying специфіка
+    webId: {
+      type: String, trim: true,
+      validate: { validator: v => v == null || /^w\d{3,}$/i.test(v), message: 'Invalid webId format' }
+    },
+
+    grants: [{ type: String }],
+
+    isActive: { type: Boolean, default: true },
+    lastLoginAt: { type: Date },
   },
-  lastname: {
-    type: String,
-    unique: false,
-    required: [true, 'Please enter FirstName']
-  },
-  email: {
-    type: String,
-    unique: true,
-    required: [true, 'Please enter email']
-  },
-  password: {
-    type: String,
-    required: [true, 'Please enter password']
-  },
-  telegram: {
-    type: String,
-    unique: false,
-    required: false
-  },
-  position: {
-    type: String,
-    required: true
-  },
-  webID: {
-    type: String,
-    unique: true,
-    required: false
-  },
-  role: {
-    type: String,
-    required: true,
-    enum: ['admin', 'manager', 'user']
+  { timestamps: true, versionKey: false }
+);
+
+// Virtuals
+userSchema.virtual('fullName').get(function () {
+  return `${this.firstName} ${this.lastName}`.trim();
+});
+
+// Hooks
+userSchema.pre('save', function (next) {
+  if (this.isModified('email') && typeof this.email === 'string') {
+    this.email = this.email.trim().toLowerCase();
   }
-}, { timestamps: true });
+  next();
+});
 
+// Indexes (без дублювань)
+userSchema.index({ email: 1 }, { unique: true, name: 'uniq_user_email' });
+userSchema.index({ webId: 1 }, { unique: true, sparse: true, name: 'uniq_user_webId_sparse' });
+
+userSchema.index({ department: 1 }, { name: 'idx_user_department' });
+userSchema.index({ orgRole: 1 }, { name: 'idx_user_orgRole' });
+userSchema.index({ deptRole: 1 }, { name: 'idx_user_deptRole' });
+userSchema.index({ team: 1 }, { name: 'idx_user_team' });
+userSchema.index({ teamRole: 1 }, { name: 'idx_user_teamRole' });
+userSchema.index({ assistantOf: 1 }, { name: 'idx_user_assistantOf' });
+userSchema.index({ isActive: 1 }, { name: 'idx_user_isActive' });
 
 module.exports = model('User', userSchema);

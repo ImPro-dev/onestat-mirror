@@ -17,6 +17,8 @@ block page
               a( href='/' ): img( src='images/logo_' + process.env.NODE_ENV + '.svg', alt='onestat' )
 
           form.panel(role='form' class='stat-form' method='POST' action='/auth/login')
+            if typeof csrfToken !== 'undefined'
+              input(type='hidden', name='_csrf', value=csrfToken)
             .panel-header
               .row.row-10
                 .col-12
@@ -26,9 +28,17 @@ block page
                 .col-lg-12.order-lg-1
                   if error && error.length
                     div.mb-4
-                      +alert( {close: false} ).alert-danger.alert-sm
-                        span.alert-icon.fa-exclamation-triangle
-                        span= error
+                      // --- Flash ---
+                      if error && error.length
+                        +alert({close:false}).alert-danger.alert-sm.mb-3
+                          span.alert-icon.fa-exclamation-triangle
+                          if Array.isArray(error)
+                            each e in error
+                              span= e
+                              br
+                          else
+                            span= error
+
                   .form-group
                     label( for='email' ) Емейл
                     .input-group

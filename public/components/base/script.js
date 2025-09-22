@@ -2397,16 +2397,55 @@ let components = {
 			'./components/bootstrap/js/bootstrap.min.js'
 		],
 		init: function (nodes) {
-			console.log(123);
-			$(nodes).on('click', function (e) {
-				alert(1);
-				e.preventDefault();
-			})
+			let modalDynamic = $('#modal-dynamic');
+			let decline = document.querySelector('[data-modal-decline]');
+			let confirm = document.querySelector('[data-modal-confirm]');
+
 			nodes.forEach(function (node) {
-				$(node).modal({
-					show: false,
-					focus: false
+				$(node).on('click', function (e) {
+					e.preventDefault();
+					var _this = $(this);
+					var data = _this.data('confirmation');
+
+					modalDynamic.find('.modal-title').text(data.title);
+					modalDynamic.find('.modal-text').text(data.content);
+
+					// збережемо контекст тригера (щоб на Confirm знати, що робити)
+					modalDynamic.data('confirm-trigger', _this);
+
+					// лишаємо для бек-варіанта переходу (GET)
+					modalDynamic.find('.modal-action').data('href', _this[0].href || '#');
+
+					modalDynamic.modal('show');
+					return false;
 				});
+			});
+
+			$(decline).on('click', function (event) {
+				event.preventDefault();
+				modalDynamic.modal('hide');
+				return false;
+			});
+			$(confirm).on('click', function (event) {
+				event.preventDefault();
+				var trigger = modalDynamic.data('confirm-trigger');
+
+				if (trigger && trigger.is('[data-confirm-submit]')) {
+					// submit найближчої форми (POST з CSRF)
+					var $form = trigger.closest('form');
+					if ($form && $form.length) {
+						$form.trigger('submit');
+						modalDynamic.modal('hide');
+						return false;
+					}
+				}
+
+				// інакше — старий режим (GET-навігація)
+				var href = $(this).data('href');
+				if (href) location.href = href;
+
+				modalDynamic.modal('hide');
+				return false;
 			});
 		}
 	},

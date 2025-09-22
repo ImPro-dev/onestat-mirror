@@ -1,3 +1,5 @@
+'use strict';
+
 const authorizeRole = (...allowedRoles) => {
   return (req, res, next) => {
     if (!allowedRoles.includes(req.session.user.role)) {
@@ -8,5 +10,4 @@ const authorizeRole = (...allowedRoles) => {
 }
 
 module.exports = authorizeRole;
-
 

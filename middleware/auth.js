@@ -1,21 +1,20 @@
-const jwt = require('jsonwebtoken');
+'use strict';
 
-module.exports = function (req, res, next) {
-  let isAuthenticated = req.session.isAuthenticated;
-  let token = req.session.token;
+module.exports = function auth(req, res, next) {
+  const user = req.session?.user || null;
 
-  if (!isAuthenticated) {
-    // req.session.destroy();
+  // Якщо не авторизований
+  if (!req.session?.isAuthenticated || !user) {
     return res.redirect('/auth');
   }
 
-  // try {
-  //   const decode = jwt.verify(token, process.env.JWT_SECRET);
-  // } catch (error) {
-  //   console.log(error)
-  // }
-
-
+  // Якщо юзер деактивований — дропаємо сесію
+  if (user.isActive === false) {
+    req.session.destroy(() => {
+      res.redirect('/auth');
+    });
+    return;
+  }
 
   next();
-}
+};

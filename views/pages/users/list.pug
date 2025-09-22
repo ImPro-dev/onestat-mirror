@@ -1,11 +1,11 @@
 extends ../../components/base/_skeleton
 include ../../components/rd-navbar/_rd-navbar
+include ../../components/modal-dynamic/_modal-dynamic
 include ../../components/helpers/_helpers
-//- include ../components/breadcrumbs/_breadcrumbs
 
 block variables
   - pageName = title;
-  - htmlClass.push( 'page-small-footer' );
+  - htmlClass.push('page-small-footer');
 
 block page
   header.section.page-header
@@ -22,46 +22,256 @@ block page
                 = ' '
                 span= title
             .panel-body
+
+              // --- Top bar: Create + Filters ---
+              .d-flex.flex-wrap.justify-content-between.align-items-center.mb-3
+                a.btn.btn-primary.mb-3(href='/users/add')
+                  span.fa-plus-circle.mr-2
+                  | Створити
+
+                form.form-inline(method='GET', action='/users')
+                  .form-group.mb-2.mr-2.mt-0
+                    input.form-control(
+                      type='text',
+                      name='q',
+                      size=25,
+                      placeholder='Пошук (імʼя/емейл/WebID)',
+                      value=(query && query.q || '')
+                    )
+                  .form-group.mb-2.mr-2.mt-0
+                    select.form-control(name='department')
+                      option(value='') Відділ: всі
+                      if departments && departments.length
+                        each d in departments
+                          option(
+                            value=d.value,
+                            selected=(query && query.department===d.value) ? true : false
+                          )= d.label || d.value
+                  .form-group.mb-2.mr-2.mt-0
+                    select.form-control(name='orgRole')
+                      option(value='') Доступ: всі
+                      if orgRoles && orgRoles.length
+                        each r in orgRoles
+                          option(
+                            value=r.value,
+                            selected=(query && query.orgRole===r.value) ? true : false
+                          )= r.label || r.value
+                  .form-group.mb-2.mr-2.mt-0
+                    select.form-control(name='teamRole')
+                      option(value='') Роль: всі
+                      if teamRoles && teamRoles.length
+                        each t in teamRoles
+                          option(
+                            value=t.value,
+                            selected=(query && query.teamRole===t.value) ? true : false
+                          )= t.label || t.value
+                  .form-group.mb-2.mr-2.mt-0
+                    select.form-control(name='active')
+                      option(value='') Статус: всі
+                      option(value='true' selected=(query && query.active==='true')) Активні
+                      option(value='false' selected=(query && query.active==='false')) Неактивні
+                  .form-group.mb-2.mr-2.mt-0
+                    select.form-control(name='limit')
+                      option(value='10' selected=(pagination && +pagination.limit===10)) 10
+                      option(value='20' selected=(pagination && +pagination.limit===20)) 20
+                      option(value='50' selected=(pagination && +pagination.limit===50)) 50
+                  button.btn.btn-light.ml-2.mb-2.mt-0(type='submit')
+                    span.linearicons-magnifier
+                  a.btn.btn-outline-secondary.ml-2.mb-2(href='/users', title='Очистити всі фільтри')
+                    span.linearicons-trash2
+
+              // --- Flash ---
               if userError && userError.length
-                .col-12.mb-4
-                  +alert( {close: false} ).alert-danger.alert-sm
-                    span.alert-icon.fa-exclamation-triangle
+                +alert({close:false}).alert-danger.alert-sm.mb-3
+                  span.alert-icon.fa-exclamation-triangle
+                  if Array.isArray(userError)
+                    each e in userError
+                      span= e
+                      br
+                  else
                     span= userError
-              table.table.table-striped.mt-1.mb-4
+
+              if userSuccess && userSuccess.length
+                +alert({close:false}).alert-success.alert-sm.mb-3
+                  span.alert-icon.linearicons-checkmark-circle
+                  if Array.isArray(userSuccess)
+                    each m in userSuccess
+                      span= m
+                      br
+                  else
+                    span= userSuccess
+
+              // --- Table ---
+              table.table.table-striped.mt-3.mb-4
                 thead
                   tr
-                    th= 'No'
-                    th= 'Імʼя'
-                    th= 'Емейл'
-                    th= 'Телеграм'
-                    th= 'Web ID'
-                    th= 'Позиція'
-                    th= 'Доступ'
-                    th= 'Дія'
+                    th
+                      | №
+                    th
+                      | Імʼя
+                      //- a.ml-1(href=sortUrls.firstName.asc title='Імʼя ↑' class=(sortBy==='firstName' && sortDir==='asc' ? 'text-muted' : 'text-light')) ▲
+                      //- a.ml-1(href=sortUrls.firstName.desc title='Імʼя ↓' class=(sortBy==='firstName' && sortDir==='desc' ? 'text-muted' : 'text-light')) ▼
+                      a.ml-1.fa-caret-up(href=sortUrls.lastName.asc title='Прізвище ↑' class=(sortBy==='lastName' && sortDir==='asc' ? 'text-muted' : 'text-light'))
+                      a.ml-1.fa-caret-down(href=sortUrls.lastName.desc title='Прізвище ↓' class=(sortBy==='lastName' && sortDir==='desc' ? 'text-muted' : 'text-light'))
+
+                    th
+                      | Емейл
+                      a.ml-1.fa-caret-up(href=sortUrls.email.asc title='Емейл ↑' class=(sortBy==='email' && sortDir==='asc' ? 'text-muted' : 'text-light'))
+                      a.ml-1.fa-caret-down(href=sortUrls.email.desc title='Емейл ↓' class=(sortBy==='email' && sortDir==='desc' ? 'text-muted' : 'text-light'))
+
+                    th Телеграм
+
+                    th
+                      | WebID
+                      a.ml-1.fa-caret-up(href=sortUrls.webId.asc title='WebID ↑' class=(sortBy==='webId' && sortDir==='asc' ? 'text-muted' : 'text-light'))
+                      a.ml-1.fa-caret-down(href=sortUrls.webId.desc title='WebID ↓' class=(sortBy==='webId' && sortDir==='desc' ? 'text-muted' : 'text-light'))
+
+                    th
+                      | Відділ
+                      a.ml-1.fa-caret-up(href=sortUrls.department.asc title='Відділ ↑' class=(sortBy==='department' && sortDir==='asc' ? 'text-muted' : 'text-light'))
+                      a.ml-1.fa-caret-down(href=sortUrls.department.desc title='Відділ ↓' class=(sortBy==='department' && sortDir==='desc' ? 'text-muted' : 'text-light'))
+
+                    th
+                      | Доступ
+                      a.ml-1.fa-caret-up(href=sortUrls.orgRole.asc title='Доступ ↑' class=(sortBy==='orgRole' && sortDir==='asc' ? 'text-muted' : 'text-light'))
+                      a.ml-1.fa-caret-down(href=sortUrls.orgRole.desc title='Доступ ↓' class=(sortBy==='orgRole' && sortDir==='desc' ? 'text-muted' : 'text-light'))
+
+                    th
+                      | Роль
+                      a.ml-1.fa-caret-up(href=sortUrls.teamRole.asc title='Роль ↑' class=(sortBy==='teamRole' && sortDir==='asc' ? 'text-muted' : 'text-light'))
+                      a.ml-1.fa-caret-down(href=sortUrls.teamRole.desc title='Роль ↓' class=(sortBy==='teamRole' && sortDir==='desc' ? 'text-muted' : 'text-light'))
+
+                    th
+                      | Посада
+                      a.ml-1.fa-caret-up(href=sortUrls.position.asc title='Посада ↑' class=(sortBy==='position' && sortDir==='asc' ? 'text-muted' : 'text-light'))
+                      a.ml-1.fa-caret-down(href=sortUrls.position.desc title='Посада ↓' class=(sortBy==='position' && sortDir==='desc' ? 'text-muted' : 'text-light'))
+
+                    th(style='width:110px') Дія
+
                 tbody
-                  each val, key in users
+                  - var __page  = (pagination && pagination.page) || 1;
+                  - var __lim   = (pagination && pagination.limit) || 20;
+                  - var __start = ((__page - 1) * __lim) + 1;
+
+                  if users && users.length
+                    each val, idx in users
+                      tr
+                        td #{__start + idx}
+                        td
+                          a(href='/users/' + val._id)!= `${val.firstName || ''} ${val.lastName || ''}`.trim()
+                        td= val.email
+                        td
+                          if val.telegramUsername
+                            +telegramFormat(val.telegramUsername)
+                          else
+                            +telegramFormat('')
+                        td= val.webId || '—'
+                        td
+                          if val.department
+                            +departmentBadge(val.department)
+                          else
+                            span.text-muted —
+                        td
+                          if val.orgRole
+                            +orgRoleBadge(val.orgRole)
+                          else
+                            span.text-muted —
+                        td
+                          if val.teamRole
+                            +teamRoleBadge(val.teamRole)
+                          else
+                            span.text-muted —
+                        td= val.position || '—'
+                        td
+                          // Edit
+                          a.mr-2(
+                            href='/users/edit/' + val._id + '?allow=1',
+                            data-toggle='tooltip',
+                            data-original-title='Редагувати',
+                            data-confirmation=JSON.stringify({
+                              title: 'Редагувати дані користувача',
+                              content: `${val.firstName || ''} ${val.lastName || ''}`.trim()
+                            })
+                          )
+                            span.fa-edit
+
+                          // Activate / Deactivate
+                          if val.isActive
+                            if myID && String(myID) === String(val._id)
+                              span.linearicons-pause-circle.text-muted.mr-2(
+                                data-toggle='tooltip',
+                                data-original-title='Неможливо деактивувати власний профіль'
+                              )
+                            else
+                              form.d-inline(method='POST', action='/users/' + val._id + '/deactivate')
+                                if typeof csrfToken !== 'undefined'
+                                  input(type='hidden', name='_csrf', value=csrfToken)
+                                a.mr-2(
+                                  href='#',
+                                  data-toggle='tooltip',
+                                  data-original-title='Деактивувати',
+                                  data-confirmation=JSON.stringify({
+                                    title: 'Деактивувати користувача',
+                                    content: `${(val.firstName || '')} ${(val.lastName || '')}. Користувача буде вилогінено та він не зможе увійти.`
+                                  }),
+                                  data-confirm-submit
+                                )
+                                  span.linearicons-pause-circle.text-warning
+                          else
+                            form.d-inline(method='POST', action='/users/' + val._id + '/activate')
+                              if typeof csrfToken !== 'undefined'
+                                input(type='hidden', name='_csrf', value=csrfToken)
+                              a.mr-2(
+                                href='#',
+                                data-toggle='tooltip',
+                                data-original-title='Активувати',
+                                data-confirmation=JSON.stringify({
+                                  title: 'Активувати користувача',
+                                  content: `${(val.firstName || '')} ${(val.lastName || '')}. Після активації користувач зможе увійти.`
+                                }),
+                                data-confirm-submit
+                              )
+                                span.linearicons-play-circle.text-success
+
+                          // Delete (self-protect)
+                          if myID && String(myID) === String(val._id)
+                            span.fa-trash-o.text-muted(
+                              data-toggle='tooltip',
+                              data-original-title='Неможливо видалити власний профіль'
+                            )
+                          else
+                            form.d-inline(method='POST', action='/users/remove/' + val._id)
+                              if typeof csrfToken !== 'undefined'
+                                input(type='hidden', name='_csrf', value=csrfToken)
+                              a(
+                                href='#'
+                                data-toggle='tooltip'
+                                data-original-title='Видалити'
+                                data-confirmation=JSON.stringify({
+                                  title: 'Видалити користувача',
+                                  content: `${(val.firstName || '')} ${(val.lastName || '')}. Відновити користувача буде неможливо!`
+                                })
+                                data-confirm-submit
+                              )
+                                span.fa-trash-o.text-danger
+                  else
                     tr
-                      td #{key + 1}
-                      td
-                        a(href='/users/' + val.id) #{val.firstname} #{val.lastname}
-                      td #{val.email}
-                      td
-                        if val.telegram
-                          +telegramFormat(val.telegram)
-                      td #{val.webID}
-                      td #{val.position}
-                      td #{val.role}
-                      td
-                        a.mr-3(href='/users/edit/' + val.id + '?allow=true', data-toggle='tooltip', data-original-title="Редагувати")
-                          span.fa-edit
-                        if (myID == val.id)
-                          span.fa-trash-o( data-toggle='tooltip', data-original-title="Неможливо видалити свій профіль")
-                        else
-                          a(href='/users/remove/' + val.id, data-toggle='tooltip', data-original-title="Видалити")
-                            span.fa-trash-o.text-danger
+                      td(colspan='10')
+                        em Немає користувачів за обраними фільтрами.
 
-              a.btn.btn-primary(href="/users/add")
-                span.fa-plus-circle.mr-2
-                span= 'Створити користувача'
+              // --- Pagination ---
+              if pagination && pagination.totalPages > 1
+                nav
+                  ul.pagination
+                    li.page-item(class=(pagination.page <= 1 ? 'disabled' : ''))
+                      a.page-link(href=pagination.prevUrl) «
+                    if pagination.pages && pagination.pages.length
+                      each p in pagination.pages
+                        li.page-item(class=(p.active ? 'active' : ''))
+                          a.page-link(href=p.url)= p.n
+                    li.page-item(class=(pagination.page >= pagination.totalPages ? 'disabled' : ''))
+                      a.page-link(href=pagination.nextUrl) »
+
+  +modal-dynamic
+
   include ../layout/footer
-
