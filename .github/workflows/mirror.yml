@@ -1,0 +1,47 @@
+name: Mirror to Public (full mirror)
+
+on:
+  push:
+    branches: ['**']
+    tags: ['*']
+  workflow_dispatch: {}
+  schedule:
+    - cron: '15 3 * * *'   # опційно: щоденний sync о 03:15 UTC
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false   # не пришиваємо GITHUB_TOKEN
+
+      - name: Configure Git
+        run: |
+          git config user.name  "mirror-bot"
+          git config user.email "mirror-bot@users.noreply.github.com"
+
+      - name: Add mirror remote
+        env:
+          MIRROR_PAT: ${{ secrets.MIRROR_PAT }}
+        run: |
+          set -e
+          git remote add mirror "https://x-access-token:${MIRROR_PAT}@github.com/ImPro-dev/onestat-mirror.git"
+          git remote -v
+          git fetch --all --prune
+
+      # Повне дзеркало всіх refs (гілок і тегів), включно з видаленнями та force-push
+      - name: Push all refs (mirror)
+        run: |
+          set -e
+          git push --mirror mirror
+
+      # Діагностика (зручно при перших запусках)
+      - name: Debug refs
+        if: always()
+        run: |
+          echo "Event: ${{ github.event_name }}  Ref: ${{ github.ref }}  Ref type/name: ${{ github.ref_type }} / ${{ github.ref_name }}"
+          git show-ref --heads | wc -l | xargs echo "Local branches:"
+          git show-ref --tags  | wc -l | xargs echo "Local tags:"

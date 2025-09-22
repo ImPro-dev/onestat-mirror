@@ -1,13 +1,9 @@
 extends ../../components/base/_skeleton
 include ../../components/rd-navbar/_rd-navbar
-//- include ../components/breadcrumbs/_breadcrumbs
-//- include ../components/input/_input
-//- include ../components/progress-circle/_progress-circle
-//- include ../components/progress/_progress
 
 block variables
   - pageName = title;
-  - htmlClass.push( 'page-small-footer' );
+  - htmlClass.push('page-small-footer');
 
 block page
   header.section.page-header
@@ -28,70 +24,81 @@ block page
                 .row
                   if userError && userError.length
                     .col-12.mb-4
-                      +alert( {close: false} ).alert-danger.alert-sm
+                      +alert({close:false}).alert-danger.alert-sm
                         span.alert-icon.fa-exclamation-triangle
-                        span= userError
+                        if Array.isArray(userError)
+                          each e in userError
+                            span= e
+                            br
+                        else
+                          span= userError
+
+                  if userSuccess && userSuccess.length
+                    .col-12.mb-4
+                      +alert({close:false}).alert-success.alert-sm
+                        span.alert-icon.linearicons-checkmark-circle
+                        if Array.isArray(userSuccess)
+                          each m in userSuccess
+                            span= m
+                            br
+                        else
+                          span= userSuccess
+
+                  // Ліва колонка
                   .col-xl-6
-                    div.form-group
-                      label(class='form-label' for='firstname') Імʼя:
+                    .form-group
+                      label.form-label(for='firstName') Імʼя:
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-user
-                        input#firstname.form-control(type='text', name='firstname', required)
-                    div.form-group
-                      label(class='form-label' for='email') Емейл:
+                        input#firstName.form-control(type='text', name='firstName', required)
+
+                    .form-group
+                      label.form-label(for='email') Емейл:
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-envelope
-                        input#email.form-control(type='text', name='email', required)
-                    div.form-group
-                      label(class='form-label' for='telegram') Телеграм аккаунт:
+                        input#email.form-control(type='email', name='email', required)
+
+                    .form-group
+                      label.form-label(for='telegramUsername') Телеграм:
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-paper-plane
-                        input#telegram.form-control(type='text', name='telegram')
+                        input#telegramUsername.form-control(type='text', name='telegramUsername', placeholder='@username')
+
+                  // Права колонка
                   .col-xl-6
-                    div.form-group
-                      label(class='form-label' for='lastname') Прізвище:
+                    .form-group
+                      label.form-label(for='lastName') Прізвище:
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-user
-                        input#lastname.form-control(type='text', name='lastname', required)
-                    div.form-group
-                      label(class='form-label' for='password') Пароль:
+                        input#lastName.form-control(type='text', name='lastName', required)
+
+                    .form-group
+                      label.form-label(for='password') Пароль:
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-lock
                         input#password.form-control(type='password', name='password', required)
-                    div.form-group
-                      label(class='form-label' for='role') Рівень доступу:
+
+                    .form-group
+                      label.form-label(for='department') Відділ:
                       .input-group
                         .input-group-prepend
-                          span.input-group-text.linearicons-database-lock
-                        select#role.form-control(type='text', name='role', required)
-                          option(name='user', value='user' selected='selected') user
-                          option(name='manager', value='manager') manager
-                          option(name='admin', value='admin') admin
-                  .col-xl-3.mt-3
-                    div.form-group
-                      label(class='form-label' for='webID') WebID:
-                      .input-group
-                        .input-group-prepend
-                          span.input-group-text.linearicons-briefcase
-                        input#webid.form-control(type='text', name='webID', required)
-                  .col-xl-9.mt-3
-                    div.form-group
-                      label(class='form-label' for='position') Позиція:
-                      .input-group
-                        .input-group-prepend
-                          span.input-group-text.linearicons-users2
-                        input#position.form-control(type='text', name='position', required)
+                          span.input-group-text.linearicons-lan
+                        select#department.form-control(name='department', required)
+                          if departments && departments.length
+                            each d in departments
+                              option(value=d.value)= d.label || d.value
+                          else
+                            option(value='Media Buying' selected) Media Buying
 
                   .col-12.mt-4
-                    button.btn.btn-primary.submit-btn.w-100.mb-4(type="submit") Створити
-                    a.btn.btn-light(href="/users")
+                    button.btn.btn-primary.submit-btn.w-100.mb-4(type='submit') Створити
+                    a.btn.btn-light(href='/users')
                       span.mdi-keyboard-backspace.mr-2
-                      span= 'До списку'
+                      span До списку
 
   include ../layout/footer
-

@@ -1,167 +1,102 @@
+'use strict';
+
 const express = require('express');
 const router = express.Router();
-const User = require('../models/user');
-const dbHelper = require('../helpers/dbHelper');
+
+const userController = require('../controllers/userController');
 const auth = require('../middleware/auth');
-const role = require('../middleware/role');
+const { requireAny /*, requireAll */ } = require('../middleware/requireScopes');
+const { SCOPES } = require('../scripts/permissions/scopes');
+
+// Обмеження для ObjectId (24 hex-символи)
+const OID = '([a-fA-F0-9]{24})';
 
 /**
  * GET users listing.
  */
 router.get('/',
   auth,
-  role('admin', 'manager'),
-  async (req, res, next) => {
-    const users = await User.find();
-    res.render('pages/users/list', {
-      title: 'Користувачі',
-      userError: req.flash('userError'),
-      users
-    });
-  });
+  requireAny(SCOPES.ORG_USERS_READ_ANY),
+  userController.UserList
+);
 
 /**
  * Rendering form to create new user
+ * Дозволити: admin/manager (WRITE_ANY) та team lead (CREATE_BASIC)
  */
 router.get('/add',
   auth,
-  role('admin', 'manager'),
-  function (req, res) {
-    res.render('pages/users/add', {
-      title: 'Новий користувач',
-      userError: req.flash('userError')
-    });
-  }
+  requireAny(SCOPES.ORG_USERS_WRITE_ANY, SCOPES.ORG_USERS_CREATE_BASIC),
+  userController.AddUserPage
 );
 
 /**
  * Create new user
+ * Дозволити: admin/manager (WRITE_ANY) та team lead (CREATE_BASIC)
  */
 router.post('/add',
   auth,
-  role('admin', 'manager'),
-  async (req, res) => {
-    try {
-      const { firstname, lastname, email, password, telegram, position, webID, role } = req.body;
-      const candidate = await User.findOne({ email });
-
-      if (candidate) {
-        res.redirect('/users/add');
-      } else {
-        const hashedPassword = await dbHelper.hashPassword(password);
-        const newUser = new User({ firstname, lastname, email, password: hashedPassword, telegram, position, webID, role });
-        await newUser.save();
-        res.redirect('/users')
-      }
-    } catch (error) {
-      console.log(error);
-      req.flash('userError', 'Сталася помилка, звернись до Ігоря. ' + error.message);
-      res.redirect('/users/add')
-    }
-  }
+  requireAny(SCOPES.ORG_USERS_WRITE_ANY, SCOPES.ORG_USERS_CREATE_BASIC),
+  userController.AddUser
 );
 
 /**
- * Rendering form to edit existinf user
+ * Rendering form to edit existing user
+ * Дозволити: admin/manager (WRITE_ANY) або team lead (EDIT_BASIC)
  */
-router.get('/edit/:id',
+router.get(`/edit/:id(${OID})`,
   auth,
-  role('admin', 'manager'),
-  async (req, res) => {
-    if (!req.query.allow) {
-      return res.redirect('/users');
-    }
-
-    const user = await User.findById(req.params.id);
-
-    res.render('pages/users/edit', {
-      title: 'Редагувати дані користувача',
-      user
-    });
-  }
+  requireAny(SCOPES.ORG_USERS_WRITE_ANY, SCOPES.ORG_USERS_EDIT_BASIC),
+  userController.EditUserPage
 );
 
 /**
  * Edit user data
+ * Дозволити: admin/manager (WRITE_ANY) або team lead (EDIT_BASIC)
  */
 router.post('/edit',
   auth,
-  role('admin', 'manager'),
-  async (req, res) => {
-    try {
-      const userData = req.body;
-      const { id } = req.body;
-      userData.password = await dbHelper.hashPassword(req.body.password);
-      delete req.body.id;
-      await User.findByIdAndUpdate(id, userData);
-
-      res.redirect('/users');
-    } catch (error) {
-      console.log(error);
-      req.flash('userError', 'Сталася помилка, звернись до Ігоря. ' + error.message);
-      res.redirect('/users')
-    }
-  }
+  requireAny(SCOPES.ORG_USERS_WRITE_ANY, SCOPES.ORG_USERS_EDIT_BASIC),
+  userController.EditUser
 );
 
 /**
- * User profile page (access for all)
+ * Remove user (краще POST/DELETE ніж GET)
+ * Дозволити тільки повні права
  */
-router.get('/:id',
+router.post(`/remove/:id(${OID})`,
   auth,
-  role('admin', 'manager', 'user'),
-  async (req, res) => {
-    let _id = req.params.id;
-    let myID = res.locals.myID;
-    let isUser = res.locals.isUser;
-
-    if (isUser && _id != myID) {
-      return res.redirect('/');
-    }
-    const user = await User.findById(_id);
-
-    res.render('pages/users/profile', {
-      title: 'Профіль',
-      user
-    });
-  }
+  requireAny(SCOPES.ORG_USERS_WRITE_ANY),
+  userController.RemoveUser
 );
 
 /**
- * User profile page (access for user)
+ * User profile page
+ * Доступ: у контролері дозволяємо власнику без скоупів, інакше вимагаємо ORG_USERS_READ_ANY
  */
-// router.get('/profile/:id',
-//   auth,
-//   role('admin', 'manager', 'user'),
-//   async (req, res) => {
-
-//     if (req.params.id) {
-//       const user = await User.findById(req.params.id);
-
-//       res.render('pages/users/profile', {
-//         title: 'Профіль',
-//         user
-//       });
-//     } else {
-//       return res.redirect('/');
-//     }
-//   }
-// );
+router.get(`/:id(${OID})`,
+  auth,
+  userController.ProfilePage
+);
 
 /**
- * Remove user
+ * Deactivate user
+ * Дозволити тільки повні права
  */
-router.get('/remove/:id',
+router.post(`/:id(${OID})/deactivate`,
   auth,
-  role('admin', 'manager'),
-  async (req, res) => {
-    try {
-      await User.deleteOne({ _id: req.params.id });
-      res.redirect('/users');
-    } catch (error) {
-      console.log(error);
-    }
-  }
+  requireAny(SCOPES.ORG_USERS_WRITE_ANY),
+  userController.DeactivateUser
+);
+
+/**
+ * Activate user
+ * Дозволити тільки повні права
+ */
+router.post(`/:id(${OID})/activate`,
+  auth,
+  requireAny(SCOPES.ORG_USERS_WRITE_ANY),
+  userController.ActivateUser
 );
 
 module.exports = router;
