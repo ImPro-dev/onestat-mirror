@@ -12,36 +12,41 @@ jobs:
   mirror:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout (full history)
+      - name: Checkout (full history of current ref)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: false   # не пришиваємо GITHUB_TOKEN
+          persist-credentials: true   # читаємо origin через GITHUB_TOKEN
+          fetch-tags: true
+
+      - name: Ensure we fetched ALL refs from origin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # явно підшиваємо токен до origin і тягнемо ВСІ гілки+теги
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/ImPro-dev/OneStat.git
+          git fetch origin --prune "+refs/heads/*:refs/remotes/origin/*" "+refs/tags/*:refs/tags/*"
 
       - name: Configure Git
         run: |
           git config user.name  "mirror-bot"
           git config user.email "mirror-bot@users.noreply.github.com"
 
-      - name: Add mirror remote
+      - name: Add mirror remote (PAT)
         env:
           MIRROR_PAT: ${{ secrets.MIRROR_PAT }}
         run: |
-          set -e
           git remote add mirror "https://x-access-token:${MIRROR_PAT}@github.com/ImPro-dev/onestat-mirror.git"
           git remote -v
-          git fetch --all --prune
 
-      # Повне дзеркало всіх refs (гілок і тегів), включно з видаленнями та force-push
-      - name: Push all refs (mirror)
+      - name: Push all refs to mirror
         run: |
-          set -e
+          # переносимо ВСІ локальні refs (гілки + теги) у mirror 1:1
           git push --mirror mirror
 
-      # Діагностика (зручно при перших запусках)
-      - name: Debug refs
+      - name: Debug (optional)
         if: always()
         run: |
-          echo "Event: ${{ github.event_name }}  Ref: ${{ github.ref }}  Ref type/name: ${{ github.ref_type }} / ${{ github.ref_name }}"
+          echo "Event: ${{ github.event_name }}  Ref: ${{ github.ref }}"
           git show-ref --heads | wc -l | xargs echo "Local branches:"
           git show-ref --tags  | wc -l | xargs echo "Local tags:"
