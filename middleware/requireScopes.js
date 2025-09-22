@@ -1,30 +1,31 @@
-// middleware/requireScopes.js
 'use strict';
 
 const { getUserScopes } = require('../scripts/permissions/scopes');
 
-function requireAll(scopes) {
+function requireAny(...needed) {
   return (req, res, next) => {
-    const u = req.session?.user;
-    if (!u) { req.flash('error', 'Будь ласка, увійдіть'); return res.redirect('/auth'); }
-
-    const have = new Set(getUserScopes(u));
-    const ok = scopes.every(s => have.has(s));
-    if (!ok) { req.flash('error', 'Недостатньо прав'); return res.redirect('/dashboard'); }
+    const user = req.session?.user || null;
+    const scopes = new Set(getUserScopes(user));
+    const ok = needed.some(s => scopes.has(s));
+    if (!ok) {
+      req.flash('error', 'Недостатньо прав для цієї дії.');
+      return res.redirect('/dashboard');
+    }
     next();
   };
 }
 
-function requireAny(scopes) {
+function requireAll(...needed) {
   return (req, res, next) => {
-    const u = req.session?.user;
-    if (!u) { req.flash('error', 'Будь ласка, увійдіть'); return res.redirect('/auth'); }
-
-    const have = new Set(getUserScopes(u));
-    const ok = scopes.some(s => have.has(s));
-    if (!ok) { req.flash('error', 'Недостатньо прав'); return res.redirect('/dashboard'); }
+    const user = req.session?.user || null;
+    const scopes = new Set(getUserScopes(user));
+    const ok = needed.every(s => scopes.has(s));
+    if (!ok) {
+      req.flash('error', 'Недостатньо прав для цієї дії.');
+      return res.redirect('/dashboard');
+    }
     next();
   };
 }
 
-module.exports = { requireAll, requireAny };
+module.exports = { requireAny, requireAll };

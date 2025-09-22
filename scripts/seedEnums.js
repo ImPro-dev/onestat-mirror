@@ -17,7 +17,7 @@ const ORG_ROLES = [
 ];
 
 const TEAM_ROLES = [
-  { value: 'lead', label: 'Team Lead', order: 1, isActive: true },
+  { value: 'lead', label: 'Lead', order: 1, isActive: true },
   { value: 'member', label: 'Member', order: 2, isActive: true }, // у MB це buyer (лейбл у UI)
   { value: 'assistant', label: 'Assistant', order: 3, isActive: true },
 ];

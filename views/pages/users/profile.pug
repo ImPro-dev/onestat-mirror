@@ -1,3 +1,4 @@
+// views/pages/users/profile.pug
 extends ../../components/base/_skeleton
 include ../../components/rd-navbar/_rd-navbar
 include ../../components/helpers/_helpers
@@ -14,15 +15,13 @@ block page
     .container-fluid
       .media.flex-column.flex-sm-row.align-items-sm-center.group-30
         .media-item
-          // аватар (статичний плейсхолдер або свій, якщо є)
+          // аватар (плейсхолдер або власний)
           img(src='/images/users/user-01-165x165.png', width='165', height='165', alt='avatar')
 
         .media-body
-          h4.mb-1 #{(user.firstName || '') + ' ' + (user.lastName || '')}
-          if user.position
-            p.text-muted.mb-2= user.position
+          h4.mb-2 #{`${user.firstName || ''} ${user.lastName || ''}`.trim() || '—'}
 
-          // бейджі ролей/департаменту
+          // бейджі департаменту / orgRole / teamRole / статус
           .mb-3
             if user.department
               +departmentBadge(user.department)
@@ -32,14 +31,49 @@ block page
             if user.teamRole
               span.ml-1
                 +teamRoleBadge(user.teamRole)
+            if typeof user.isActive !== 'undefined'
+              span.ml-1
+                +statusBadge(user.isActive)
 
-          ul.list-marked.mt-4.mb-4
+          if user.position
+            p.text-muted.mb-0= user.position
+
+      // Flash
+      if userError && userError.length
+        .row.mt-3
+          .col-12
+            +alert({close:false}).alert-danger.alert-sm
+              span.alert-icon.fa-exclamation-triangle
+              if Array.isArray(userError)
+                ul.mb-0
+                  each e in userError
+                    li= e
+              else
+                span= userError
+      if userSuccess && userSuccess.length
+        .row.mt-3
+          .col-12
+            +alert({close:false}).alert-success.alert-sm
+              span.alert-icon.linearicons-checkmark-circle
+              if Array.isArray(userSuccess)
+                ul.mb-0
+                  each m in userSuccess
+                    li= m
+              else
+                span= userSuccess
+
+      .row.mt-4
+        // --- Left column ---
+        .col-xl-6
+          ul.list-marked.mt-2.mb-4
             li.list-block-item
               span.fa-envelope-square.h4.text-warning.mr-3
-              if user.email
-                a(href=`mailto:${user.email}`)= user.email
-              else
-                span.text-muted &mdash;
+              span Емейл:
+              span.ml-2
+                if user.email
+                  a(href=`mailto:${user.email}`)= user.email
+                else
+                  span.text-muted —
 
             li.list-block-item
               span.fa-telegram.h4.text-info.mr-3
@@ -48,29 +82,62 @@ block page
                 +telegramFormat(user.telegramUsername)
 
             li.list-block-item
+              span.linearicons-lan.h5.text-primary.mr-3
+              span Департамент:
+              span.ml-2= user.department || '—'
+
+            li.list-block-item
+              span.linearicons-database-lock.h5.text-secondary.mr-3
+              span orgRole:
+              span.ml-2= user.orgRole || '—'
+
+            li.list-block-item
+              span.linearicons-users2.h5.text-secondary.mr-3
+              span teamRole:
+              span.ml-2= user.teamRole || '—'
+
+            // --- Команда ---
+            li.list-block-item
+              span.linearicons-users.h5.text-secondary.mr-3
+              span Команда:
+              if user.team
+                span.ml-2
+                  a(href=`/teams/${user.team._id}`)= user.team.name || '—'
+                  if user.teamRole
+                    span.ml-2
+                      +teamRoleBadge(user.teamRole)
+              else
+                span.ml-2.text-muted — (не привʼязаний)
+              if user.orgRole === 'manager' && !user.team
+                small.d-block.text-muted.ml-5 Менеджер департаменту (без команди)
+
+        // --- Right column ---
+        .col-xl-6
+          ul.list-marked.mt-2.mb-4
+            li.list-block-item
               span.mdi-briefcase-check.h4.text-success.mr-3
               span WebID:
               span.ml-2= user.webId || '—'
 
             li.list-block-item
-              span.linearicons-calendar-full.h4.text-secondary.mr-3
+              span.linearicons-calendar-full.h5.text-danger.mr-3
               span Створено:
               span.ml-2= user.createdAt ? new Date(user.createdAt).toLocaleString() : '—'
 
             li.list-block-item
-              span.linearicons-user.h4.text-secondary.mr-3
+              span.linearicons-user.h5.text-warning.mr-3
               span Останній вхід:
               span.ml-2= user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : '—'
 
-          // Кнопки дій
-          .mt-3
-            if !isSelf
-              a.btn.btn-secondary(href='/users/edit/' + user._id + '?allow=1')
-                span.linearicons-pencil5.mr-2
-                | Редагувати профіль
-            else
-              a.btn.btn-light(href='/auth/change-password')
-                span.linearicons-lock.mr-2
-                | Змінити пароль
+      // --- Action buttons ---
+      .mt-3
+        a.btn.btn-secondary.mr-3.mb-2(href='/users/edit/' + user._id + '?allow=1')
+          span.linearicons-pencil5.mr-2
+          | Редагувати профіль
+
+        if typeof myID !== 'undefined' && String(myID) === String(user._id)
+          a.btn.btn-light.mr-3.mb-2(href='/auth/change-password')
+            span.linearicons-lock.mr-2
+            | Змінити пароль
 
   include ../layout/footer

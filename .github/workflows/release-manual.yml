@@ -3,48 +3,34 @@ on:
   workflow_dispatch:
     inputs:
       releaseAs:
-        description: "Тип релізу (auto|patch|minor|major|prebeta|prerc)"
+        description: "Тип релізу (auto|patch|minor|major)"
         required: true
         default: "auto"
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    # Потрібні права на запис лише якщо крок пушу виконається (на master)
-    permissions:
-      contents: write
-
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: true  # дозволяє пушити через GITHUB_TOKEN
-
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
-
-      - run: npm ci
-
+          node-version: 18
+      - run: npm install
       - name: Git identity
         run: |
           git config user.name "onestat-release-bot"
           git config user.email "release-bot@users.noreply.github.com"
-
-      - name: Run standard-version (manual only on master)
-        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'
+      - name: Run standard-version
+        if: github.ref_name == 'master'
         run: |
           case "${{ github.event.inputs.releaseAs }}" in
-            auto)    npx standard-version ;;
-            patch)   npx standard-version --release-as patch ;;
-            minor)   npx standard-version --release-as minor ;;
-            major)   npx standard-version --release-as major ;;
-            prebeta) npx standard-version --prerelease beta ;;
-            prerc)   npx standard-version --prerelease rc ;;
-            *) echo "Unknown releaseAs"; exit 1 ;;
+            auto) npx standard-version ;;
+            patch) npx standard-version --release-as patch ;;
+            minor) npx standard-version --release-as minor ;;
+            major) npx standard-version --release-as major ;;
           esac
-
-      - name: Push commit and tags (master only)
-        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'
-        run: |
-          git push --follow-tags origin HEAD:${{ github.ref_name }}
+      - name: Push commit and tags
+        if: github.ref_name == 'master'
+        run: git push --follow-tags origin HEAD:master

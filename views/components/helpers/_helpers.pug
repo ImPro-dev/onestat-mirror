@@ -32,12 +32,12 @@ mixin orgRoleBadge(role)
 
 //- Бейдж для teamRole
 mixin teamRoleBadge(role)
-	- const map = { lead: 'info', member: 'success', assistant: 'warning' };
+	- const map = { lead: 'warning', member: 'success', assistant: 'light' };
 	- const color = map[role] || 'light';
 	span(class='badge badge-' + color)= role || '-'
 
 //- Бейдж для department
 mixin departmentBadge(dept)
-	- const map = { 'Media Buying': 'success', 'Marketing': 'primary' };
+	- const map = { 'Media Buying': 'info', 'Marketing': 'info' };
 	- const color = map[dept] || 'light';
 	span(class='badge badge-' + color)= dept || '-'

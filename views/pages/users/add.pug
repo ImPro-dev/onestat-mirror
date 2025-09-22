@@ -24,14 +24,25 @@ block page
                 .row
                   if userError && userError.length
                     .col-12.mb-4
-                      +alert({close: false}).alert-danger.alert-sm
+                      +alert({close:false}).alert-danger.alert-sm
                         span.alert-icon.fa-exclamation-triangle
-                        span= userError
+                        if Array.isArray(userError)
+                          each e in userError
+                            span= e
+                            br
+                        else
+                          span= userError
+
                   if userSuccess && userSuccess.length
                     .col-12.mb-4
-                      +alert({close: false}).alert-success.alert-sm
+                      +alert({close:false}).alert-success.alert-sm
                         span.alert-icon.linearicons-checkmark-circle
-                        span= userSuccess
+                        if Array.isArray(userSuccess)
+                          each m in userSuccess
+                            span= m
+                            br
+                        else
+                          span= userSuccess
 
                   // Ліва колонка
                   .col-xl-6
@@ -73,71 +84,16 @@ block page
                         input#password.form-control(type='password', name='password', required)
 
                     .form-group
-                      label.form-label(for='orgRole') Рівень доступу (orgRole):
-                      .input-group
-                        .input-group-prepend
-                          span.input-group-text.linearicons-database-lock
-                        select#orgRole.form-control(name='orgRole', required)
-                          if orgRoles && orgRoles.length
-                            each r in orgRoles
-                              // r: { value, label }
-                              option(value=r.value selected=(r.value==='user'))= r.label
-                          else
-                            option(value='user' selected) user111
-
-                  // Департамент
-                  .col-xl-6.mt-3
-                    .form-group
                       label.form-label(for='department') Відділ:
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-lan
-                        select#department.form-control(name='department', required, onchange='onDeptChange(this.value)')
+                        select#department.form-control(name='department', required)
                           if departments && departments.length
                             each d in departments
-                              // d: { value, label }
-                              option(value=d.value selected=(currentDept && currentDept===d.value))= d.label
+                              option(value=d.value)= d.label || d.value
                           else
-                            option(value='Media Buying' selected) Media Buying111
-
-                  // TeamRole
-                  .col-xl-6.mt-3
-                    .form-group
-                      label.form-label(for='teamRole') Роль у команді (teamRole):
-                      .input-group
-                        .input-group-prepend
-                          span.input-group-text.linearicons-users2
-                        select#teamRole.form-control(name='teamRole', required)
-                          if teamRoles && teamRoles.length
-                            each t in teamRoles
-                              // t: { value, label }
-                              option(value=t.value)= t.label
-                          else
-                            option(value='lead') lead111
-                            option(value='member') member111
-                            option(value='assistant') assistant111
-
-                  // Позиція (людський лейбл, не впливає на доступи)
-                  .col-xl-8.mt-3
-                    .form-group
-                      label.form-label(for='position') Позиція (лейбл для UI/HR):
-                      .input-group
-                        .input-group-prepend
-                          span.input-group-text.linearicons-user
-                        input#position.form-control(type='text', name='position', placeholder='Team Lead / Buyer / Marketer ...')
-                  // WebID (тільки для member)
-                  .col-xl-4.mt-3
-                    .form-group#webid_group(style='display:none')
-                      label.form-label(for='webId') WebID (для buyer):
-                      .input-group
-                        .input-group-prepend
-                          span.input-group-text.linearicons-briefcase
-                        input#webId.form-control(
-                          type='text',
-                          name='webId',
-                          placeholder='w000',
-                          pattern='^w\\d{3,}$'
-                        )
+                            option(value='Media Buying' selected) Media Buying
 
                   .col-12.mt-4
                     button.btn.btn-primary.submit-btn.w-100.mb-4(type='submit') Створити
@@ -146,30 +102,3 @@ block page
                       span До списку
 
   include ../layout/footer
-
-  // === Simple client-side logic ===
-  block scripts
-    script.
-      function isMediaBuying(dept) {
-        return String(dept).toLowerCase() === 'media buying'.toLowerCase();
-      }
-      function syncWebIdVisibility() {
-        var deptSel = document.getElementById('department');
-        var dept = deptSel ? deptSel.value : '';
-        var grp = document.getElementById('webid_group');
-        var input = document.getElementById('webId');
-        var needs = isMediaBuying(dept);
-        if (grp) grp.style.display = needs ? '' : 'none';
-        if (input) input.required = !!needs;
-      }
-      function onDeptChange(dept) {
-        // миттєво оновлюємо видимість webId (без очікування перерендеру)
-        syncWebIdVisibility();
-
-        // якщо у тебе залежні позиції від департаменту через сервер — лишаємо перезавантаження:
-        //- var url = new URL(window.location.href);
-        //- url.searchParams.set('department', dept);
-        //- window.location.href = url.toString();
-      }
-      // init
-      (function(){ syncWebIdVisibility(); })();

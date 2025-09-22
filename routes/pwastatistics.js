@@ -336,7 +336,7 @@ router.post('/',
                 } else if (error.code == 'INVALID_OPENING_QUOTE') {
                   req.flash('csvError', 'Переконайся, що завантажив правильні файли');
                 } else {
-                  req.flash('csvError', 'Сталася помилка, звернись до Ігоря');
+                  req.flash('csvError', 'Сталася помилка, звернись до адміністратора');
                 }
                 return res.redirect('/statistics');
               });
@@ -348,7 +348,7 @@ router.post('/',
             } else if (error.code == 'INVALID_OPENING_QUOTE') {
               req.flash('csvError', 'Переконайся, що завантажив правильні файли');
             } else {
-              req.flash('csvError', 'Сталася помилка, звернись до Ігоря');
+              req.flash('csvError', 'Сталася помилка, звернись до адміністратора');
             }
             return res.redirect('/statistics');
           });
@@ -361,7 +361,7 @@ router.post('/',
         } else if (error.code == 'INVALID_OPENING_QUOTE') {
           req.flash('csvError', 'Переконайся, що завантажив правильні файли');
         } else {
-          req.flash('csvError', 'Сталася помилка, звернись до Ігоря');
+          req.flash('csvError', 'Сталася помилка, звернись до адміністратора');
         }
         return res.redirect('/statistics');
       });

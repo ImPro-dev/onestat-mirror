@@ -1,58 +1,47 @@
-# .github/workflows/mirror.yml
-name: Mirror to Public (branches & tags)
+name: Mirror to Public (full mirror)
 
 on:
   push:
-    branches:
-      - '**'
-    tags:
-      - '*'
+    branches: ['**']
+    tags: ['*']
+  workflow_dispatch: {}
+  schedule:
+    - cron: '15 3 * * *'   # опційно: щоденний sync о 03:15 UTC
 
 jobs:
   mirror:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout private repo
+      - name: Checkout (full history)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Remove secrets and noise
-        run: |
-          rm -f .env .env.* || true
-          rm -rf secrets config/private tokens || true
-          rm -rf node_modules dist build coverage || true
-          find . -name ".DS_Store" -type f -delete || true
+          persist-credentials: false   # не пришиваємо GITHUB_TOKEN
 
       - name: Configure Git
         run: |
-          git config user.name "mirror-bot"
+          git config user.name  "mirror-bot"
           git config user.email "mirror-bot@users.noreply.github.com"
 
-      - name: Add public mirror remote (sanitize URL)
+      - name: Add mirror remote
         env:
-          PUB_URL_RAW: ${{ secrets.PUBLIC_MIRROR_URL }}
+          MIRROR_PAT: ${{ secrets.MIRROR_PAT }}
         run: |
-          # прибираємо CR/LF, пробіли
-          PUB_URL="$(printf '%s' "$PUB_URL_RAW" | tr -d '\r\n' | sed 's/[[:space:]]\+$//')"
-          if [ -z "$PUB_URL" ]; then
-            echo "Empty PUB_URL after sanitize"; exit 1
-          fi
-          git remote add public "$PUB_URL"
+          set -e
+          git remote add mirror "https://x-access-token:${MIRROR_PAT}@github.com/ImPro-dev/onestat-mirror.git"
           git remote -v
+          git fetch --all --prune
 
-      - name: Push branch if event is branch
-        env:
-          REF_TYPE: ${{ github.ref_type }}
-          REF_NAME: ${{ github.ref_name }}
+      # Повне дзеркало всіх refs (гілок і тегів), включно з видаленнями та force-push
+      - name: Push all refs (mirror)
         run: |
-          if [ "$REF_TYPE" = "branch" ]; then
-            echo "Pushing branch $REF_NAME"
-            git push -f public "$REF_NAME:$REF_NAME"
-          else
-            echo "Not a branch push (type=$REF_TYPE), skipping branch push"
-          fi
+          set -e
+          git push --mirror mirror
 
-      - name: Push tags (always)
+      # Діагностика (зручно при перших запусках)
+      - name: Debug refs
+        if: always()
         run: |
-          git push -f public --tags
+          echo "Event: ${{ github.event_name }}  Ref: ${{ github.ref }}  Ref type/name: ${{ github.ref_type }} / ${{ github.ref_name }}"
+          git show-ref --heads | wc -l | xargs echo "Local branches:"
+          git show-ref --tags  | wc -l | xargs echo "Local tags:"
