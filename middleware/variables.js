@@ -1,18 +1,31 @@
 'use strict';
 
-module.exports = function (req, res, next) {
-  res.locals.isAuth = req.session.isAuthenticated;
+module.exports = function variables(req, res, next) {
+  const user = req.session?.user || null;
 
-  res.locals.myID = req.session.user?._id;
-  res.locals.webID = req.session.user?.webID;
-  res.locals.userFirstname = req.session.user?.firstname;
-  res.locals.userLastname = req.session.user?.lastname;
+  // Чи авторизований
+  res.locals.isAuth = !!req.session?.isAuthenticated;
 
-  res.locals.role = req.session.user?.role || req.session.user?.orgRole;  // TODO: to be refactored after migration
-  res.locals.position = req.session.user?.position;
-  res.locals.isUser = req.session.user?.role === 'user';
-  res.locals.isManager = req.session.user?.role === 'maneger';
-  res.locals.isAdmin = req.session.user?.role === 'admin';
+  // Базові ідентифікатори
+  res.locals.myID = user ? String(user._id || user.id || '') : null;
+  res.locals.webID = user?.webId || null;
+
+  // Імʼя/прізвище
+  res.locals.userFirstname = user?.firstName || '';
+  res.locals.userLastname = user?.lastName || '';
+
+  // Ролі
+  const orgRole = user?.orgRole || null;
+  res.locals.role = orgRole;
+  res.locals.isUser = orgRole === 'user';
+  res.locals.isManager = orgRole === 'manager';
+  res.locals.isAdmin = orgRole === 'admin';
+
+  // Додаткові зручності
+  res.locals.position = user?.position || '';
+  res.locals.department = user?.department || '';
+  res.locals.teamRole = user?.teamRole || null;
+  res.locals.fullName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '';
 
   next();
-}
+};

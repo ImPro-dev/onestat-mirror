@@ -1,6 +1,5 @@
 extends ../../components/base/_skeleton
 include ../../components/rd-navbar/_rd-navbar
-include ../../components/input/_input
 
 block variables
   - pageName = title;
@@ -18,149 +17,105 @@ block page
             .panel-header
               h5.panel-title
                 span.panel-icon.linearicons-pencil5
-                = ' '
-                span= title
+                |  #{title}
             .panel-body
-              form(role='form' class='stat-form' method='POST' action='/users/edit')
+              form.stat-form(method='POST', action='/users/edit')
+                if typeof csrfToken !== 'undefined'
+                  input(type='hidden', name='_csrf', value=csrfToken)
+                input(type='hidden', name='id', value=user._id)
                 .row
                   if userError && userError.length
-                    .col-12.mb-4
+                    .col-12.mb-3
                       +alert({close:false}).alert-danger.alert-sm
                         span.alert-icon.fa-exclamation-triangle
-                        span= userError
+                        if Array.isArray(userError)
+                          each e in userError
+                            span= e
+                            br
+                        else
+                          span= userError
                   if userSuccess && userSuccess.length
-                    .col-12.mb-4
+                    .col-12.mb-3
                       +alert({close:false}).alert-success.alert-sm
                         span.alert-icon.linearicons-checkmark-circle
-                        span= userSuccess
+                        if Array.isArray(userSuccess)
+                          each m in userSuccess
+                            span= m
+                            br
+                        else
+                          span= userSuccess
 
                   // Ліва колонка
                   .col-xl-6
                     .form-group
-                      label.form-label(for='firstName') Імʼя:
+                      label.form-label(for='firstName') Імʼя
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-user
-                        input#firstName.form-control(type='text', name='firstName', required, value=user.firstName)
+                        input#firstName.form-control(
+                          type='text',
+                          name='firstName',
+                          required,
+                          value=(user.firstName || '')
+                        )
 
                     .form-group
-                      label.form-label(for='email') Емейл:
+                      label.form-label(for='email') Емейл
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-envelope
-                        input#email.form-control(type='email', name='email', required, value=user.email)
+                        input#email.form-control(
+                          type='email',
+                          name='email',
+                          required,
+                          value=(user.email || '')
+                        )
 
                     .form-group
-                      label.form-label(for='telegramUsername') Телеграм:
+                      label.form-label(for='telegramUsername') Телеграм
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-paper-plane
-                        input#telegramUsername.form-control(type='text', name='telegramUsername', value=user.telegramUsername, placeholder='@username')
+                        input#telegramUsername.form-control(
+                          type='text',
+                          name='telegramUsername',
+                          placeholder='@username',
+                          value=(user.telegramUsername || '')
+                        )
 
                   // Права колонка
                   .col-xl-6
                     .form-group
-                      label.form-label(for='lastName') Прізвище:
+                      label.form-label(for='lastName') Прізвище
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-user
-                        input#lastName.form-control(type='text', name='lastName', required, value=user.lastName)
+                        input#lastName.form-control(
+                          type='text',
+                          name='lastName',
+                          required,
+                          value=(user.lastName || '')
+                        )
 
                     .form-group
-                      label.form-label(for='orgRole') Рівень доступу (orgRole):
-                      .input-group
-                        .input-group-prepend
-                          span.input-group-text.linearicons-database-lock
-                        select#orgRole.form-control(name='orgRole', required)
-                          if orgRoles && orgRoles.length
-                            each r in orgRoles
-                              option(value=r.value selected=(user.orgRole===r.value))= r.label
-                          else
-                            option(value=user.orgRole selected)= user.orgRole
-
-                    .form-group
-                      label.form-label(for='teamRole') Роль у команді (teamRole):
-                      .input-group
-                        .input-group-prepend
-                          span.input-group-text.linearicons-users2
-                        select#teamRole.form-control(name='teamRole')
-                          // teamRole може бути null (для head/manager без команди)
-                          option(value='' selected=!user.teamRole) — немає —
-                          if teamRoles && teamRoles.length
-                            each t in teamRoles
-                              option(value=t.value selected=(user.teamRole===t.value))= t.label
-                          else
-                            option(value='lead' selected=(user.teamRole==='lead')) lead
-                            option(value='member' selected=(user.teamRole==='member')) member
-                            option(value='assistant' selected=(user.teamRole==='assistant')) assistant
-
-                  // Департамент
-                  .col-xl-6.mt-3
-                    .form-group
-                      label.form-label(for='department') Відділ:
+                      label.form-label(for='department') Відділ
                       .input-group
                         .input-group-prepend
                           span.input-group-text.linearicons-lan
-                        select#department.form-control(name='department', required, onchange='onDeptChange(this.value)')
+                        select#department.form-control(name='department', required)
                           if departments && departments.length
                             each d in departments
-                              option(value=d.value selected=(user.department===d.value))= d.label
+                              option(
+                                value=d.value,
+                                selected=(user.department===d.value) ? true : false
+                              )= d.label || d.value
                           else
-                            option(value=user.department selected)= user.department
+                            option(value=user.department selected)= user.department || '—'
 
-                  // WebID (обовʼязковий для Media Buying)
-                  .col-xl-6.mt-3
-                    .form-group#webid_group(style='display:none')
-                      label.form-label(for='webId') WebID (для Media Buying):
-                      .input-group
-                        .input-group-prepend
-                          span.input-group-text.linearicons-briefcase
-                        input#webId.form-control(
-                          type='text',
-                          name='webId',
-                          value=user.webId,
-                          placeholder='w043',
-                          pattern='^w\\d{3,}$'
-                        )
-
-                  // Позиція (людський лейбл)
                   .col-12.mt-3
-                    .form-group
-                      label.form-label(for='position') Позиція (лейбл для UI/HR):
-                      .input-group
-                        .input-group-prepend
-                          span.input-group-text.linearicons-user
-                        input#position.form-control(type='text', name='position', value=user.position, placeholder='Team Lead / Buyer / Marketer ...')
-
-                  .col-12.mt-4
-                    input#id(type='hidden', name='id', value=user._id)
-                    button.btn.btn-primary.submit-btn.w-100.mb-4(type='submit') Зберегти
-                    a.btn.btn-light(href='/users')
+                    button.btn.btn-primary.w-100(type='submit') Зберегти
+                    a.btn.btn-light.mt-2(href='/users')
                       span.mdi-keyboard-backspace.mr-2
                       | До списку
 
   include ../layout/footer
-
-  block scripts
-    script.
-      function isMediaBuying(dept) {
-        return String(dept || '').toLowerCase() === 'media buying';
-      }
-      function syncWebIdVisibility() {
-        var deptSel = document.getElementById('department');
-        var dept = deptSel ? deptSel.value : '';
-        var grp = document.getElementById('webid_group');
-        var input = document.getElementById('webId');
-        var needs = isMediaBuying(dept);
-        if (grp) grp.style.display = needs ? '' : 'none';
-        if (input) input.required = !!needs;
-      }
-      function onDeptChange(_dept) {
-        // якщо позиції/ролі не залежать від департаменту на сервері — без перезавантаження:
-        syncWebIdVisibility();
-        // якщо все ж фільтруєш на сервері — розкоментуй:
-        // const url = new URL(window.location.href);
-        // url.searchParams.set('department', _dept);
-        // window.location.href = url.toString();
-      }
-      (function(){ syncWebIdVisibility(); })();

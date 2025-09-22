@@ -2,100 +2,150 @@
 'use strict';
 
 const User = require('../models/User');
-const OrgRole = require('../models/OrgRole');
-const TeamRole = require('../models/TeamRole');
 const Department = require('../models/Department');
-const { SCOPES, getUserScopes } = require('../scripts/permissions/scopes');
 
 const dbHelper = require('../helpers/dbHelper');
-const { getOrgRoleOptions, getTeamRoleOptions, getDepartmentOptions } = require('../services/enumsService');
+const { getOrgRoleOptions, getDepartmentOptions, getTeamRoleOptions } = require('../services/enumsService');
 
-const WEBID_RE = /^w\d{3,}$/i;
+const { SCOPES, getUserScopes } = require('../scripts/permissions/scopes');
+const mongoose = require('mongoose');
+
+
+// const WEBID_RE = /^w\d{3,}$/i;
 
 // Helpers
 function redirectBack(res, req, path = '/users/add') {
   const suffix = req.body?.department ? `?department=${encodeURIComponent(req.body.department)}` : '';
   return res.redirect(path + suffix);
 }
-function redirectToEdit(res, id) {
-  return res.redirect(`/users/edit/${id}?allow=1`);
+
+function toInt(v, def) {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) && n > 0 ? n : def;
+}
+function buildUrl(base, params) {
+  const qs = new URLSearchParams(params);
+  return `${base}?${qs.toString()}`;
 }
 
-// ---- helpers для списку ----
-function buildUserFilters(query) {
-  const { q, department, orgRole, teamRole, active } = query;
-  const filter = {};
-
-  if (department) filter.department = department;
-  if (orgRole) filter.orgRole = orgRole;
-  if (teamRole) filter.teamRole = teamRole;
-
-  if (active === 'true') filter.isActive = true;
-  if (active === 'false') filter.isActive = false;
-
-  if (q && q.trim()) {
-    const re = new RegExp(q.trim(), 'i');
-    filter.$or = [
-      { firstName: re },
-      { lastName: re },
-      { email: re },
-      { webId: re },
-    ];
-  }
-  return filter;
+// видаляє ВСІ сесії користувача з session-колекції (connect-mongodb-session)
+async function revokeUserSessions(userId) {
+  const col = mongoose.connection.collection('sessions');
+  // у документі поле "session" — це JSON-рядок; шукаємо за "id":"<userId>"
+  await col.deleteMany({ session: { $regex: `"id":"${String(userId)}"` } });
 }
 
 /**
  * GET: Users list (простий варіант)
  */
-const UserList = async (req, res, next) => {
+// --- LIST (усі фільтри лишаємо, сортування теж) ---
+const UserList = async (req, res) => {
   try {
-    const page = Math.max(parseInt(req.query.page || '1', 10), 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit || '20', 10), 1), 100);
-    const skip = (page - 1) * limit;
+    const {
+      q = '',
+      department = '',
+      orgRole = '',
+      teamRole = '',
+      active = '',
+      page: pageRaw = '1',
+      limit: limitRaw = '10',
+      sortBy: sortByRaw = 'createdAt',
+      sortDir: sortDirRaw = 'desc',
+    } = req.query;
 
-    const filter = buildUserFilters(req.query);
-
-    const [users, total, orgRoles, departments, teamRoles] = await Promise.all([
-      User.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
-      User.countDocuments(filter),
-      getOrgRoleOptions(),
-      getDepartmentOptions(),
-      getTeamRoleOptions(),
+    const ALLOWED_SORTS = new Set([
+      'firstName', 'lastName', 'email', 'telegramUsername', 'webId',
+      'department', 'orgRole', 'teamRole', 'position', 'isActive', 'createdAt'
     ]);
 
-    const totalPages = Math.max(Math.ceil(total / limit), 1);
+    const sortBy = ALLOWED_SORTS.has(sortByRaw) ? sortByRaw : 'createdAt';
+    const sortDir = (String(sortDirRaw).toLowerCase() === 'asc') ? 'asc' : 'desc';
+    const sort = { [sortBy]: sortDir === 'asc' ? 1 : -1 };
+
+    const page = toInt(pageRaw, 1);
+    const limit = toInt(limitRaw, 20);
+
+    // фільтр
+    const find = {};
+    if (q && q.trim()) {
+      const re = new RegExp(q.trim(), 'i');
+      find.$or = [{ firstName: re }, { lastName: re }, { email: re }, { webId: re }];
+    }
+    if (department) find.department = department;
+    if (orgRole) find.orgRole = orgRole;       // хоч і не редагується тут, але доступний для фільтра
+    if (teamRole) find.teamRole = teamRole;    // те саме
+    if (active === 'true') find.isActive = true;
+    if (active === 'false') find.isActive = false;
+
+    const total = await User.countDocuments(find);
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const safePage = Math.min(Math.max(page, 1), totalPages);
+    const skip = (safePage - 1) * limit;
+
+    const users = await User.find(find)
+      .select('firstName lastName email telegramUsername webId department orgRole teamRole position isActive createdAt')
+      .sort(sort).limit(limit).skip(skip).lean();
+
+    const [departments, orgRoles, teamRoles] = await Promise.all([
+      getDepartmentOptions(),
+      getOrgRoleOptions(),          // потрібні лише для select-фільтра
+      getTeamRoleOptions()          // якщо залишаєш глобальний список; або зроби департаменто-специфічний
+    ]);
+
+    const baseQuery = { q, department, orgRole, teamRole, active, limit: String(limit), sortBy, sortDir };
+
+    const makeSortUrls = (field) => ({
+      asc: buildUrl('/users', { ...baseQuery, sortBy: field, sortDir: 'asc', page: '1' }),
+      desc: buildUrl('/users', { ...baseQuery, sortBy: field, sortDir: 'desc', page: '1' }),
+      activeDir: (sortBy === field ? sortDir : null),
+    });
+
+    const sortUrls = {
+      firstName: makeSortUrls('firstName'),
+      lastName: makeSortUrls('lastName'),
+      email: makeSortUrls('email'),
+      telegram: makeSortUrls('telegramUsername'),
+      webId: makeSortUrls('webId'),
+      department: makeSortUrls('department'),
+      orgRole: makeSortUrls('orgRole'),
+      teamRole: makeSortUrls('teamRole'),
+      position: makeSortUrls('position'),
+      isActive: makeSortUrls('isActive'),
+      createdAt: makeSortUrls('createdAt'),
+    };
+
+    const pages = Array.from({ length: totalPages }, (_, i) => {
+      const n = i + 1;
+      return { n, url: buildUrl('/users', { ...baseQuery, page: String(n) }), active: n === safePage };
+    });
+    const prevUrl = buildUrl('/users', { ...baseQuery, page: String(Math.max(1, safePage - 1)) });
+    const nextUrl = buildUrl('/users', { ...baseQuery, page: String(Math.min(totalPages, safePage + 1)) });
 
     res.render('pages/users/list', {
       title: 'Користувачі',
+      users,
       userError: req.flash('userError'),
       userSuccess: req.flash('userSuccess'),
 
-      // дані таблиці
-      users,
-
-      // пагінація/фільтри
-      page, limit, total, totalPages,
-      query: {
-        q: req.query.q || '',
-        department: req.query.department || '',
-        orgRole: req.query.orgRole || '',
-        teamRole: req.query.teamRole || '',
-        active: req.query.active ?? '',
-      },
-
-      // довідники для селектів
-      orgRoles,
+      // фільтри (залишені всі)
       departments,
+      orgRoles,
       teamRoles,
+      query: { q, department, orgRole, teamRole, active },
 
-      // для умов у шаблоні (наприклад, заборона видалення себе)
-      myID: req.session?.user?.id || null,
+      // пагінація
+      pagination: { page: safePage, limit, total, totalPages, pages, prevUrl, nextUrl },
+
+      // сортування
+      sortBy, sortDir, sortUrls,
     });
   } catch (err) {
-    next(err);
+    console.error(err);
+    req.flash('userError', 'Не вдалося завантажити список користувачів.');
+    res.redirect('/dashboard');
   }
 };
+
 
 /**
  * GET: Add user page
@@ -105,10 +155,7 @@ const AddUserPage = async (req, res) => {
     title: 'Новий користувач',
     userError: req.flash('userError'),
     userSuccess: req.flash('userSuccess'),
-    orgRoles: await getOrgRoleOptions(),        // [{value,label}]
-    departments: await getDepartmentOptions(),  // [{value,label}]
-    teamRoles: await getTeamRoleOptions(),      // [{value,label}]
-    currentDept: req.query.department || 'Media Buying'
+    departments: await getDepartmentOptions(),   // тільки відділи
   });
 };
 
@@ -117,20 +164,29 @@ const AddUserPage = async (req, res) => {
  */
 const AddUser = async (req, res) => {
   try {
-    const {
-      firstName,
-      lastName,
-      email,
-      password,
-      telegramUsername,
-      department,
-      orgRole,
-      teamRole,        // 'lead'|'member'|'assistant' | '' (для manager без команди)
-      webId,
-      position         // довільний лейбл для UI/HR
-    } = req.body;
+    const actor = req.session?.user || null;
+    const scopes = new Set(getUserScopes(actor));
+    const canWriteAny = scopes.has(SCOPES.ORG_USERS_WRITE_ANY);
+    const canCreateBasic = scopes.has(SCOPES.ORG_USERS_CREATE_BASIC);
 
-    // 1) базові перевірки
+    if (!canWriteAny && !canCreateBasic) {
+      req.flash('userError', 'Недостатньо прав для створення користувача.');
+      return res.redirect('/users');
+    }
+
+    const { firstName, lastName, email, password, telegramUsername, department } = req.body;
+
+    let orgRole = 'user';     // за замовчуванням
+    let teamRoleFinal = null; // базова форма без командних ролей
+    let position = null;      // базова форма без позиції
+    let webIdFinal = null;    // базова форма без webId
+
+    // якщо адмін/менеджер з повними правами — можна дозволити orgRole з форми (за потреби)
+    if (canWriteAny && req.body.orgRole) {
+      orgRole = String(req.body.orgRole);
+    }
+
+    // Базові перевірки
     if (!firstName?.trim() || !lastName?.trim()) {
       req.flash('userError', 'Будь ласка, заповни імʼя та прізвище.');
       return redirectBack(res, req);
@@ -143,62 +199,27 @@ const AddUser = async (req, res) => {
       req.flash('userError', 'Пароль є обовʼязковим.');
       return redirectBack(res, req);
     }
-
     const emailNorm = String(email).trim().toLowerCase();
 
-    // 2) унікальність email
+    // Унікальність email
     const existing = await User.findOne({ email: emailNorm }).lean();
     if (existing) {
       req.flash('userError', 'Користувач з таким емейлом вже існує.');
       return redirectBack(res, req);
     }
 
-    // 3) валідація довідників
-    const [orgRoleOk, deptOk] = await Promise.all([
-      OrgRole.exists({ value: orgRole, isActive: true }),
-      Department.exists({ value: department, isActive: true }),
-    ]);
-    if (!orgRoleOk) { req.flash('userError', 'Невірне значення рівня доступу (orgRole).'); return redirectBack(res, req); }
-    if (!deptOk) { req.flash('userError', 'Невірний департамент.'); return redirectBack(res, req); }
-
-    // 4) teamRole логіка
-    let teamRoleFinal = null;
-    if (orgRole === 'manager') {
-      // менеджер може бути без командної ролі (Head of ...)
-      teamRoleFinal = teamRole ? String(teamRole) : null;
-    } else {
-      if (!teamRole) {
-        req.flash('userError', 'Будь ласка, вибери роль у команді (teamRole).');
-        return redirectBack(res, req);
-      }
-      teamRoleFinal = String(teamRole);
-    }
-    if (teamRoleFinal) {
-      const teamRoleOk = await TeamRole.exists({ value: teamRoleFinal, isActive: true });
-      if (!teamRoleOk) { req.flash('userError', 'Невірна роль у команді (teamRole).'); return redirectBack(res, req); }
+    // Валідність відділу
+    const deptOk = await Department.exists({ value: department, isActive: true });
+    if (!deptOk) {
+      req.flash('userError', 'Невірний відділ.');
+      return redirectBack(res, req);
     }
 
-    // 5) webId: обовʼязковий для департаменту Media Buying
-    let webIdFinal = null;
-    if (department === 'Media Buying') {
-      if (!webId || !WEBID_RE.test(webId)) {
-        req.flash('userError', 'Для департаменту Media Buying потрібен WebID у форматі wNNN (наприклад, w043).');
-        return redirectBack(res, req);
-      }
-      const taken = await User.exists({ webId: webId.toLowerCase() });
-      if (taken) {
-        req.flash('userError', `WebID ${webId} вже використовується.`);
-        return redirectBack(res, req);
-      }
-      webIdFinal = webId.toLowerCase();
-    } else {
-      webIdFinal = null;
-    }
-
-    // 6) хеш пароля
+    // Пароль
     const passwordHash = await dbHelper.hashPassword(password);
 
-    // 7) створення
+    // Створення з мінімальним набором полів:
+    // orgRole — ФІКСОВАНО 'user'; teamRole/deptRole/webId/position — не чіпаємо
     await User.create({
       firstName: String(firstName).trim(),
       lastName: String(lastName).trim(),
@@ -206,13 +227,14 @@ const AddUser = async (req, res) => {
       passwordHash,
       lastPasswordChangeAt: new Date(),
       telegramUsername: telegramUsername ? String(telegramUsername).trim() : null,
-      position: position ? String(position).trim() : null,
 
-      orgRole,
       department,
-      team: null,                 // команду привʼяжеш окремо
-      teamRole: teamRoleFinal,
-      webId: webIdFinal,
+      orgRole: orgRole,   // ← завжди user при створенні
+      team: null,
+      teamRole: null,
+      // deptRole: null,  // якщо є в моделі — теж null
+      webId: null,
+      position: null,
 
       isActive: true,
     });
@@ -221,7 +243,7 @@ const AddUser = async (req, res) => {
     return res.redirect('/users');
   } catch (error) {
     console.error(error);
-    req.flash('userError', 'Сталася помилка, звернись до Ігоря. ' + error.message);
+    req.flash('userError', 'Сталася помилка, звернись до адміністратора. ' + error.message);
     return redirectBack(res, req);
   }
 };
@@ -229,128 +251,114 @@ const AddUser = async (req, res) => {
 /**
  * GET: Edit user page
  */
+// --- EDIT PAGE (мінімальні поля + відділ) ---
 const EditUserPage = async (req, res) => {
-  if (!req.query.allow) return res.redirect('/users');
+  try {
+    if (!req.query.allow) {
+      return res.redirect('/users');
+    }
 
-  const user = await User.findById(req.params.id).lean();
-  if (!user) {
-    req.flash('userError', 'Користувача не знайдено.');
+    const { id } = req.params;
+    const user = await User.findById(id)
+      .select('firstName lastName email telegramUsername department')
+      .lean();
+
+    if (!user) {
+      req.flash('userError', 'Користувача не знайдено.');
+      return res.redirect('/users');
+    }
+
+    // список відділів для селекта
+    const departments = await getDepartmentOptions();
+
+    return res.render('pages/users/edit', {
+      title: 'Редагувати дані користувача',
+      userError: req.flash('userError'),
+      userSuccess: req.flash('userSuccess'),
+      user,
+      departments,
+    });
+  } catch (err) {
+    console.error(err);
+    req.flash('userError', 'Сталася помилка при завантаженні форми редагування.');
     return res.redirect('/users');
   }
-
-  res.render('pages/users/edit', {
-    title: 'Редагувати дані користувача',
-    userError: req.flash('userError'),
-    userSuccess: req.flash('userSuccess'),
-    user,
-    orgRoles: await getOrgRoleOptions(),
-    departments: await getDepartmentOptions(),
-    teamRoles: await getTeamRoleOptions()
-  });
 };
+
+
 
 /**
  * POST: Edit user data (без зміни пароля)
  */
+// --- EDIT SUBMIT (тільки базові поля) ---
 const EditUser = async (req, res) => {
   try {
-    const {
-      id,
-      firstName,
-      lastName,
-      email,
-      telegramUsername,
-      department,
-      orgRole,
-      teamRole,     // ''/null для manager без команди
-      webId,
-      position
-    } = req.body;
+    const { id, firstName, lastName, email, telegramUsername, department } = req.body;
 
-    if (!id) { req.flash('userError', 'Відсутній ідентифікатор користувача.'); return res.redirect('/users'); }
+    if (!id) {
+      req.flash('userError', 'Відсутній ідентифікатор користувача.');
+      return res.redirect('/users');
+    }
 
-    const current = await User.findById(id).lean();
-    if (!current) { req.flash('userError', 'Користувача не знайдено.'); return res.redirect('/users'); }
+    const current = await User.findById(id).select('email').lean();
+    if (!current) {
+      req.flash('userError', 'Користувача не знайдено.');
+      return res.redirect('/users');
+    }
 
-    // 1) базові перевірки
+    // --- Базові перевірки ---
     if (!firstName?.trim() || !lastName?.trim()) {
       req.flash('userError', 'Будь ласка, заповни імʼя та прізвище.');
-      return redirectToEdit(res, id);
+      return res.redirect(`/users/edit/${id}?allow=1`);
     }
+
     if (!email?.trim()) {
       req.flash('userError', 'Будь ласка, вкажи емейл.');
-      return redirectToEdit(res, id);
+      return res.redirect(`/users/edit/${id}?allow=1`);
     }
+
     const emailNorm = String(email).trim().toLowerCase();
 
-    // 2) унікальність email (якщо змінився)
+    // --- Перевірка унікальності email (якщо змінився) ---
     if (emailNorm !== current.email) {
       const emailTaken = await User.exists({ _id: { $ne: id }, email: emailNorm });
-      if (emailTaken) { req.flash('userError', 'Користувач з таким емейлом вже існує.'); return redirectToEdit(res, id); }
-    }
-
-    // 3) валідація довідників
-    const [orgRoleOk, deptOk] = await Promise.all([
-      OrgRole.exists({ value: orgRole, isActive: true }),
-      Department.exists({ value: department, isActive: true }),
-    ]);
-    if (!orgRoleOk) { req.flash('userError', 'Невірне значення orgRole.'); return redirectToEdit(res, id); }
-    if (!deptOk) { req.flash('userError', 'Невірний департамент.'); return redirectToEdit(res, id); }
-
-    // 4) teamRole логіка
-    let teamRoleFinal = null;
-    if (orgRole === 'manager') {
-      teamRoleFinal = teamRole ? String(teamRole) : null;
-    } else {
-      if (!teamRole) { req.flash('userError', 'Будь ласка, вибери роль у команді (teamRole).'); return redirectToEdit(res, id); }
-      teamRoleFinal = String(teamRole);
-    }
-    if (teamRoleFinal) {
-      const teamRoleOk = await TeamRole.exists({ value: teamRoleFinal, isActive: true });
-      if (!teamRoleOk) { req.flash('userError', 'Невірна роль у команді (teamRole).'); return redirectToEdit(res, id); }
-    }
-
-    // 5) webId: обовʼязковий для Media Buying, інакше null
-    let webIdFinal = null;
-    if (department === 'Media Buying') {
-      if (!webId || !WEBID_RE.test(webId)) {
-        req.flash('userError', 'Для департаменту Media Buying потрібен WebID у форматі wNNN (наприклад, w043).');
-        return redirectToEdit(res, id);
+      if (emailTaken) {
+        req.flash('userError', 'Користувач з таким емейлом вже існує.');
+        return res.redirect(`/users/edit/${id}?allow=1`);
       }
-      const webIdNorm = webId.toLowerCase();
-      if (webIdNorm !== (current.webId || '')) {
-        const webIdTaken = await User.exists({ _id: { $ne: id }, webId: webIdNorm });
-        if (webIdTaken) { req.flash('userError', `WebID ${webId} вже використовується.`); return redirectToEdit(res, id); }
-      }
-      webIdFinal = webId.toLowerCase();
-    } else {
-      webIdFinal = null;
     }
 
-    // 6) якщо manager без команди — team = null (щоб не залишався привʼязаний)
-    const update = {
-      firstName: String(firstName).trim(),
-      lastName: String(lastName).trim(),
-      email: emailNorm,
-      telegramUsername: telegramUsername ? String(telegramUsername).trim() : null,
-      department,
-      orgRole,
-      teamRole: teamRoleFinal,
-      webId: webIdFinal,
-      position: position ? String(position).trim() : null,
-    };
-    if (orgRole === 'manager' && !teamRoleFinal) update.team = null;
+    // --- Перевірка валідності відділу ---
+    const deptOk = await Department.exists({ value: department, isActive: true });
+    if (!deptOk) {
+      req.flash('userError', 'Невірний відділ.');
+      return res.redirect(`/users/edit/${id}?allow=1`);
+    }
 
-    await User.findByIdAndUpdate(id, { $set: update }, { runValidators: true });
+    // --- Оновлюємо тільки базові поля ---
+    await User.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          firstName: String(firstName).trim(),
+          lastName: String(lastName).trim(),
+          email: emailNorm,
+          telegramUsername: telegramUsername ? String(telegramUsername).trim() : null,
+          department
+        }
+      },
+      { runValidators: true }
+    );
 
     req.flash('userSuccess', 'Дані користувача збережено.');
-    return redirectToEdit(res, id);
-  } catch (error) {
-    console.error(error);
-    req.flash('userError', 'Сталася помилка, звернись до Ігоря. ' + error.message);
+    return res.redirect(`/users/edit/${id}?allow=1`);
+  } catch (err) {
+    console.error(err);
+    req.flash('userError', 'Сталася помилка, звернись до адміністратора. ' + err.message);
     return res.redirect('/users');
   }
 };
+
 
 /**
  * GET: User profile page (залишаю як у тебе, мінімально)
@@ -359,9 +367,9 @@ const ProfilePage = async (req, res) => {
   try {
     const id = req.params.id;
     const sessionUser = req.session?.user || null;
-    const isSelf = sessionUser && String(sessionUser.id) === String(id);
+    const isSelf = !!(sessionUser && String(sessionUser._id || sessionUser.id) === String(id));
 
-    // Перевірка прав: свій профіль — дозволено; чужий — лише з ORG_USERS_READ_ANY
+    // Доступ: свій профіль — дозволено; чужий — лише зі скоупом ORG_USERS_READ_ANY
     const scopes = new Set(getUserScopes(sessionUser));
     if (!isSelf && !scopes.has(SCOPES.ORG_USERS_READ_ANY)) {
       req.flash('userError', 'У вас немає доступу до цього профілю.');
@@ -369,7 +377,8 @@ const ProfilePage = async (req, res) => {
     }
 
     const user = await User.findById(id)
-      .select('firstName lastName email telegramUsername webId department orgRole teamRole position createdAt lastLoginAt')
+      .select('firstName lastName email telegramUsername webId department orgRole teamRole position isActive createdAt lastLoginAt team')
+      .populate('team', 'name')        // підтягуємо назву команди
       .lean();
 
     if (!user) {
@@ -377,15 +386,16 @@ const ProfilePage = async (req, res) => {
       return res.redirect('/users');
     }
 
-    res.render('pages/users/profile', {
-      title: `Профіль · ${user.firstName || ''} ${user.lastName || ''}`.trim(),
+    return res.render('pages/users/profile', {
+      title: `Профіль · ${`${user.firstName || ''} ${user.lastName || ''}`.trim()}`,
       user,
-      isSelf
+      isSelf,                           // для кнопки "Змінити пароль" у шаблоні
+      // userError/userSuccess та myID прокидуємо глобально з app.js, як домовлялись
     });
   } catch (err) {
     console.error(err);
     req.flash('userError', 'Сталася помилка при завантаженні профілю.');
-    res.redirect('/users');
+    return res.redirect('/users');
   }
 };
 
@@ -399,8 +409,69 @@ const RemoveUser = async (req, res) => {
     res.redirect('/users');
   } catch (error) {
     console.error(error);
-    req.flash('userError', 'Сталася помилка, звернись до Ігоря. ' + error.message);
+    req.flash('userError', 'Сталася помилка, звернись до адміністратора. ' + error.message);
     res.redirect('/users');
+  }
+};
+
+/**
+ * POST: Deactivate User
+ */
+const DeactivateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // не дозволяємо вимикати самого себе
+    if (String(req.session?.user?.id) === String(id)) {
+      req.flash('userError', 'Не можна деактивувати власний обліковий запис.');
+      return res.redirect('/users');
+    }
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { $set: { isActive: false } },
+      { new: true, lean: true }
+    );
+    if (!user) {
+      req.flash('userError', 'Користувача не знайдено.');
+      return res.redirect('/users');
+    }
+
+    // кілл усіх його сесій
+    await revokeUserSessions(id);
+
+    req.flash('userSuccess', `Користувача ${user.firstName || ''} ${user.lastName || ''} деактивовано.`);
+    return res.redirect('/users');
+  } catch (e) {
+    console.error(e);
+    req.flash('userError', 'Не вдалося деактивувати користувача.');
+    return res.redirect('/users');
+  }
+};
+
+/**
+ * POST: Activate User
+ */
+const ActivateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { $set: { isActive: true } },
+      { new: true, lean: true }
+    );
+    if (!user) {
+      req.flash('userError', 'Користувача не знайдено.');
+      return res.redirect('/users');
+    }
+
+    req.flash('userSuccess', `Користувача ${user.firstName || ''} ${user.lastName || ''} активовано.`);
+    return res.redirect('/users');
+  } catch (e) {
+    console.error(e);
+    req.flash('userError', 'Не вдалося активувати користувача.');
+    return res.redirect('/users');
   }
 };
 
@@ -411,5 +482,7 @@ module.exports = {
   EditUserPage,
   EditUser,
   ProfilePage,
-  RemoveUser
+  RemoveUser,
+  DeactivateUser,
+  ActivateUser
 };
