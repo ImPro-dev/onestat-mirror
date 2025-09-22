@@ -2374,7 +2374,8 @@ let components = {
 		selector: 'body',
 		script: [
 			'/components/base/jquery-3.4.1.min.js',
-			'/components/base/jquery-ui.min.js'
+			'/components/base/jquery-ui.min.js',
+			'/components/addField/addField.js',
 		],
 		init: function (nodes) {
 			// $('form').on('submit', function (e) {

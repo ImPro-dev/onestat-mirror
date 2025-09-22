@@ -1,11 +1,8 @@
 module.exports = {
     FB: {
-        adColumnName: 'Название объявления',
-        adColumnName_ua: 'Назва реклами',
-        spendColumnName: 'Сумма затрат (USD)',
-        spendColumnName_ua: 'Сума витрат (USD)',
-        spendRegex: /^Сумма затрат \([A-Z]{3}\)$/,
-        spendRegex_ua: /^Сума витрат \([A-Z]{3}\)$/,
+        adColumnNameRegex: /(Название объявления|Назва реклами|Назва оголошення|Ad name)/u,
+        spendColumnNameRegex: /(Сумма затрат|Сума витрат|Витрачена сума|Amount spent) \(\w{3}\)/u,
+        spendColumnName: 'Сумма затрат',
     },
     Keitaro: {
         subId: 'SubId',
