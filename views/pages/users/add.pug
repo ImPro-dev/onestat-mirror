@@ -21,6 +21,9 @@ block page
                 span= title
             .panel-body
               form(role='form' class='stat-form' method='POST' action='/users/add')
+                // CSRF
+                if typeof csrfToken !== 'undefined'
+                  input(type='hidden', name='_csrf', value=csrfToken)
                 .row
                   if userError && userError.length
                     .col-12.mb-4
@@ -85,9 +88,11 @@ block page
                           type='password'
                           name='password'
                           required
+                          minlength="8"
                           autocomplete='new-password'
                         )
                         .input-group-append
+                          button#genPwdBtn.btn.btn-info.linearicons-rotation-lock(type='button' data-toggle='tooltip', data-original-title='Згенерувати пароль')
                           button.btn.btn-light(type='button', data-toggle='pw', data-target='#password', aria-label='Показати/приховати пароль')
                             span.linearicons-eye
 
@@ -108,5 +113,18 @@ block page
                     a.btn.btn-light(href='/users')
                       span.mdi-keyboard-backspace.mr-2
                       span До списку
+
+    block scripts
+      script(defer src='/components/base/custom/pw-generator.js')
+      script.
+        document.addEventListener('DOMContentLoaded', function () {
+          PasswordTools.init({
+            input:  '#password',
+            toggle: '#togglePwd',
+            gen:    '#genPwdBtn',
+            hint:   '#pwd_hint',
+            length: 14
+          });
+        });
 
   include ../layout/footer
