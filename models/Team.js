@@ -5,10 +5,10 @@ const { Schema, model, Types } = require('mongoose');
 const teamSchema = new Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 128 },
-    department: { type: String, required: true, trim: true, maxlength: 128, index: true },
+    department: { type: String, required: true, trim: true, maxlength: 128 },
     lead: { type: Types.ObjectId, ref: 'User', required: true },
     members: [{ type: Types.ObjectId, ref: 'User' }],
-    isActive: { type: Boolean, default: true, index: true },
+    isActive: { type: Boolean, default: true },
   },
   {
     timestamps: true,

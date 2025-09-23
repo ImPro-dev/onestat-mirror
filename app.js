@@ -7,7 +7,7 @@ const session = require('express-session');
 const flash = require('connect-flash');
 const dbHelper = require('./helpers/dbHelper');
 const MongoStore = require('connect-mongodb-session')(session);
-const csurf = require('csurf');
+const csrf = require('csurf');
 const logger = require('morgan');
 const dotenv = require('dotenv').config();
 
@@ -59,6 +59,7 @@ app.use(session({
   store: store,
 }));
 app.use(flash());
+app.use(csrf());
 app.use(varMiddlware);
 
 // Routes
@@ -94,10 +95,8 @@ app.use((err, req, res, next) => {
   res.render('error');
 });
 
-app.use(csurf());
 // зробимо csrfToken доступним у всіх шаблонах
 app.use((req, res, next) => {
-  res.locals.csrfToken = req.csrfToken();
   // уніфікуємо flash
   res.locals.userError = req.flash('userError');
   res.locals.userSuccess = req.flash('userSuccess');

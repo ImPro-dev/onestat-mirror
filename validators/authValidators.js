@@ -4,7 +4,7 @@
 const { body } = require('express-validator');
 
 const changePasswordRules = [
-  body('oldPassword').trim().notEmpty().withMessage('Вкажіть поточний пароль'),
+  body('currentPassword').trim().notEmpty().withMessage('Вкажіть поточний пароль'),
   body('newPassword')
     .isLength({ min: 8 }).withMessage('Новий пароль має містити мінімум 8 символів')
     .matches(/[A-Za-z]/).withMessage('Новий пароль має містити літери')

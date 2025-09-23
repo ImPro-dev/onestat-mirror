@@ -108,11 +108,14 @@ const Logout = (req, res) => {
     res.redirect('/auth');
   });
 };
+
+// GET: форма зміни пароля
 const ChangePasswordPage = async (req, res) => {
   try {
     return res.render('pages/auth/change-password', {
-      title: 'Змінити пароль',
-      // userError/userSuccess вже доступні в res.locals з app.js
+      title: 'Зміна пароля',
+      error: req.flash('userError'),
+      success: req.flash('userSuccess'),
     });
   } catch (err) {
     console.error(err);
@@ -121,15 +124,31 @@ const ChangePasswordPage = async (req, res) => {
   }
 };
 
+// POST: зміна пароля
 const ChangePassword = async (req, res) => {
   try {
-    const userId = req.session?.user?._id;
+    const userId = req.session?.user?.id || req.session?.user?._id;
     if (!userId) {
-      req.flash('userError', 'Сесія завершена. Увійдіть знову.');
+      req.flash('userError', 'Будь ласка, увійди в систему.');
       return res.redirect('/auth');
     }
 
-    const { oldPassword, newPassword } = req.body;
+    // підтримуємо обидва імені поля
+    const currentPassword = req.body.currentPassword;
+    const { newPassword, confirmPassword } = req.body || {};
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      req.flash('userError', 'Заповни всі поля форми.');
+      return res.redirect('/auth/change-password');
+    }
+    if (newPassword !== confirmPassword) {
+      req.flash('userError', 'Новий пароль і підтвердження не співпадають.');
+      return res.redirect('/auth/change-password');
+    }
+    if (String(newPassword).length < 8) {
+      req.flash('userError', 'Новий пароль має містити щонайменше 8 символів.');
+      return res.redirect('/auth/change-password');
+    }
 
     const user = await User.findById(userId).select('+passwordHash');
     if (!user) {
@@ -137,58 +156,38 @@ const ChangePassword = async (req, res) => {
       return res.redirect('/auth');
     }
 
-    const ok = await dbHelper.comparePassword(oldPassword, user.passwordHash);
-    if (!ok) {
+    const match = await dbHelper.comparePassword(currentPassword, user.passwordHash);
+    if (!match) {
       req.flash('userError', 'Поточний пароль невірний.');
       return res.redirect('/auth/change-password');
     }
 
-    const same = await dbHelper.comparePassword(newPassword, user.passwordHash);
-    if (same) {
+    const isSame = await dbHelper.comparePassword(newPassword, user.passwordHash);
+    if (isSame) {
       req.flash('userError', 'Новий пароль не може збігатися з поточним.');
       return res.redirect('/auth/change-password');
     }
 
-    user.passwordHash = await dbHelper.hashPassword(newPassword);
-    user.lastPasswordChangeAt = new Date();
-    await user.save();
+    const newHash = await dbHelper.hashPassword(newPassword);
+    await User.updateOne(
+      { _id: userId },
+      { $set: { passwordHash: newHash, lastPasswordChangeAt: new Date() } }
+    );
 
-    const currentSid = req.session.id;
+    // прибиваємо всі сесії користувача
+    // try {
+    //   const col = mongoose.connection.collection('sessions');
+    //   await col.deleteMany({ session: { $regex: `"id":"${String(userId)}"` } });
+    // } catch (e) {
+    //   console.error('Failed to revoke sessions after password change:', e);
+    // }
 
-    req.session.regenerate(async err => {
-      if (err) {
-        console.error('Session regenerate error:', err);
-      }
-
-      // поновлюємо дані у новій сесії
-      req.session.user = {
-        _id: user._id,
-        email: user.email,
-        orgRole: user.orgRole,
-        grants: user.grants || [],
-        department: user.department,
-        team: user.team,
-        teamRole: user.teamRole,
-        firstName: user.firstName,
-        lastName: user.lastName,
-      };
-      req.session.isAuthenticated = true;
-
-      try {
-        const resKill = await killOtherSessions(user._id, currentSid);
-        if (resKill.deletedCount) {
-          console.log(`Killed ${resKill.deletedCount} other sessions for user ${user._id}`);
-        }
-      } catch (e) {
-        console.error('Failed to kill other sessions:', e);
-      }
-
-      req.flash('userSuccess', 'Пароль змінено. Вас виведено з інших пристроїв.');
-      return res.redirect('/users/' + user._id);
-    });
+    req.flash('userSuccess', 'Пароль успішно змінено.');
+    // return res.redirect('/auth');
+    return res.redirect('/users/' + userId);
   } catch (err) {
     console.error(err);
-    req.flash('userError', 'Не вдалося змінити пароль. Спробуйте пізніше.');
+    req.flash('userError', 'Сталася помилка при зміні пароля.');
     return res.redirect('/auth/change-password');
   }
 };

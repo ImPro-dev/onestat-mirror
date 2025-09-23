@@ -27,5 +27,7 @@ module.exports = function variables(req, res, next) {
   res.locals.teamRole = user?.teamRole || null;
   res.locals.fullName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '';
 
+  res.locals.csrfToken = req.csrfToken ? req.csrfToken() : undefined;
+
   next();
 };

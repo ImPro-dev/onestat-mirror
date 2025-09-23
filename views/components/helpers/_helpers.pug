@@ -41,3 +41,10 @@ mixin departmentBadge(dept)
 	- const map = { 'Media Buying': 'info', 'Marketing': 'info' };
 	- const color = map[dept] || 'light';
 	span(class='badge badge-' + color)= dept || '-'
+
+//- Бейдж Active/Non-active
+mixin statusBadge(isActive)
+	if isActive
+		span.badge.badge-success Активний
+	else
+		span.badge.badge-danger Неактивний

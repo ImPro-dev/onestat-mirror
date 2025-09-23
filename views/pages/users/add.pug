@@ -78,10 +78,18 @@ block page
 
                     .form-group
                       label.form-label(for='password') Пароль:
-                      .input-group
+                      .input-group.password-toggle
                         .input-group-prepend
                           span.input-group-text.linearicons-lock
-                        input#password.form-control(type='password', name='password', required)
+                        input#password.form-control(
+                          type='password'
+                          name='password'
+                          required
+                          autocomplete='new-password'
+                        )
+                        .input-group-append
+                          button.btn.btn-light(type='button', data-toggle='pw', data-target='#password', aria-label='Показати/приховати пароль')
+                            span.linearicons-eye
 
                     .form-group
                       label.form-label(for='department') Відділ:

@@ -1,4 +1,3 @@
-// views/pages/users/profile.pug
 extends ../../components/base/_skeleton
 include ../../components/rd-navbar/_rd-navbar
 include ../../components/helpers/_helpers
@@ -13,6 +12,26 @@ block page
 
   section.section-xs.bg-white
     .container-fluid
+      // Flash
+      if userError && userError.length
+        +alert({close:false}).alert-danger.alert-sm
+          span.alert-icon.fa-exclamation-triangle
+          if Array.isArray(userError)
+            each e in userError
+              span= e
+              br
+          else
+            span= userError
+
+      if userSuccess && userSuccess.length
+        +alert({close:false}).alert-success.alert-sm
+          span.alert-icon.linearicons-checkmark-circle
+          if Array.isArray(userSuccess)
+            each m in userSuccess
+              span= m
+              br
+          else
+            span= userSuccess
       .media.flex-column.flex-sm-row.align-items-sm-center.group-30
         .media-item
           // аватар (плейсхолдер або власний)
@@ -37,30 +56,6 @@ block page
 
           if user.position
             p.text-muted.mb-0= user.position
-
-      // Flash
-      if userError && userError.length
-        .row.mt-3
-          .col-12
-            +alert({close:false}).alert-danger.alert-sm
-              span.alert-icon.fa-exclamation-triangle
-              if Array.isArray(userError)
-                ul.mb-0
-                  each e in userError
-                    li= e
-              else
-                span= userError
-      if userSuccess && userSuccess.length
-        .row.mt-3
-          .col-12
-            +alert({close:false}).alert-success.alert-sm
-              span.alert-icon.linearicons-checkmark-circle
-              if Array.isArray(userSuccess)
-                ul.mb-0
-                  each m in userSuccess
-                    li= m
-              else
-                span= userSuccess
 
       .row.mt-4
         // --- Left column ---

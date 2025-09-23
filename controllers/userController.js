@@ -2,6 +2,7 @@
 'use strict';
 
 const User = require('../models/User');
+const Team = require('../models/Team');
 const Department = require('../models/Department');
 
 const dbHelper = require('../helpers/dbHelper');
@@ -361,7 +362,10 @@ const EditUser = async (req, res) => {
 
 
 /**
- * GET: User profile page (залишаю як у тебе, мінімально)
+ * GET: User profile page
+ * Доступ:
+ *  - власний профіль: завжди
+ *  - чужий профіль: вимагає ORG_USERS_READ_ANY
  */
 const ProfilePage = async (req, res) => {
   try {
@@ -378,7 +382,7 @@ const ProfilePage = async (req, res) => {
 
     const user = await User.findById(id)
       .select('firstName lastName email telegramUsername webId department orgRole teamRole position isActive createdAt lastLoginAt team')
-      .populate('team', 'name')        // підтягуємо назву команди
+      .populate('team', 'name department') // <- працюватиме після require('../models/Team')
       .lean();
 
     if (!user) {
@@ -389,8 +393,9 @@ const ProfilePage = async (req, res) => {
     return res.render('pages/users/profile', {
       title: `Профіль · ${`${user.firstName || ''} ${user.lastName || ''}`.trim()}`,
       user,
-      isSelf,                           // для кнопки "Змінити пароль" у шаблоні
-      // userError/userSuccess та myID прокидуємо глобально з app.js, як домовлялись
+      isSelf,
+      userError: req.flash('userError'),
+      userSuccess: req.flash('userSuccess'),
     });
   } catch (err) {
     console.error(err);
