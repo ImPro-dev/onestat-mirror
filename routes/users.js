@@ -1,3 +1,4 @@
+// routes/users.js
 'use strict';
 
 const express = require('express');
@@ -5,97 +6,104 @@ const router = express.Router();
 
 const userController = require('../controllers/userController');
 const auth = require('../middleware/auth');
-const { requireAny /*, requireAll */ } = require('../middleware/requireScopes');
+const { requireAny } = require('../middleware/requireScopes');
+const { avatarUploadGuard } = require('../middleware/uploadAvatar');
 const { SCOPES } = require('../scripts/permissions/scopes');
 
-// Обмеження для ObjectId (24 hex-символи)
+const csrf = require('csurf');
+const csrfProtection = csrf({ cookie: false });
+const ensureCsrfLocal = (req, res, next) => { res.locals.csrfToken = req.csrfToken(); next(); };
+
 const OID = '([a-fA-F0-9]{24})';
 
-/**
- * GET users listing.
- */
+// LIST
 router.get('/',
   auth,
   requireAny(SCOPES.ORG_USERS_READ_ANY),
+  csrfProtection, ensureCsrfLocal,
   userController.UserList
 );
 
-/**
- * Rendering form to create new user
- * Дозволити: admin/manager (WRITE_ANY) та team lead (CREATE_BASIC)
- */
+// ADD
 router.get('/add',
   auth,
   requireAny(SCOPES.ORG_USERS_WRITE_ANY, SCOPES.ORG_USERS_CREATE_BASIC),
+  csrfProtection, ensureCsrfLocal,
   userController.AddUserPage
 );
-
-/**
- * Create new user
- * Дозволити: admin/manager (WRITE_ANY) та team lead (CREATE_BASIC)
- */
 router.post('/add',
   auth,
   requireAny(SCOPES.ORG_USERS_WRITE_ANY, SCOPES.ORG_USERS_CREATE_BASIC),
+  csrfProtection,
   userController.AddUser
 );
 
-/**
- * Rendering form to edit existing user
- * Дозволити: admin/manager (WRITE_ANY) або team lead (EDIT_BASIC)
- */
+// EDIT
 router.get(`/edit/:id(${OID})`,
   auth,
   requireAny(SCOPES.ORG_USERS_WRITE_ANY, SCOPES.ORG_USERS_EDIT_BASIC),
+  csrfProtection, ensureCsrfLocal,
   userController.EditUserPage
 );
-
-/**
- * Edit user data
- * Дозволити: admin/manager (WRITE_ANY) або team lead (EDIT_BASIC)
- */
 router.post('/edit',
   auth,
   requireAny(SCOPES.ORG_USERS_WRITE_ANY, SCOPES.ORG_USERS_EDIT_BASIC),
+  csrfProtection,
   userController.EditUser
 );
 
-/**
- * Remove user (краще POST/DELETE ніж GET)
- * Дозволити тільки повні права
- */
+// AVATAR: serve
+router.get(`/:id(${OID})/avatar`,
+  auth,
+  userController.ServeAvatar
+);
+
+// AVATAR: upload (GET form + POST)
+router.get(`/:id(${OID})/avatar/upload`,
+  auth,
+  csrfProtection, ensureCsrfLocal,
+  userController.UploadAvatarPage
+);
+router.post(`/:id(${OID})/avatar/upload`,
+  auth,
+  avatarUploadGuard('avatar'),
+  csrfProtection,
+  userController.UploadAvatar
+);
+
+// AVATAR: delete (NEW)
+router.post(`/:id(${OID})/avatar/delete`,
+  auth,
+  csrfProtection,
+  userController.DeleteAvatar
+);
+
+// REMOVE (POST)
 router.post(`/remove/:id(${OID})`,
   auth,
   requireAny(SCOPES.ORG_USERS_WRITE_ANY),
+  csrfProtection,
   userController.RemoveUser
 );
 
-/**
- * User profile page
- * Доступ: у контролері дозволяємо власнику без скоупів, інакше вимагаємо ORG_USERS_READ_ANY
- */
+// PROFILE (додали CSRF, щоб у шаблоні був токен для кнопок/форм)
 router.get(`/:id(${OID})`,
   auth,
+  csrfProtection, ensureCsrfLocal,
   userController.ProfilePage
 );
 
-/**
- * Deactivate user
- * Дозволити тільки повні права
- */
+// (De)Activate
 router.post(`/:id(${OID})/deactivate`,
   auth,
   requireAny(SCOPES.ORG_USERS_WRITE_ANY),
+  csrfProtection,
   userController.DeactivateUser
 );
-
-/**
- * Activate user
- * Дозволити тільки повні права
- */
 router.post(`/:id(${OID})/activate`,
   auth,
   requireAny(SCOPES.ORG_USERS_WRITE_ANY),
+  csrfProtection,
   userController.ActivateUser
 );
 

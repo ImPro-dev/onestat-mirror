@@ -1,3 +1,6 @@
+// app.js
+'use strict';
+
 const express = require('express');
 const path = require('path');
 const helmet = require('helmet');
@@ -5,13 +8,13 @@ const createError = require('http-errors');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const flash = require('connect-flash');
-const dbHelper = require('./helpers/dbHelper');
 const MongoStore = require('connect-mongodb-session')(session);
 const csrf = require('csurf');
 const logger = require('morgan');
-const dotenv = require('dotenv').config();
+require('dotenv').config();
 
-const varMiddlware = require('./middleware/variables');
+const dbHelper = require('./helpers/dbHelper');
+const varMiddleware = require('./middleware/variables');
 
 // Routes
 const indexRouter = require('./routes/index');
@@ -25,46 +28,56 @@ const statisticsRouter = require('./routes/statistics');
 const downloadRouter = require('./routes/download');
 const buyingTeamRouter = require('./routes/buying-team');
 
-// DB Connection
+// DB
 const { MONGODB_URI, SESSION_SECRET, COOKIE_AGE } = process.env;
 dbHelper.dbConnect(MONGODB_URI);
 
 const app = express();
-const store = new MongoStore({
-  collection: 'sessions',
-  uri: MONGODB_URI
-});
+const store = new MongoStore({ collection: 'sessions', uri: MONGODB_URI });
 
-// view engine setup
+// views
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
+// middlewares (base)
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-// app.use(helmet());
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+// app.use(helmet()); // вмикай коли потрібно
+
+// session + flash
 app.use(session({
   secret: SESSION_SECRET,
   resave: true,
   saveUninitialized: false,
-  // cookie: {
-  //   // expires: new Date(Date.now() + (24 * 60 * 60 * 1000)),
-  //   expires: new Date(Date.now() + (20 * 1000)),
-  // },
-  cookie: {
-    maxAge: 1000 * 60 * 60 * COOKIE_AGE
-  },
-  store: store,
+  cookie: { maxAge: 1000 * 60 * 60 * Number(COOKIE_AGE || 24) },
+  store
 }));
 app.use(flash());
-app.use(csrf());
-app.use(varMiddlware);
 
-// Routes
+// locals (єдине місце)
+app.use(varMiddleware);
+
+// static
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), { maxAge: '7d' }));
+
+// CSRF: застосовуємо точково на потрібних роутерах
+const csrfProtection = csrf({ cookie: false });
+const injectCsrf = (req, res, next) => {
+  // дублюємо токен у locals (раптом змінився після varMiddleware)
+  res.locals.csrfToken = (typeof req.csrfToken === 'function') ? req.csrfToken() : undefined;
+  next();
+};
+
+// routes
 app.use('/', indexRouter);
-app.use('/auth', authRouter);
+
+// auth: показ форм + POST — під CSRF
+app.use('/auth', csrfProtection, injectCsrf, authRouter);
+
+// інші розділи (додай csrf за потреби на POST-форми)
 app.use('/dashboard', dashboardRouter);
 app.use('/users', usersRouter);
 app.use('/documentation', documentationRouter);
@@ -74,57 +87,29 @@ app.use('/statistics', statisticsRouter);
 app.use('/download', downloadRouter);
 app.use('/buying-team', buyingTeamRouter);
 
-// catch 404 and forward to error handler
-app.use(function (req, res, next) {
-  next(createError(404, 'Сторінку не знайдено!'));
-});
+// 404
+app.use((req, res, next) => next(createError(404, 'Сторінку не знайдено!')));
 
 // error handler
 app.use((err, req, res, next) => {
-  // set locals, only providing error in development
+  // CSRF помилка → повертаємо на попередню сторінку/логін з флешем
+  // if (err && err.code === 'EBADCSRFTOKEN') {
+  //   req.flash('error', 'Невалідний CSRF токен. Онови сторінку й спробуй ще раз.');
+  //   return res.redirect('back');
+  // }
+
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  if (err && err.code === 'EBADCSRFTOKEN') {
-    req.flash('error', 'Невалідний CSRF токен. Онови сторінку й спробуй ще раз.');
-    return res.status(403).redirect('/auth');   // або куди логічно
-  }
-
-  // render the error page
   res.status(err.status || 500);
   res.render('error');
 });
 
-// зробимо csrfToken доступним у всіх шаблонах
-app.use((req, res, next) => {
-  // уніфікуємо flash
-  res.locals.userError = req.flash('userError');
-  res.locals.userSuccess = req.flash('userSuccess');
-  next();
+app.use((err, req, res, next) => {
+  if (err && err.code === 'EBADCSRFTOKEN') {
+    req.flash('userError', 'Невалідний CSRF токен. Онови сторінку й спробуй ще раз.');
+    return res.redirect('back');
+  }
+  next(err);
 });
-
-// async function connectDB() {
-//   try {
-//     await mongoose.connect(MONGODB_URI);
-//     console.log('Connected!');
-//   } catch (error) {
-//     console.error(error);
-//   }
-// }
-
-// connectDB();
-// mongoose.connect()
-//   .then(() => console.log('Connected!'))
-//   .catch(() => console.error('Database connection failed!'));
-
-// console.log(process.env.PORT);
-// console.log(module.parent);
-
-
-// async () => {
-//   app.listen(PORT || 3000, () => {
-//     console.log(`Server is running on http://localhost:${PORT}`);
-//   });
-// }
 
 module.exports = app;

@@ -1,33 +1,35 @@
+// middleware/variables.js
 'use strict';
 
-module.exports = function variables(req, res, next) {
-  const user = req.session?.user || null;
+module.exports = function (req, res, next) {
+  // auth/session info
+  const u = req.session?.user || null;
+  res.locals.user = u;
+  res.locals.isAuth = !!req.session.isAuthenticated;
 
-  // Чи авторизований
-  res.locals.isAuth = !!req.session?.isAuthenticated;
+  // id може бути _id або id (toString())
+  res.locals.myID = u?.id || (u?._id ? String(u._id) : null);
 
-  // Базові ідентифікатори
-  res.locals.myID = user ? String(user._id || user.id || '') : null;
-  res.locals.webID = user?.webId || null;
+  // кілька зручних полів (не обов’язкові — будуть undefined/null)
+  res.locals.webID = u?.webId || null;
+  res.locals.userFirstname = u?.firstName || u?.firstname || null;
+  res.locals.userLastname = u?.lastName || u?.lastname || null;
+  res.locals.role = u?.orgRole || u?.role || null;
+  res.locals.position = u?.position || null;
 
-  // Імʼя/прізвище
-  res.locals.userFirstname = user?.firstName || '';
-  res.locals.userLastname = user?.lastName || '';
+  // швидкі прапорці (історичні; не покладайся на них для безпеки)
+  res.locals.isUser = res.locals.role === 'user';
+  res.locals.isManager = res.locals.role === 'manager';
+  res.locals.isAdmin = res.locals.role === 'admin';
 
-  // Ролі
-  const orgRole = user?.orgRole || null;
-  res.locals.role = orgRole;
-  res.locals.isUser = orgRole === 'user';
-  res.locals.isManager = orgRole === 'manager';
-  res.locals.isAdmin = orgRole === 'admin';
+  // flash (уніфіковано)
+  res.locals.userError = req.flash('userError');
+  res.locals.userSuccess = req.flash('userSuccess');
+  res.locals.error = req.flash('error');
+  res.locals.success = req.flash('success');
 
-  // Додаткові зручності
-  res.locals.position = user?.position || '';
-  res.locals.department = user?.department || '';
-  res.locals.teamRole = user?.teamRole || null;
-  res.locals.fullName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '';
-
-  res.locals.csrfToken = req.csrfToken ? req.csrfToken() : undefined;
+  // csrfToken: якщо на маршруті підключений csurf — метод існує
+  res.locals.csrfToken = (typeof req.csrfToken === 'function') ? req.csrfToken() : undefined;
 
   next();
 };

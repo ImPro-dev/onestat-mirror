@@ -29,7 +29,6 @@ const CreateTeamPage = async (req, res, next) => {
     res.render('pages/teams/create', {
       title: 'Створити команду',
       candidates, // користувачі без команди (щоб не ламати одно-командне правило)
-      teamError: req.flash('teamError'),
     });
   } catch (e) { next(e); }
 };

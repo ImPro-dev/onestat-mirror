@@ -45,6 +45,7 @@ const userSchema = new Schema(
 
     grants: [{ type: String }],
 
+    avatarUpdatedAt: { type: Date, default: null },
     isActive: { type: Boolean, default: true },
     lastLoginAt: { type: Date },
   },

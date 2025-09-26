@@ -2388,13 +2388,13 @@ let components = {
 	confirmation: {
 		selector: '[data-confirmation]',
 		styles: [
-			'./components/modal/modal.css',
-			'./components/animate/animate.css'
+			'/components/modal/modal.css',
+			'/components/animate/animate.css'
 		],
 		script: [
-			'./components/base/jquery-3.4.1.min.js',
-			'./components/bootstrap/js/popper.js',
-			'./components/bootstrap/js/bootstrap.min.js'
+			'/components/base/jquery-3.4.1.min.js',
+			'/components/bootstrap/js/popper.js',
+			'/components/bootstrap/js/bootstrap.min.js'
 		],
 		init: function (nodes) {
 			let modalDynamic = $('#modal-dynamic');
