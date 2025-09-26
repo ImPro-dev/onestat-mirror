@@ -1,0 +1,212 @@
+extends ../../components/base/_skeleton
+include ../../components/rd-navbar/_rd-navbar
+
+block variables
+  - pageName = title;
+  - htmlClass.push('page-small-footer');
+
+block page
+  header.section.page-header
+    +rd-navbar
+
+  section.section-xs
+    .container
+      .row.justify-content-center
+        .col-lg-7
+          .panel
+            .panel-header
+              h5.panel-title
+                span.panel-icon.linearicons-cloud-upload
+                |  #{title}
+            .panel-body
+
+              // Flash
+              if userError && userError.length
+                +alert({close:false}).alert-danger.alert-sm.mb-3
+                  span.alert-icon.fa-exclamation-triangle
+                  if Array.isArray(userError)
+                    each e in userError
+                      span= e
+                      br
+                  else
+                    span= userError
+
+              if userSuccess && userSuccess.length
+                +alert({close:false}).alert-success.alert-sm.mb-3
+                  span.alert-icon.linearicons-checkmark-circle
+                  if Array.isArray(userSuccess)
+                    each m in userSuccess
+                      span= m
+                      br
+                  else
+                    span= userSuccess
+
+              // === Avatar Uploader (radmin-style) ===
+              form#avatarForm(method='POST', action=`/users/${user._id}/avatar/upload`, enctype='multipart/form-data', novalidate)
+                if typeof csrfToken !== 'undefined'
+                  input(type='hidden', name='_csrf', value=csrfToken)
+
+                // Поточний аватар + прев’ю нового
+                .d-flex.flex-column.flex-md-row.align-items-center.mb-4
+                  .text-center.mr-md-4.mb-3.mb-md-0
+                    img#currentAvatar.rounded-circle(
+                      src=`/users/${user._id}/avatar`
+                      alt='current avatar'
+                      width='120'
+                      height='120'
+                      style='object-fit:cover;'
+                    )
+                    .small.text-muted.mt-2 Поточний аватар
+
+                  .text-center
+                    img#previewAvatar.rounded-circle(
+                      src=''
+                      alt='preview'
+                      width='120'
+                      height='120'
+                      style='object-fit:cover; display:none;'
+                    )
+                    .small.text-muted.mt-2(id='previewHint' style='display:none;') Новий аватар
+
+                // Drag & Drop зона
+                .card.shadow-sm
+                  .card-body
+                    .uploader-dropzone#dropzone(
+                      style='border:2px dashed #e3e6ef; border-radius:10px; padding:28px; text-align:center; cursor:pointer;'
+                    )
+                      span.linearicons-cloud-upload.d-block(style='font-size:40px; line-height:1;')
+                      h6.mt-2.mb-1 Перетягни файл сюди
+                      p.text-muted.mb-0 або натисни, щоб обрати зображення (JPG / PNG / WEBP, до 2MB)
+
+                      // Схований інпут
+                      input#avatarInput(type='file', name='avatar', accept='image/*', style='display:none;' required)
+
+                // Деталі файлу
+                .row.mt-3
+                  .col-md-6
+                    .form-group.mb-2
+                      label.form-label.mb-1 Формат та розмір
+                      .d-flex.align-items-center
+                        span.mdi-file-image-outline.mr-2
+                        span#fileMeta.text-muted — не обрано —
+                  .col-md-6.text-md-right.mt-2.mt-md-0
+                    button.btn.btn-light.btn-sm#btnClear(type='button' disabled)
+                      span.linearicons-cross.mr-1
+                      | Очистити вибір
+
+                // Підказки
+                .alert.alert-info.alert-sm.mt-3
+                  span.alert-icon.mdi-information-outline
+                  |  Рекомендації: квадратне зображення мінімум 500×500, у хорошій якості.
+
+                // Дії
+                .mt-3.d-flex.flex-wrap.align-items-center
+                  button.btn.btn-primary.mr-2.mb-2(type='submit' id='btnUpload' disabled)
+                    span.linearicons-cloud-upload.mr-2
+                    | Завантажити
+                  a.btn.btn-light.mb-2(href=`/users/${user._id}`)
+                    span.mdi-keyboard-backspace.mr-2
+                    | Назад до профілю
+
+  // Підключення потрібних стилів/скриптів radmin (локальні)
+  // (ті самі, що використовуються для модалок/базових елементів; без зовнішніх CDN)
+  block scripts
+    // Невеликий JS для drag&drop + прев’ю
+    script.
+      (function(){
+        var dz = document.getElementById('dropzone');
+        var input = document.getElementById('avatarInput');
+        var preview = document.getElementById('previewAvatar');
+        var previewHint = document.getElementById('previewHint');
+        var meta = document.getElementById('fileMeta');
+        var btnUpload = document.getElementById('btnUpload');
+        var btnClear = document.getElementById('btnClear');
+        var form = document.getElementById('avatarForm');
+
+        var MAX_SIZE = 2 * 1024 * 1024; // 2MB
+        var ALLOWED = ['image/jpeg','image/png','image/webp'];
+
+        function resetPreview() {
+          preview.style.display = 'none';
+          preview.src = '';
+          previewHint.style.display = 'none';
+          meta.textContent = '— не обрано —';
+          btnUpload.disabled = true;
+          btnClear.disabled = true;
+        }
+
+        function formatSize(bytes) {
+          if (bytes < 1024) return bytes + ' B';
+          if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+          return (bytes/1024/1024).toFixed(1) + ' MB';
+        }
+
+        function handleFile(file) {
+          if (!file) return;
+          if (ALLOWED.indexOf(file.type) === -1) {
+            alert('Дозволені формати: JPG, PNG, WEBP');
+            input.value = '';
+            resetPreview();
+            return;
+          }
+          if (file.size > MAX_SIZE) {
+            alert('Файл завеликий. Максимум 2MB');
+            input.value = '';
+            resetPreview();
+            return;
+          }
+          meta.textContent = (file.type.replace('image/','').toUpperCase()) + ' · ' + formatSize(file.size);
+
+          var reader = new FileReader();
+          reader.onload = function(e){
+            preview.src = e.target.result;
+            preview.style.display = 'inline-block';
+            previewHint.style.display = 'block';
+            btnUpload.disabled = false;
+            btnClear.disabled = false;
+          };
+          reader.readAsDataURL(file);
+        }
+
+        // click to open dialog
+        dz.addEventListener('click', function(){
+          input.click();
+        });
+
+        // drag over
+        dz.addEventListener('dragover', function(e){
+          e.preventDefault();
+          dz.style.borderColor = '#b6c2e4';
+          dz.style.background = '#f9fbff';
+        });
+        dz.addEventListener('dragleave', function(){
+          dz.style.borderColor = '#e3e6ef';
+          dz.style.background = 'transparent';
+        });
+        dz.addEventListener('drop', function(e){
+          e.preventDefault();
+          dz.style.borderColor = '#e3e6ef';
+          dz.style.background = 'transparent';
+          if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+            input.files = e.dataTransfer.files; // передамо у справжній input
+            handleFile(e.dataTransfer.files[0]);
+          }
+        });
+
+        // on change
+        input.addEventListener('change', function(e){
+          if (input.files && input.files[0]) {
+            handleFile(input.files[0]);
+          } else {
+            resetPreview();
+          }
+        });
+
+        btnClear.addEventListener('click', function(){
+          input.value = '';
+          resetPreview();
+        });
+
+        // стартовий стан
+        resetPreview();
+      })();

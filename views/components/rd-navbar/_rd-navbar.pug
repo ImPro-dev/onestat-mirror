@@ -63,14 +63,15 @@ mixin rd-navbar
 						isolate: '[data-multi-switch]'
 					} )
 						.media.align-items-center
-							img.rounded-circle(src='/images/users/user-01-165x165.png', width='50', height='50', alt='')
+							img.rounded-circle(src=`/users/${myID}/avatar${user.avatarUpdatedAt ? '?v=' + new Date(user.avatarUpdatedAt).getTime() : ''}`, width='50', height='50', alt='')
+							//- img.rounded-circle(src='/images/users/user-01-165x165.png', width='50', height='50', alt='')
 							.media-body.ml-2
 								p #{userFirstname} #{userLastname}
 					#subpanel-user.rd-navbar-subpanel
 						.panel
 							.panel-header
 								.group-5.d-flex.flex-wrap.align-items-center
-									img.rounded-circle.mr-2(src='/images/users/user-01-165x165.png', width='50', height='50', alt='')
+									img.rounded-circle(src=`/users/${myID}/avatar${user.avatarUpdatedAt ? '?v=' + new Date(user.avatarUpdatedAt).getTime() : ''}`, width='50', height='50', alt='')
 									h6.panel-title #{userFirstname} #{userLastname}
 							.panel-body.p-0.scroller.scroller-vertical
 								.list-group

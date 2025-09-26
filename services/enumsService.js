@@ -8,10 +8,10 @@ const Department = require('../models/Department');
 
 // ----- Simple in-memory cache -----
 let cache = {
-  orgRoles: null,   // [{value,label,department?,order,isActive}]
-  teamRoles: null,   // "
-  deptRoles: null,   // "
-  departments: null,   // "
+  orgRoles: null,     // [{value,label,order,isActive}]
+  teamRoles: null,    // [{value,label,department?,order,isActive}]
+  deptRoles: null,    // [{value,label,department?,order,isActive}]
+  departments: null,  // [{value,label,order,isActive}]
 };
 let lastLoadAt = 0;
 const TTL_MS = 60 * 1000; // 1 хвилина
@@ -38,39 +38,43 @@ async function loadAll(force = false) {
 }
 
 // ----- Public API -----
+
+// Відділи
 async function getDepartmentOptions() {
   const { departments } = await loadAll();
   return mapOptions(departments);
 }
 
+// Org roles
 async function getOrgRoleOptions() {
   const { orgRoles } = await loadAll();
-  return orgRoles.map(r => ({ value: r.value, label: r.label }));
+  return mapOptions(orgRoles);
 }
 
-async function getTeamRoleOptions() {
+// Team roles: усі департаменти (для глобального фільтра)
+async function getTeamRoleOptionsAll() {
   const { teamRoles } = await loadAll();
-  return teamRoles.map(r => ({ value: r.value, label: r.label }));
+  return mapOptions(teamRoles);
 }
 
-// dept-specific team roles (lead/member/assistant ... з UI-лейблами під відділ)
+// Team roles: лише для конкретного департаменту
 async function getTeamRoleOptionsByDept(department) {
   const { teamRoles } = await loadAll();
   return mapOptions(teamRoles.filter(r => r.department === department));
 }
 
-// dept-specific dept roles (head/… під відділ)
+// Dept roles: лише для конкретного департаменту
 async function getDeptRoleOptionsByDept(department) {
   const { deptRoles } = await loadAll();
   return mapOptions(deptRoles.filter(r => r.department === department));
 }
 
-// Отримати все «як є» (для адмін-панелі довідників, наприклад)
+// Отримати все «як є» (для адмін-UI довідників)
 async function getAllEnumsRaw() {
   return await loadAll();
 }
 
-// Скинути кеш вручну (наприклад після сидінгу/CRUD довідників)
+// Скинути кеш вручну (після сидів/CRUD)
 function invalidateEnumsCache() {
   cache = { orgRoles: null, teamRoles: null, deptRoles: null, departments: null };
   lastLoadAt = 0;
@@ -79,7 +83,7 @@ function invalidateEnumsCache() {
 module.exports = {
   getDepartmentOptions,
   getOrgRoleOptions,
-  getTeamRoleOptions,
+  getTeamRoleOptionsAll,
   getTeamRoleOptionsByDept,
   getDeptRoleOptionsByDept,
   getAllEnumsRaw,

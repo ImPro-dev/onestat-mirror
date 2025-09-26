@@ -18,7 +18,6 @@ const Auth = async (req, res) => {
     title: 'Авторизація',
     isLogin: true,
     captcha: res.recaptcha,
-    error: req.flash('error')
   });
 }
 
@@ -114,8 +113,6 @@ const ChangePasswordPage = async (req, res) => {
   try {
     return res.render('pages/auth/change-password', {
       title: 'Зміна пароля',
-      error: req.flash('userError'),
-      success: req.flash('userSuccess'),
     });
   } catch (err) {
     console.error(err);

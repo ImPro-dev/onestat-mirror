@@ -6,11 +6,15 @@ const Team = require('../models/Team');
 const Department = require('../models/Department');
 
 const dbHelper = require('../helpers/dbHelper');
-const { getOrgRoleOptions, getDepartmentOptions, getTeamRoleOptions } = require('../services/enumsService');
+const { getOrgRoleOptions, getDepartmentOptions, getTeamRoleOptionsAll, getTeamRoleOptionsByDept } = require('../services/enumsService');
 
+const fs = require('fs');
+const path = require('path');
 const { SCOPES, getUserScopes } = require('../scripts/permissions/scopes');
+const { processAndSaveAvatar } = require('../middleware/uploadAvatar');
 const mongoose = require('mongoose');
 
+const AVATAR_DIR = path.join(__dirname, '..', 'uploads', 'avatars');
 
 // const WEBID_RE = /^w\d{3,}$/i;
 
@@ -87,11 +91,13 @@ const UserList = async (req, res) => {
       .select('firstName lastName email telegramUsername webId department orgRole teamRole position isActive createdAt')
       .sort(sort).limit(limit).skip(skip).lean();
 
-    const [departments, orgRoles, teamRoles] = await Promise.all([
+    const [departments, orgRoles] = await Promise.all([
       getDepartmentOptions(),
-      getOrgRoleOptions(),          // потрібні лише для select-фільтра
-      getTeamRoleOptions()          // якщо залишаєш глобальний список; або зроби департаменто-специфічний
+      getOrgRoleOptions(),
     ]);
+    const teamRoles = department
+      ? await getTeamRoleOptionsByDept(department)
+      : await getTeamRoleOptionsAll();
 
     const baseQuery = { q, department, orgRole, teamRole, active, limit: String(limit), sortBy, sortDir };
 
@@ -125,8 +131,6 @@ const UserList = async (req, res) => {
     res.render('pages/users/list', {
       title: 'Користувачі',
       users,
-      userError: req.flash('userError'),
-      userSuccess: req.flash('userSuccess'),
 
       // фільтри (залишені всі)
       departments,
@@ -154,8 +158,6 @@ const UserList = async (req, res) => {
 const AddUserPage = async (req, res) => {
   res.render('pages/users/add', {
     title: 'Новий користувач',
-    userError: req.flash('userError'),
-    userSuccess: req.flash('userSuccess'),
     departments: await getDepartmentOptions(),   // тільки відділи
   });
 };
@@ -274,8 +276,6 @@ const EditUserPage = async (req, res) => {
 
     return res.render('pages/users/edit', {
       title: 'Редагувати дані користувача',
-      userError: req.flash('userError'),
-      userSuccess: req.flash('userSuccess'),
       user,
       departments,
     });
@@ -352,7 +352,7 @@ const EditUser = async (req, res) => {
     );
 
     req.flash('userSuccess', 'Дані користувача збережено.');
-    return res.redirect(`/users/edit/${id}?allow=1`);
+    return res.redirect('/users');
   } catch (err) {
     console.error(err);
     req.flash('userError', 'Сталася помилка, звернись до адміністратора. ' + err.message);
@@ -373,7 +373,6 @@ const ProfilePage = async (req, res) => {
     const sessionUser = req.session?.user || null;
     const isSelf = !!(sessionUser && String(sessionUser._id || sessionUser.id) === String(id));
 
-    // Доступ: свій профіль — дозволено; чужий — лише зі скоупом ORG_USERS_READ_ANY
     const scopes = new Set(getUserScopes(sessionUser));
     if (!isSelf && !scopes.has(SCOPES.ORG_USERS_READ_ANY)) {
       req.flash('userError', 'У вас немає доступу до цього профілю.');
@@ -382,7 +381,7 @@ const ProfilePage = async (req, res) => {
 
     const user = await User.findById(id)
       .select('firstName lastName email telegramUsername webId department orgRole teamRole position isActive createdAt lastLoginAt team')
-      .populate('team', 'name department') // <- працюватиме після require('../models/Team')
+      .populate('team', 'name department')
       .lean();
 
     if (!user) {
@@ -390,17 +389,48 @@ const ProfilePage = async (req, res) => {
       return res.redirect('/users');
     }
 
+    const hasAvatar = fs.existsSync(path.join(AVATAR_DIR, `${id}.webp`));
+
     return res.render('pages/users/profile', {
       title: `Профіль · ${`${user.firstName || ''} ${user.lastName || ''}`.trim()}`,
       user,
       isSelf,
-      userError: req.flash('userError'),
-      userSuccess: req.flash('userSuccess'),
+      canEdit: canEditUserBase(sessionUser, id),
+      hasAvatar,
     });
   } catch (err) {
     console.error(err);
     req.flash('userError', 'Сталася помилка при завантаженні профілю.');
     return res.redirect('/users');
+  }
+};
+
+// --- NEW: Видалення аватара ---
+const DeleteAvatar = async (req, res) => {
+  const id = req.params.id;
+  try {
+    const me = req.session?.user || null;
+    if (!canEditUserBase(me, id)) {
+      req.flash('userError', 'Недостатньо прав для видалення аватара.');
+      return res.redirect(`/users/${id}`);
+    }
+
+    const filePath = path.join(__dirname, '..', 'uploads', 'avatars', `${id}.webp`);
+    try {
+      if (fs.existsSync(filePath)) await fs.promises.unlink(filePath);
+    } catch (e) {
+      // якщо не вдалося видалити — логнемо, але не валимо UX
+      console.error('Avatar unlink error:', e);
+    }
+
+    await User.findByIdAndUpdate(id, { $unset: { avatarUpdatedAt: 1 } });
+
+    req.flash('userSuccess', 'Аватар видалено.');
+    return res.redirect(`/users/${id}`);
+  } catch (e) {
+    console.error(e);
+    req.flash('userError', 'Не вдалося видалити аватар.');
+    return res.redirect(`/users/${id}`);
   }
 };
 
@@ -480,6 +510,86 @@ const ActivateUser = async (req, res) => {
   }
 };
 
+// Віддати картинку: якщо нема — віддати плейсхолдер
+const ServeAvatar = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const filePath = path.join(__dirname, '..', 'uploads', 'avatars', `${userId}.webp`);
+    const placeholder = path.join(__dirname, '..', 'public', 'images', 'users', 'user-01-165x165.png');
+
+    if (fs.existsSync(filePath)) {
+      res.type('image/webp');
+      return fs.createReadStream(filePath).pipe(res);
+    } else {
+      res.type('png');
+      return fs.createReadStream(placeholder).pipe(res);
+    }
+  } catch (e) {
+    console.error(e);
+    return res.sendStatus(404);
+  }
+};
+
+const canEditUserBase = (sessionUser, targetUserId) => {
+  const scopes = new Set(getUserScopes(sessionUser));
+  const isSelf = sessionUser && String(sessionUser._id || sessionUser.id) === String(targetUserId);
+  return isSelf || scopes.has(SCOPES.ORG_USERS_WRITE_ANY);
+};
+
+// Сторінка завантаження
+const UploadAvatarPage = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const me = req.session?.user || null;
+    if (!canEditUserBase(me, id)) {
+      req.flash('userError', 'Недостатньо прав для зміни аватара.');
+      return res.redirect('/users');
+    }
+
+    const user = await User.findById(id).select('firstName lastName').lean();
+    if (!user) {
+      req.flash('userError', 'Користувача не знайдено.');
+      return res.redirect('/users');
+    }
+
+    return res.render('pages/users/avatar', {
+      title: `Аватар · ${user.firstName || ''} ${user.lastName || ''}`.trim(),
+      user,
+    });
+  } catch (e) {
+    console.error(e);
+    req.flash('userError', 'Помилка завантаження сторінки аватара.');
+    return res.redirect('/users');
+  }
+};
+
+// Обробка аплоаду
+const UploadAvatar = async (req, res) => {
+  const id = req.params.id;
+  try {
+    const me = req.session?.user || null;
+    if (!canEditUserBase(me, id)) {
+      req.flash('userError', 'Недостатньо прав для зміни аватара.');
+      return res.redirect('/users');
+    }
+
+    if (!req.file) {
+      req.flash('userError', 'Файл не отримано.');
+      return res.redirect(`/users/${id}/avatar/upload`);
+    }
+
+    await processAndSaveAvatar(id, req.file.buffer);
+    await User.findByIdAndUpdate(id, { $set: { avatarUpdatedAt: new Date() } });
+
+    req.flash('userSuccess', 'Аватар оновлено.');
+    return res.redirect(`/users/${id}`);
+  } catch (e) {
+    console.error(e);
+    req.flash('userError', e.message || 'Не вдалося оновити аватар.');
+    return res.redirect(`/users/${id}/avatar/upload`);
+  }
+};
+
 module.exports = {
   UserList,
   AddUserPage,
@@ -489,5 +599,9 @@ module.exports = {
   ProfilePage,
   RemoveUser,
   DeactivateUser,
-  ActivateUser
+  ActivateUser,
+  ServeAvatar,
+  UploadAvatarPage,
+  UploadAvatar,
+  DeleteAvatar
 };

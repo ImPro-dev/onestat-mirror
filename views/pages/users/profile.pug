@@ -1,5 +1,6 @@
 extends ../../components/base/_skeleton
 include ../../components/rd-navbar/_rd-navbar
+include ../../components/modal-dynamic/_modal-dynamic
 include ../../components/helpers/_helpers
 
 block variables
@@ -13,29 +14,59 @@ block page
   section.section-xs.bg-white
     .container-fluid
       // Flash
-      if userError && userError.length
-        +alert({close:false}).alert-danger.alert-sm
-          span.alert-icon.fa-exclamation-triangle
-          if Array.isArray(userError)
-            each e in userError
-              span= e
-              br
-          else
-            span= userError
-
-      if userSuccess && userSuccess.length
-        +alert({close:false}).alert-success.alert-sm
-          span.alert-icon.linearicons-checkmark-circle
-          if Array.isArray(userSuccess)
-            each m in userSuccess
-              span= m
-              br
-          else
-            span= userSuccess
+      .row
+        if userError && userError.length
+          .col-12.mb-3
+            +alert({close:false}).alert-danger.alert-sm
+              span.alert-icon.fa-exclamation-triangle
+              if Array.isArray(userError)
+                each e in userError
+                  span= e
+                  br
+              else
+                span= userError
+        if userSuccess && userSuccess.length
+          .col-12.mb-3
+            +alert({close:false}).alert-success.alert-sm
+              span.alert-icon.linearicons-checkmark-circle
+              if Array.isArray(userSuccess)
+                each m in userSuccess
+                  span= m
+                  br
+              else
+                span= userSuccess
       .media.flex-column.flex-sm-row.align-items-sm-center.group-30
-        .media-item
+        .media-item.text-center
           // аватар (плейсхолдер або власний)
-          img(src='/images/users/user-01-165x165.png', width='165', height='165', alt='avatar')
+          img(src=`/users/${user._id}/avatar`, width='165', height='165', alt='avatar')
+          if canEdit && isSelf
+            if hasAvatar
+              div
+                a.btn.btn-sm.btn-outline-secondary.mt-2.mr-2(
+                  href=`/users/${user._id}/avatar/upload`
+                  title='Редагувати аватар'
+                  data-toggle='tooltip'
+                )
+                  span.linearicons-pencil5
+                form.d-inline-block(style='right:-6px; top:-6px' method='POST' action=`/users/${user._id}/avatar/delete`)
+                  if typeof csrfToken !== 'undefined'
+                    input(type='hidden', name='_csrf', value=csrfToken)
+                  a.btn.btn-sm.btn-outline-danger.mt-2(
+                    href='#'
+                    title='Видалити аватар'
+                    data-toggle='tooltip'
+                    data-confirmation=JSON.stringify({
+                      title: 'Видалити аватар',
+                      content: 'Видалити аватар?'
+                    })
+                    data-confirm-submit
+                  )
+                    span.linearicons-trash2
+            else
+              a.btn.btn-block.btn-sm.btn-outline-primary.mt-2(href=`/users/${user._id}/avatar/upload`)
+                span.linearicons-cloud-upload.mr-2
+                | Додати аватар
+
 
         .media-body
           h4.mb-2 #{`${user.firstName || ''} ${user.lastName || ''}`.trim() || '—'}
@@ -55,14 +86,14 @@ block page
                 +statusBadge(user.isActive)
 
           if user.position
-            p.text-muted.mb-0= user.position
+            h6.text-muted.mb-0= user.position
 
       .row.mt-4
         // --- Left column ---
-        .col-xl-6
+        .col-xl-4
           ul.list-marked.mt-2.mb-4
             li.list-block-item
-              span.fa-envelope-square.h4.text-warning.mr-3
+              span.mdi-email-outline.h4.text-primary.mr-3
               span Емейл:
               span.ml-2
                 if user.email
@@ -71,29 +102,29 @@ block page
                   span.text-muted —
 
             li.list-block-item
-              span.fa-telegram.h4.text-info.mr-3
+              span.mdi-telegram.h4.text-primary.mr-3
               span Телеграм:
               span.ml-2
                 +telegramFormat(user.telegramUsername)
 
             li.list-block-item
-              span.linearicons-lan.h5.text-primary.mr-3
+              span.mdi-lan.h4.text-primary.mr-3
               span Департамент:
               span.ml-2= user.department || '—'
 
             li.list-block-item
-              span.linearicons-database-lock.h5.text-secondary.mr-3
-              span orgRole:
+              span.mdi-database-plus.h4.text-primary.mr-3
+              span Доступ:
               span.ml-2= user.orgRole || '—'
 
             li.list-block-item
-              span.linearicons-users2.h5.text-secondary.mr-3
-              span teamRole:
+              span.mdi-account-outline.h4.text-primary.mr-3
+              span Роль:
               span.ml-2= user.teamRole || '—'
 
             // --- Команда ---
             li.list-block-item
-              span.linearicons-users.h5.text-secondary.mr-3
+              span.mdi-account-multiple-outline.h4.text-primary.mr-3
               span Команда:
               if user.team
                 span.ml-2
@@ -107,32 +138,32 @@ block page
                 small.d-block.text-muted.ml-5 Менеджер департаменту (без команди)
 
         // --- Right column ---
-        .col-xl-6
+        .col-xl-4
           ul.list-marked.mt-2.mb-4
             li.list-block-item
-              span.mdi-briefcase-check.h4.text-success.mr-3
+              span.mdi-account-location.h4.text-primary.mr-3
               span WebID:
               span.ml-2= user.webId || '—'
 
             li.list-block-item
-              span.linearicons-calendar-full.h5.text-danger.mr-3
+              span.mdi-calendar-check.h4.text-primary.mr-3
               span Створено:
               span.ml-2= user.createdAt ? new Date(user.createdAt).toLocaleString() : '—'
 
             li.list-block-item
-              span.linearicons-user.h5.text-warning.mr-3
+              span.mdi-calendar-clock.h4.text-primary.mr-3
               span Останній вхід:
               span.ml-2= user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : '—'
-
-      // --- Action buttons ---
-      .mt-3
-        a.btn.btn-secondary.mr-3.mb-2(href='/users/edit/' + user._id + '?allow=1')
-          span.linearicons-pencil5.mr-2
-          | Редагувати профіль
-
-        if typeof myID !== 'undefined' && String(myID) === String(user._id)
-          a.btn.btn-light.mr-3.mb-2(href='/auth/change-password')
-            span.linearicons-lock.mr-2
-            | Змінити пароль
-
+      .row
+        .col-12
+          //- Action buttons
+          .mt-3
+            a.btn.btn-secondary.mr-3.mb-2(href='/users/edit/' + user._id + '?allow=1')
+              span.linearicons-pencil5.mr-2
+              | Редагувати профіль
+            if isSelf
+              a.btn.btn-light.mr-3.mb-2(href='/auth/change-password')
+                span.linearicons-lock.mr-2
+                | Змінити пароль
+    +modal-dynamic
   include ../layout/footer
