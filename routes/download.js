@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const config = require('../config/statConfig')
-const auth = require('../middleware/auth');
+const auth = require('../middlewares/auth');
 
 const router = express.Router();
 

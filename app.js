@@ -14,12 +14,15 @@ const logger = require('morgan');
 require('dotenv').config();
 
 const dbHelper = require('./helpers/dbHelper');
-const varMiddleware = require('./middleware/variables');
+const varMiddleware = require('./middlewares/variables');
 
 // Routes
 const indexRouter = require('./routes/index');
 const authRouter = require('./routes/auth');
 const usersRouter = require('./routes/users');
+const teamsRouter = require('./routes/teams');
+const adminUsersRouter = require('./routes/adminUsers');
+
 const dashboardRouter = require('./routes/dashboard');
 const documentationRouter = require('./routes/documentation');
 const botStatisticsRouter = require('./routes/botstatistics');
@@ -66,7 +69,6 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), { maxAge: '7
 // CSRF: застосовуємо точково на потрібних роутерах
 const csrfProtection = csrf({ cookie: false });
 const injectCsrf = (req, res, next) => {
-  // дублюємо токен у locals (раптом змінився після varMiddleware)
   res.locals.csrfToken = (typeof req.csrfToken === 'function') ? req.csrfToken() : undefined;
   next();
 };
@@ -77,9 +79,12 @@ app.use('/', indexRouter);
 // auth: показ форм + POST — під CSRF
 app.use('/auth', csrfProtection, injectCsrf, authRouter);
 
-// інші розділи (додай csrf за потреби на POST-форми)
+// інші розділи
 app.use('/dashboard', dashboardRouter);
 app.use('/users', usersRouter);
+app.use('/teams', teamsRouter);
+app.use('/admin/users', adminUsersRouter);
+
 app.use('/documentation', documentationRouter);
 app.use('/botstatistics', botStatisticsRouter);
 app.use('/pwastatistics', pwaStatisticsRouter);
@@ -92,12 +97,6 @@ app.use((req, res, next) => next(createError(404, 'Сторінку не зна�
 
 // error handler
 app.use((err, req, res, next) => {
-  // CSRF помилка → повертаємо на попередню сторінку/логін з флешем
-  // if (err && err.code === 'EBADCSRFTOKEN') {
-  //   req.flash('error', 'Невалідний CSRF токен. Онови сторінку й спробуй ще раз.');
-  //   return res.redirect('back');
-  // }
-
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
   res.status(err.status || 500);

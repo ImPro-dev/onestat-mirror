@@ -6,12 +6,16 @@ const Team = require('../models/Team');
 const Department = require('../models/Department');
 
 const dbHelper = require('../helpers/dbHelper');
-const { getOrgRoleOptions, getDepartmentOptions, getTeamRoleOptionsAll, getTeamRoleOptionsByDept } = require('../services/enumsService');
+const {
+  getOrgRoleOptions,
+  getDepartmentOptions,
+  getTeamRoleOptionsAll,
+  getTeamRoleOptionsByDept } = require('../services/enumsService');
 
 const fs = require('fs');
 const path = require('path');
 const { SCOPES, getUserScopes } = require('../scripts/permissions/scopes');
-const { processAndSaveAvatar } = require('../middleware/uploadAvatar');
+const { processAndSaveAvatar } = require('../middlewares/uploadAvatar');
 const mongoose = require('mongoose');
 
 const AVATAR_DIR = path.join(__dirname, '..', 'uploads', 'avatars');

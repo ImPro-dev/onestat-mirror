@@ -1,14 +1,14 @@
 'use strict';
 
 const { Router } = require('express');
-const auth = require('../middleware/auth'); // твій існуючий
+const auth = require('../middlewares/auth'); // твій існуючий
 const authController = require('../controllers/authController');
 const Recaptcha = require('express-recaptcha').RecaptchaV2;
 const router = Router();
 const csrf = require('csurf');
 const csrfProtection = csrf({ cookie: false });
 
-const { validate } = require('../middleware/validate');
+const { validate } = require('../middlewares/validate');
 const { changePasswordRules } = require('../validators/authValidators');
 
 const { RECAPTCHA_SITE_KEY, RECAPTCHA_SECRET_KEY } = process.env;
