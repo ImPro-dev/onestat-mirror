@@ -68,8 +68,10 @@ const Login = async (req, res) => {
       lastName: candidate.lastName,
       telegramUsername: candidate.telegramUsername,
       orgRole: candidate.orgRole,
+      deptRole: candidate.deptRole,
       teamRole: candidate.teamRole,
       department: candidate.department,
+      assistantOf: candidate.assistantOf,
       team: candidate.team,
       webId: candidate.webId,
       grants: candidate.grants || [],     // додаткові кастомні скоупи з БД

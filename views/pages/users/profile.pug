@@ -93,7 +93,7 @@ block page
         .col-xl-4
           ul.list-marked.mt-2.mb-4
             li.list-block-item
-              span.mdi-email-outline.h4.text-primary.mr-3
+              span.mdi-email-outline.h4.text-info.mr-3
               span Емейл:
               span.ml-2
                 if user.email
@@ -102,29 +102,29 @@ block page
                   span.text-muted —
 
             li.list-block-item
-              span.mdi-telegram.h4.text-primary.mr-3
+              span.mdi-telegram.h4.text-info.mr-3
               span Телеграм:
               span.ml-2
                 +telegramFormat(user.telegramUsername)
 
             li.list-block-item
-              span.mdi-lan.h4.text-primary.mr-3
+              span.mdi-lan.h4.text-info.mr-3
               span Департамент:
               span.ml-2= user.department || '—'
 
             li.list-block-item
-              span.mdi-database-plus.h4.text-primary.mr-3
+              span.mdi-database-plus.h4.text-info.mr-3
               span Доступ:
               span.ml-2= user.orgRole || '—'
 
             li.list-block-item
-              span.mdi-account-outline.h4.text-primary.mr-3
+              span.mdi-account-outline.h4.text-info.mr-3
               span Роль:
               span.ml-2= user.teamRole || '—'
 
             // --- Команда ---
             li.list-block-item
-              span.mdi-account-multiple-outline.h4.text-primary.mr-3
+              span.mdi-account-multiple-outline.h4.text-info.mr-3
               span Команда:
               if user.team
                 span.ml-2
@@ -141,17 +141,17 @@ block page
         .col-xl-4
           ul.list-marked.mt-2.mb-4
             li.list-block-item
-              span.mdi-account-location.h4.text-primary.mr-3
+              span.mdi-account-location.h4.text-info.mr-3
               span WebID:
               span.ml-2= user.webId || '—'
 
             li.list-block-item
-              span.mdi-calendar-check.h4.text-primary.mr-3
+              span.mdi-calendar-check.h4.text-info.mr-3
               span Створено:
               span.ml-2= user.createdAt ? new Date(user.createdAt).toLocaleString() : '—'
 
             li.list-block-item
-              span.mdi-calendar-clock.h4.text-primary.mr-3
+              span.mdi-calendar-clock.h4.text-info.mr-3
               span Останній вхід:
               span.ml-2= user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : '—'
       .row

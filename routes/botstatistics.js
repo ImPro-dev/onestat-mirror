@@ -6,10 +6,10 @@ const fs = require('fs');
 const path = require('path');
 const { createObjectCsvWriter } = require('csv-writer');
 const { parse } = require("csv-parse");
-const auth = require('../middleware/auth');
+const auth = require('../middlewares/auth');
 
 const config = require('../config/statConfig')
-const upload = require('../middleware/upload');
+const upload = require('../middlewares/upload');
 const fields = [
   { name: 'fb_stat', maxCount: 1 },
   { name: 'keitaro_stat_conversions', maxCount: 1 }

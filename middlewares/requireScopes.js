@@ -1,10 +1,20 @@
+// middlewares/requireScopes.js
 'use strict';
 
 const { getUserScopes } = require('../scripts/permissions/scopes');
 
+function pickUser(req, res) {
+  // Пріоритет: varMiddleware -> passport -> session
+  return (res?.locals?.user)
+    || (res?.locals?.currentUser)
+    || req.user
+    || req.session?.user
+    || null;
+}
+
 function requireAny(...needed) {
   return (req, res, next) => {
-    const user = req.session?.user || null;
+    const user = pickUser(req, res);
     const scopes = new Set(getUserScopes(user));
     const ok = needed.some(s => scopes.has(s));
     if (!ok) {
@@ -17,7 +27,7 @@ function requireAny(...needed) {
 
 function requireAll(...needed) {
   return (req, res, next) => {
-    const user = req.session?.user || null;
+    const user = pickUser(req, res);
     const scopes = new Set(getUserScopes(user));
     const ok = needed.every(s => scopes.has(s));
     if (!ok) {

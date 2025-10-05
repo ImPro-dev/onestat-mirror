@@ -5,9 +5,9 @@ const express = require('express');
 const router = express.Router();
 
 const userController = require('../controllers/userController');
-const auth = require('../middleware/auth');
-const { requireAny } = require('../middleware/requireScopes');
-const { avatarUploadGuard } = require('../middleware/uploadAvatar');
+const auth = require('../middlewares/auth');
+const { requireAny } = require('../middlewares/requireScopes');
+const { avatarUploadGuard } = require('../middlewares/uploadAvatar');
 const { SCOPES } = require('../scripts/permissions/scopes');
 
 const csrf = require('csurf');

@@ -39,8 +39,8 @@ const userSchema = new Schema(
 
     // Media Buying специфіка
     webId: {
-      type: String, trim: true,
-      validate: { validator: v => v == null || /^w\d{3,}$/i.test(v), message: 'Invalid webId format' }
+      type: String, trim: true, default: null,
+      validate: { validator: v => v == null || /^\d{3}$/.test(v), message: 'Invalid webId format' }
     },
 
     grants: [{ type: String }],

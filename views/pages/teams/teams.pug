@@ -1,0 +1,76 @@
+extends ../../components/base/_skeleton
+include ../../components/rd-navbar/_rd-navbar
+include ../../components/modal-dynamic/_modal-dynamic
+include ../../components/helpers/_helpers
+
+block variables
+  - pageName = title;
+  - htmlClass.push('page-small-footer');
+
+block page
+  header.section.page-header
+    +rd-navbar
+
+  section.section-xs
+    .container-fluid
+      .row
+        .col-12
+          .panel
+            .panel-header
+              h5.panel-title
+                span.panel-icon.linearicons-cash-dollar
+                = ' '
+                span= title
+            .panel-body
+              .d-flex.justify-content-end.mb-3
+                a.btn.btn-primary(href='/teams/mediabuying/management')
+                  span.linearicons-cog.mr-2
+                  | Управління
+
+              // --- Teams tree (рендериться JS) ---
+              #teamsTree.d-grid.gap-3(data-department=department)
+
+  // --- Modals ---
+  // Перейменувати команду
+  #renameTeamModal.modal(tabindex='-1')
+    .modal-dialog
+      .modal-content
+        .modal-header
+          h5.modal-title Перейменувати команду
+          button(type='button', class='close', data-dismiss='modal', aria-label='Close')
+            span(aria-hidden='true') ×
+        .modal-body
+          form#renameTeamForm
+            input#renameTeamId(type='hidden')
+            .form-group
+              label.form-label Нова назва
+              input#renameTeamName.form-control(type='text', maxlength='128', required)
+        .modal-footer
+          button(type='button', class='btn btn-secondary', data-dismiss='modal') Скасувати
+          button#renameTeamSaveBtn(type='button', class='btn btn-primary') Зберегти
+
+  // Додати асистента
+  #addAssistantModal.modal(tabindex='-1')
+    .modal-dialog
+      .modal-content
+        .modal-header
+          h5.modal-title Додати асистента
+          button(type='button', class='close', data-dismiss='modal', aria-label='Close')
+            span(aria-hidden='true') ×
+        .modal-body
+          form#addAssistantForm
+            input#assistantSupervisorId(type='hidden')
+            .form-group
+              label.form-label Кандидат (користувач департаменту)
+              select#assistantCandidate.form-control(required)
+                // options підставить JS (users департаменту без lead)
+            .form-text.text-muted Користувач отримає роль «assistant» та успадкує команду супервізора.
+        .modal-footer
+          button(type='button', class='btn btn-secondary', data-dismiss='modal') Скасувати
+          button#addAssistantSaveBtn(type='button', class='btn btn-primary') Додати
+
+  +modal-dynamic
+  include ../layout/footer
+
+  block scripts
+    script(defer src="/components/base/custom/teams-tree.js")

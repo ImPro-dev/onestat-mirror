@@ -6,8 +6,8 @@ const { createObjectCsvWriter } = require('csv-writer');
 const { parse } = require('csv-parse');
 
 const config = require('../config/statConfig')
-const upload = require('../middleware/upload');
-const auth = require('../middleware/auth');
+const upload = require('../middlewares/upload');
+const auth = require('../middlewares/auth');
 const fields = [
   { name: 'fb_stat', maxCount: 1 },
   { name: 'keitaro_stat_conversions', maxCount: 1 },
