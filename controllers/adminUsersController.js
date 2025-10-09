@@ -7,6 +7,7 @@ const User = require('../models/User');
 const Team = require('../models/Team');
 const enumsService = require('../services/enumsService');
 const { SCOPES, getUserScopes } = require('../scripts/permissions/scopes');
+const { getTeamRoleLabel } = require('../helpers/appHelper'); // moved helper here
 
 // -------------------- helpers --------------------
 function toObjectIdOrNull(v) {
@@ -54,7 +55,7 @@ function dbDeptToUi(deptRoleDB) { return (deptRoleDB && deptRoleDB !== 'none') ?
 function normalizeWebId(input) {
   if (input == null) return null;
   const digits = String(input).replace(/\D/g, '');
-  return digits.length ? digits : null; // зберігаємо лише цифри (валідація моделі робить решту)
+  return digits.length ? digits : null; // keep digits only; model enforces exact format
 }
 
 // -------------------- GET /admin/users/management --------------------
@@ -67,7 +68,7 @@ async function getManagementData(req, res, next) {
 
     const usersQuery = { department };
     if (!isAdmin && isManager && ORG.ADMIN) {
-      usersQuery.orgRole = { $ne: ORG.ADMIN }; // менеджер не бачить адмінів
+      usersQuery.orgRole = { $ne: ORG.ADMIN }; // manager should not see admins
     }
 
     const rawUsers = await User.find(usersQuery)
@@ -122,7 +123,7 @@ async function patchRoles(req, res, next) {
       return res.status(400).json({ ok: false, error: 'Invalid user id' });
     }
 
-    // ВАЖЛИВО: лише поля, присутні в запиті!
+    // Only apply fields present in the payload
     const b = req.body || {};
     const has = (k) => Object.prototype.hasOwnProperty.call(b, k);
 
@@ -145,14 +146,13 @@ async function patchRoles(req, res, next) {
       return res.status(403).json({ ok: false, error: 'Forbidden', message: 'Manager cannot assign admin role' });
     }
 
-    // ---- ORG ROLE (частковий апдейт)
+    // ---- ORG ROLE (partial update)
     if (typeof patch.orgRole !== 'undefined' && patch.orgRole !== user.orgRole) {
       user.orgRole = patch.orgRole;
     }
 
-    // Якщо адмін → зануляємо все командне та dept і віддаємо відповідь
+    // If user becomes admin → clear dept/team fields and any leadership
     if (ORG.ADMIN && user.orgRole === ORG.ADMIN) {
-      // зняти лідерство, якщо було
       if (user.team) {
         await Team.updateOne({ _id: user.team, lead: user._id }, { $unset: { lead: 1 } }, { runValidators: false });
       }
@@ -163,6 +163,7 @@ async function patchRoles(req, res, next) {
       user.team = null;
       user.assistantOf = null;
       user.webId = null;
+      user.position = null;
 
       await user.save();
       return res.json({
@@ -183,14 +184,13 @@ async function patchRoles(req, res, next) {
       });
     }
 
-    // ---- DEPT ROLE / TEAM ROLE / TEAM / ASSISTANTOF (часткові апдейти)
-    const prevTeamRole = user.teamRole;            // запам’ятали ДО змін
+    // ---- DEPT ROLE / TEAM ROLE / TEAM / ASSISTANTOF (partial updates)
+    const prevTeamRole = user.teamRole; // snapshot before mutation
     const deptRoleUI = has('deptRole') ? patch.deptRole : dbDeptToUi(user.deptRole);
     const teamRoleNew = has('teamRole') ? patch.teamRole : user.teamRole;
 
-    // DEPT: head ↔ none
+    // Department head on/off
     if (DEPT.HEAD && deptRoleUI === DEPT.HEAD) {
-      // якщо був лідом — зняти у всіх командах
       if (TEAM.LEAD && prevTeamRole === TEAM.LEAD) {
         await Team.updateMany({ lead: user._id }, { $unset: { lead: 1 } }, { runValidators: false });
       }
@@ -208,12 +208,18 @@ async function patchRoles(req, res, next) {
     } else {
       if (has('deptRole')) {
         user.deptRole = uiDeptToDb(deptRoleUI); // null/'' → 'none'
-        user.position = null;
+        // Recompute position based on current teamRole if it exists; otherwise clear.
+        if (user.teamRole) {
+          const label = await getTeamRoleLabel(user.department, user.teamRole);
+          user.position = label || null;
+        } else {
+          user.position = null;
+        }
       }
 
       const teamRoleChanging = has('teamRole');
 
-      // 1) зміна ролі
+      // 1) teamRole change
       if (teamRoleChanging) {
         if (teamRoleNew && TEAM.LEAD && teamRoleNew === TEAM.LEAD) {
           const prevTeamId = user.team ? String(user.team) : null;
@@ -243,11 +249,12 @@ async function patchRoles(req, res, next) {
               );
             }
             user.assistantOf = null;
-
           } else {
-            // поки без команди — просто фіксуємо роль
             user.assistantOf = null;
           }
+
+          // set position by TeamRole label
+          user.position = (await getTeamRoleLabel(user.department, TEAM.LEAD)) || null;
 
         } else if (teamRoleNew && TEAM.MEMBER && teamRoleNew === TEAM.MEMBER) {
           user.teamRole = TEAM.MEMBER;
@@ -262,6 +269,9 @@ async function patchRoles(req, res, next) {
             }
             user.team = team._id;
           }
+
+          // set position by TeamRole label
+          user.position = (await getTeamRoleLabel(user.department, TEAM.MEMBER)) || null;
 
         } else if (teamRoleNew && TEAM.ASSISTANT && teamRoleNew === TEAM.ASSISTANT) {
           user.teamRole = TEAM.ASSISTANT;
@@ -285,6 +295,9 @@ async function patchRoles(req, res, next) {
           }
           user.webId = null;
 
+          // set position by TeamRole label
+          user.position = (await getTeamRoleLabel(user.department, TEAM.ASSISTANT)) || null;
+
         } else {
           // teamRole = null
           if (TEAM.LEAD && user.teamRole === TEAM.LEAD) {
@@ -293,10 +306,11 @@ async function patchRoles(req, res, next) {
           user.teamRole = null;
           user.team = null;
           user.assistantOf = null;
+          user.position = null; // clear position when no team role and not head
         }
       }
 
-      // 2) окреме оновлення team без зміни role (LEAD/MEMBER)
+      // 2) change team only (for LEAD/MEMBER)
       if (!teamRoleChanging && has('team') &&
         user.teamRole && [TEAM.LEAD, TEAM.MEMBER].includes(user.teamRole)) {
 
@@ -330,9 +344,9 @@ async function patchRoles(req, res, next) {
             }
             user.assistantOf = null;
           }
-          // MEMBER — без додаткових дій
+          // position stays as role-based label
         } else {
-          // обрали "— не вибрано —"
+          // "not selected" for team
           if (user.teamRole === TEAM.LEAD && prevTeamId) {
             await Team.updateOne(
               { _id: prevTeamId, lead: user._id },
@@ -350,7 +364,7 @@ async function patchRoles(req, res, next) {
         }
       }
 
-      // 3) окреме оновлення assistantOf для ASSISTANT
+      // 3) change assistantOf only (for ASSISTANT)
       if (!teamRoleChanging && has('assistantOf') && user.teamRole === TEAM.ASSISTANT) {
         const supIdObj = toObjectIdOrNull(patch.assistantOf);
         if (patch.assistantOf && !supIdObj) {
@@ -367,14 +381,16 @@ async function patchRoles(req, res, next) {
           }
           user.assistantOf = sup._id;
           user.team = sup.team;
+          // position remains assistant's label
         } else {
           user.assistantOf = null;
           user.team = null;
+          // position remains assistant's label
         }
       }
     }
 
-    // --- webId (лише Media Buying і лише для LEAD/MEMBER). Не чіпаємо team/assistantOf.
+    // --- webId (Media Buying only, for LEAD/MEMBER). Does not touch team/assistantOf.
     if (typeof patch.webId !== 'undefined') {
       const canHaveWebId =
         user.department === 'Media Buying' &&

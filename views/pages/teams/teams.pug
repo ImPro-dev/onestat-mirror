@@ -16,22 +16,132 @@ block page
       .row
         .col-12
           .panel
-            .panel-header
-              h5.panel-title
+            // --- Header with responsive actions ---
+            .panel-header.d-flex.flex-column.flex-md-row.align-items-xl-center.justify-content-between
+              h5.panel-title.mb-2.mb-xl-0
                 span.panel-icon.linearicons-cash-dollar
                 = ' '
                 span= title
-            .panel-body
-              .d-flex.justify-content-end.mb-3
+              .d-flex.flex-wrap.gap-2
+                button#newTeamBtn.btn.btn-outline-secondary.mr-2(type='button')
+                  span.fa-plus-circle.mr-2
+                  | Створити команду
                 a.btn.btn-primary(href='/teams/mediabuying/management')
                   span.linearicons-cog.mr-2
                   | Управління
 
-              // --- Teams tree (рендериться JS) ---
-              #teamsTree.d-grid.gap-3(data-department=department)
+            .panel-body
+              if buckets && buckets.length
+                .row
+                  each b in buckets
+                    .col-12.col-md-6.col-lg-4.mb-3
+                      .panel
+                        .panel-header.d-flex.justify-content-between.align-items-center
+                          h6.panel-title.mb-0
+                            span.linearicons-users2
+                            = ' '
+                            span= (b.team && b.team.name) || '—'
+                          .d-flex.align-items-center
+                            button.btn.btn-sm.btn-outline-primary.ml-2.js-team-rename(
+                              type='button',
+                              data-team-id=(b.team ? String(b.team._id) : ''),
+                              data-team-name=(b.team && b.team.name ? b.team.name : '')
+                              data-toggle='tooltip',
+                              data-original-title='Редагувати',
+                            )
+                              span.linearicons-pencil5
+                            button.btn.btn-sm.btn-outline-danger.ml-2.js-team-archive(
+                              type='button',
+                              data-team-id=(b.team ? String(b.team._id) : ''),
+                              data-team-name=(b.team && b.team.name ? b.team.name : '')
+                              data-toggle='tooltip',
+                              data-original-title='Архівувати',
+                            )
+                              span.linearicons-archive2
+                        .panel-body
+                          // ==== Team Lead ====
+                          - const __lead = b.lead || null;
+                          .media.group-15.flex-column.flex-sm-row
+                            .media-item
+                              if __lead
+                                img(
+                                  src=`/users/${__lead._id}/avatar`,
+                                  class="rounded-circle",
+                                  width='60', height='60',
+                                  alt=`${(__lead.firstName || '')} ${(__lead.lastName || '')}`.trim()
+                                )
+                              else
+                                img(src='/images/users/user-02-40x40.jpg', class='rounded-circle', width='60', height='60', alt='')
+                            .media-body
+                              h6
+                                if __lead
+                                  = `${__lead.firstName || ''} ${__lead.lastName || ''}`.trim()
+                                else
+                                  | —
+                              span.badge.badge-primary.mr-1= (roleLabel && __lead && __lead.teamRole && roleLabel[__lead.teamRole]) || (__lead && __lead.teamRole) || '—'
+                              if isMediaBuying && __lead && __lead.webId
+                                span.badge.badge-light #{__lead.webId}
+
+                              div.text-muted.small.mt-3 Асистенти тімліда:
+                              if b.assistantsOfLead && b.assistantsOfLead.length
+                                each a in b.assistantsOfLead
+                                  .media.group-10.mt-1
+                                    .media-item
+                                      img(
+                                        src=`/users/${a._id}/avatar`,
+                                        class="rounded-circle",
+                                        width='50', height='50',
+                                        alt=`${(a.firstName || '')} ${(a.lastName || '')}`.trim()
+                                      )
+                                    .media-body
+                                      h6 #{`${a.firstName || ''} ${a.lastName || ''}`.trim() || a.email || String(a._id)}
+                                      span.badge.badge-light.mt-2= (roleLabel && roleLabel[a.teamRole]) || a.teamRole || 'assistant'
+                              else
+                                .text-muted.small — немає —
+
+                          // ==== Buyers & their assistants ====
+                          if b.buyers && b.buyers.length
+                            each row in b.buyers
+                              - const m = row.buyer;
+                              hr
+                              .media.group-15.flex-column.flex-sm-row
+                                .media-item
+                                  img(
+                                    src=`/users/${m._id}/avatar`,
+                                    class="rounded-circle",
+                                    width='50', height='50',
+                                    alt=`${(m.firstName || '')} ${(m.lastName || '')}`.trim()
+                                  )
+                                .media-body
+                                  h6
+                                    = `${m.firstName || ''} ${m.lastName || ''}`.trim() || m.email || String(m._id)
+                                  span.badge.badge-light.mr-1= (roleLabel && roleLabel[m.teamRole]) || m.teamRole || 'member'
+                                  if isMediaBuying && m.webId
+                                    span.badge.badge-light #{m.webId}
+
+                                  div.text-muted.small.mt-3 Асистенти баєра:
+                                  if row.assistants && row.assistants.length
+                                    each a in row.assistants
+                                      .media.group-10.mt-1
+                                        .media-item
+                                          img(
+                                            src=`/users/${a._id}/avatar`,
+                                            class="rounded-circle",
+                                            width='50', height='50',
+                                            alt=`${(a.firstName || '')} ${(a.lastName || '')}`.trim()
+                                          )
+                                        .media-body
+                                          h6 #{`${a.firstName || ''} ${a.lastName || ''}`.trim() || a.email || String(a._id)}
+                                          span.badge.badge-light.mr-3= (roleLabel && roleLabel[a.teamRole]) || a.teamRole || 'assistant'
+                                  else
+                                    .text-muted.small — немає —
+                          else
+                            .text-muted.small — немає баєрів у команді —
+              else
+                .text-muted Немає активних команд у цьому департаменті.
 
   // --- Modals ---
-  // Перейменувати команду
+  // Rename team
   #renameTeamModal.modal(tabindex='-1')
     .modal-dialog
       .modal-content
@@ -49,28 +159,54 @@ block page
           button(type='button', class='btn btn-secondary', data-dismiss='modal') Скасувати
           button#renameTeamSaveBtn(type='button', class='btn btn-primary') Зберегти
 
-  // Додати асистента
-  #addAssistantModal.modal(tabindex='-1')
+  // Archive team confirm
+  #archiveTeamModal.modal(tabindex='-1')
     .modal-dialog
       .modal-content
         .modal-header
-          h5.modal-title Додати асистента
+          h5.modal-title Архівувати команду
           button(type='button', class='close', data-dismiss='modal', aria-label='Close')
             span(aria-hidden='true') ×
         .modal-body
-          form#addAssistantForm
-            input#assistantSupervisorId(type='hidden')
-            .form-group
-              label.form-label Кандидат (користувач департаменту)
-              select#assistantCandidate.form-control(required)
-                // options підставить JS (users департаменту без lead)
-            .form-text.text-muted Користувач отримає роль «assistant» та успадкує команду супервізора.
+          input#archiveTeamId(type='hidden')
+          p.mb-0 Підтвердити архівацію команди:
+          p.fw-semibold.mt-1#archiveTeamName
         .modal-footer
-          button(type='button', class='btn btn-secondary', data-dismiss='modal') Скасувати
-          button#addAssistantSaveBtn(type='button', class='btn btn-primary') Додати
+          button(type='button', class='btn btn-outline-secondary', data-dismiss='modal') Ні
+          button#archiveTeamConfirm(type='button', class='btn btn-danger') Так, архівувати
+
+  // Create team (moved here from Management)
+  #teamModal.modal(tabindex='-1')
+    .modal-dialog
+      .modal-content
+        .modal-header
+          h5.modal-title Створити команду
+          button(type='button', class='close', data-dismiss='modal', aria-label='Close')
+            span(aria-hidden='true') ×
+        .modal-body
+          form#teamForm
+            .form-group
+              label.form-label Назва команди
+              input#teamName.form-control(type='text', maxlength='128', required)
+            .form-group
+              label.form-label Департамент
+              select#teamDept.form-control(required)
+                option(value=department selected)= department
+            .form-group
+              label.form-label Тімлід
+              select#teamLead.form-control(required)
+                option(value='') — оберіть тімліда —
+                if options && options.teamLeads && options.teamLeads.length
+                  each cand in options.teamLeads
+                    - const candName = `${cand.firstName || ''} ${cand.lastName || ''}`.trim() || cand.email || String(cand._id)
+                    option(value=String(cand._id))= candName
+            .form-text.text-muted Тімлід має належати цьому ж департаменту.
+        .modal-footer
+          button(type='button', class='btn btn-outline-primary', data-dismiss='modal') Скасувати
+          button#teamCreateBtn(type='button', class='btn btn-primary') Створити
 
   +modal-dynamic
   include ../layout/footer
 
   block scripts
-    script(defer src="/components/base/custom/teams-tree.js")
+    script(defer src="/components/base/custom/teams-page.js")
