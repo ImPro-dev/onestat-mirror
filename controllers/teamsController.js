@@ -6,6 +6,7 @@ const Team = require('../models/Team');
 const User = require('../models/User');
 const enumsService = require('../services/enumsService');
 const { SCOPES, getUserScopes } = require('../scripts/permissions/scopes');
+const { getTeamLeads, getSupervisors } = require('../helpers/appHelper');
 
 // ---- helpers ----
 function getActor(req) {
@@ -30,16 +31,16 @@ function assertHeadDepartment(actor, department) {
 }
 
 function getActorFlags(req, res) {
-  // 1) пріоритетно беремо з res.locals (твій існуючий middleware)
+  // 1) prefer res.locals flags
   if (res?.locals) {
     const isAdmin = !!res.locals.isAdmin;
     const isManager = !!res.locals.isManager && !isAdmin;
     return { isAdmin, isManager };
   }
-  // 2) фолбек по scopes (раптом локалі не виставлені)
+  // 2) fallback to scopes
   const user = req.session?.user || req.user || null;
   const set = new Set(getUserScopes(user));
-  const isAdmin = set.has(SCOPES.INTEGRATIONS_ADMIN);       // у вашому мапінгу адмін має всі скоупи
+  const isAdmin = set.has(SCOPES.INTEGRATIONS_ADMIN);
   const isManager = !isAdmin && set.has(SCOPES.TEAMS_WRITE_ANY);
   return { isAdmin, isManager };
 }
@@ -122,7 +123,7 @@ async function updateTeam(req, res, next) {
 
 // =======================================================
 // GET /teams/tree?department=Media%20Buying
-// Повертає дерево команд департаменту (canonical: team, assistantOf).
+// Returns team structure for a department (canonical: team, assistantOf).
 // =======================================================
 async function getDeptTeamsTree(req, res, next) {
   try {
@@ -136,7 +137,7 @@ async function getDeptTeamsTree(req, res, next) {
 
     const teamIds = teams.map(t => t._id);
 
-    // беремо канонічні поля: team, assistantOf, teamRole (+ ПІБ для відмальовки)
+    // canonical fields: team, assistantOf, teamRole (+ names for UI)
     const users = await User.find({ department, team: { $in: teamIds } })
       .select('_id firstName lastName teamRole team assistantOf webId')
       .lean();
@@ -146,7 +147,7 @@ async function getDeptTeamsTree(req, res, next) {
     );
     const byId = new Map(users.map(u => [String(u._id), u]));
 
-    // lead із users
+    // lead from users
     for (const u of users) {
       if (u.teamRole === 'lead' && u.team) {
         const bucket = byTeam.get(String(u.team));
@@ -154,7 +155,7 @@ async function getDeptTeamsTree(req, res, next) {
       }
     }
 
-    // фолбек по team.lead (якщо у юзера ще не оновили role)
+    // fallback via team.lead
     const needFallback = [];
     for (const bucket of byTeam.values()) {
       if (!bucket.lead && bucket.team.lead) needFallback.push(bucket.team.lead);
@@ -202,34 +203,180 @@ async function getDeptTeamsTree(req, res, next) {
 }
 
 // =======================================================
-// SSR-рендер командної сторінки департаменту
+// SSR: teams page (server-side tree rendering)
 // =======================================================
-function renderDeptTeamsPage(req, res, next, { department }) {
+async function renderDeptTeamsPage(req, res, next, { department }) {
   try {
+    const dept = String(department || 'Media Buying').trim();
+
+    // 1) Активні команди департаменту
+    const teams = await Team.find({ department: dept, isActive: true })
+      .select('_id name department lead')
+      .sort({ name: 1 })
+      .lean();
+
+    const teamIds = teams.map(t => t._id);
+
+    // 2) Користувачі департаменту, що входять до цих команд (канонічні поля)
+    const users = await User.find({ department: dept, team: { $in: teamIds } })
+      .select('_id firstName lastName email webId team teamRole assistantOf')
+      .lean();
+
+    // 3) Побудова buckets: { team, lead, buyers:[{buyer, assistants:[] }], assistantsOfLead:[] }
+    const byTeam = new Map(
+      teams.map(t => [String(t._id), { team: t, lead: null, buyers: [], assistantsOfLead: [] }])
+    );
+    const byId = new Map(users.map(u => [String(u._id), u]));
+
+    // lead з users
+    for (const u of users) {
+      if (u.team && u.teamRole === 'lead') {
+        const bucket = byTeam.get(String(u.team));
+        if (bucket) bucket.lead = u;
+      }
+    }
+    // fallback: якщо не знайшли серед users, глянемо team.lead
+    const missing = [];
+    for (const bucket of byTeam.values()) {
+      if (!bucket.lead && bucket.team.lead) missing.push(bucket.team.lead);
+    }
+    if (missing.length) {
+      const lf = await User.find({ _id: { $in: missing } })
+        .select('_id firstName lastName email webId team teamRole assistantOf')
+        .lean();
+      const fb = new Map(lf.map(x => [String(x._id), x]));
+      for (const bucket of byTeam.values()) {
+        if (!bucket.lead && bucket.team.lead) {
+          const cand = fb.get(String(bucket.team.lead));
+          if (cand) bucket.lead = cand;
+        }
+      }
+    }
+
+    // buyers
+    for (const u of users) {
+      if (u.team && u.teamRole === 'member') {
+        const bucket = byTeam.get(String(u.team));
+        if (bucket) bucket.buyers.push({ buyer: u, assistants: [] });
+      }
+    }
+
+    // assistants: до баєра або до ліда
+    for (const u of users) {
+      if (!u.team || u.teamRole !== 'assistant') continue;
+      const bucket = byTeam.get(String(u.team));
+      if (!bucket) continue;
+
+      const sup = u.assistantOf ? byId.get(String(u.assistantOf)) : null;
+      if (!sup) continue;
+
+      if (sup.teamRole === 'member') {
+        const cell = bucket.buyers.find(b => String(b.buyer._id) === String(sup._id));
+        if (cell) cell.assistants.push(u);
+      } else if (sup.teamRole === 'lead') {
+        bucket.assistantsOfLead.push(u);
+      }
+    }
+
+    const buckets = Array.from(byTeam.values());
+
+    // 4) Локалізовані лейбли ролей (для бейджів)
+    const teamRolesByDept = await enumsService.getTeamRoleOptionsByDept(dept);
+    const roleLabel = {};
+    for (const r of (teamRolesByDept || [])) roleLabel[r.value] = r.label || r.value;
+
+    // 5) Кандидати тімлідів для модалки створення команди (SSR!)
+    const leadsRaw = await getTeamLeads(dept, { onlyActive: true, withTeamOnly: false });
+    const teamLeads = (leadsRaw || [])
+      .map(u => ({
+        _id: String(u._id),
+        firstName: u.firstName || '',
+        lastName: u.lastName || '',
+        email: u.email || ''
+      }))
+      .sort((a, b) => {
+        const an = (`${a.firstName} ${a.lastName}`).trim() || a.email || '';
+        const bn = (`${b.firstName} ${b.lastName}`).trim() || b.email || '';
+        return an.localeCompare(bn);
+      });
+
+    // 6) Рендер
     res.render('pages/teams/teams', {
-      title: `${department}`,
-      department,
+      title: `${dept}`,
+      department: dept,
+      isMediaBuying: (dept === 'Media Buying'),
+      buckets,
+      roleLabel,
+      options: { teamLeads },    // ← важливо для заповнення селекту
     });
   } catch (e) { next(e); }
 }
 
 // =======================================================
-// SSR-рендер сторінки "Управління" департаменту
-// (таблиця відразу заповнена, canonical: team, assistantOf)
+// SSR: management page (table is prefilled; canonical: team, assistantOf)
 // =======================================================
 async function renderDeptManagementPage(req, res, next, { department }) {
   try {
     const { isAdmin, isManager } = getActorFlags(req, res);
 
-    // 1) Users: менеджеру не показуємо адмінів
-    const usersQuery = { department };
+    // query params (filters + pagination)
+    const {
+      q = '',
+      orgRole = '',
+      deptRole = '',
+      teamRole = '',
+      team = '',
+      assistantOf = '',
+      page: pageRaw = '1',
+      limit: limitRaw = '20',
+    } = req.query || {};
+
+    const toInt = (v, def) => {
+      const n = parseInt(v, 10);
+      return Number.isFinite(n) && n > 0 ? n : def;
+    };
+    const buildUrl = (base, params) => {
+      const qs = new URLSearchParams(params);
+      return `${base}?${qs.toString()}`;
+    };
+
+    const page = toInt(pageRaw, 1);
+    const limit = toInt(limitRaw, 20);
+
+    // base query (respect manager visibility)
+    const find = { department };
     if (!isAdmin && isManager) {
-      usersQuery.orgRole = { $ne: 'admin' }; // фільтруємо саме за значенням запису в БД (це ок)
+      find.orgRole = { $ne: 'admin' };
     }
 
-    const rawUsers = await User.find(usersQuery)
+    // search: by name or webId
+    if (q && q.trim()) {
+      const re = new RegExp(q.trim(), 'i');
+      find.$or = [{ firstName: re }, { lastName: re }, { webId: re }];
+    }
+
+    // filters
+    if (orgRole) find.orgRole = orgRole;
+    if (deptRole) find.deptRole = deptRole;
+    if (teamRole) find.teamRole = teamRole;
+    if (team && mongoose.isValidObjectId(team)) {
+      find.team = new mongoose.Types.ObjectId(team);
+    }
+    if (assistantOf && mongoose.isValidObjectId(assistantOf)) {
+      find.assistantOf = new mongoose.Types.ObjectId(assistantOf);
+    }
+
+    // counts & page
+    const total = await User.countDocuments(find);
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const safePage = Math.min(Math.max(page, 1), totalPages);
+    const skip = (safePage - 1) * limit;
+
+    const rawUsers = await User.find(find)
       .select('_id firstName lastName email telegramUsername department orgRole deptRole teamRole team assistantOf webId isActive position')
       .sort({ lastName: 1, firstName: 1 })
+      .limit(limit)
+      .skip(skip)
       .lean();
 
     const users = rawUsers.map(u => ({
@@ -237,14 +384,12 @@ async function renderDeptManagementPage(req, res, next, { department }) {
       deptRole: (u.deptRole && u.deptRole !== 'none') ? u.deptRole : null,
     }));
 
-    // 2) Опції
+    // options for selects
     const [orgRolesAll, deptRolesByDept, teamRolesByDept] = await Promise.all([
       enumsService.getOrgRoleOptions(),
       enumsService.getDeptRoleOptionsByDept(department),
       enumsService.getTeamRoleOptionsByDept(department),
     ]);
-
-    // менеджеру не показуємо опцію 'admin' у селекті доступів
     const orgRoles = isAdmin ? orgRolesAll : orgRolesAll.filter(r => r.value !== 'admin');
 
     const teams = await Team.find({ department, isActive: true })
@@ -252,17 +397,53 @@ async function renderDeptManagementPage(req, res, next, { department }) {
       .sort({ name: 1 })
       .lean();
 
+    // supervisors (leads + members) for filter dropdown
+    const supervisorsRaw = await getSupervisors(department, { onlyActive: true, withTeamOnly: false });
+    const supervisors = (supervisorsRaw || []).map(u => ({
+      _id: String(u._id),
+      firstName: u.firstName || '',
+      lastName: u.lastName || '',
+      email: u.email || '',
+    })).sort((a, b) => {
+      const an = (`${a.firstName} ${a.lastName}`).trim() || a.email || '';
+      const bn = (`${b.firstName} ${b.lastName}`).trim() || b.email || '';
+      return an.localeCompare(bn);
+    });
+
+    // team leads for "Create team" modal
+    const teamLeadsRaw = await getTeamLeads(department);
+    const teamLeads = (teamLeadsRaw || []).map(u => ({
+      _id: String(u._id),
+      firstName: u.firstName || '',
+      lastName: u.lastName || '',
+      email: u.email || '',
+    })).sort((a, b) => {
+      const an = (`${a.firstName} ${a.lastName}`).trim() || a.email || '';
+      const bn = (`${b.firstName} ${b.lastName}`).trim() || b.email || '';
+      return an.localeCompare(bn);
+    });
+
+    // pagination links
+    const baseQuery = { q, orgRole, deptRole, teamRole, team, assistantOf, limit: String(limit) };
+    const pages = Array.from({ length: totalPages }, (_, i) => {
+      const n = i + 1;
+      return { n, url: buildUrl('/teams/mediabuying/management', { ...baseQuery, page: String(n) }), active: n === safePage };
+    });
+    const prevUrl = buildUrl('/teams/mediabuying/management', { ...baseQuery, page: String(Math.max(1, safePage - 1)) });
+    const nextUrl = buildUrl('/teams/mediabuying/management', { ...baseQuery, page: String(Math.min(totalPages, safePage + 1)) });
+
     res.render('pages/teams/management', {
       title: `${department} → Управління`,
       department,
       users,
-      options: { orgRoles, deptRolesByDept, teamRolesByDept, teams },
+      options: { orgRoles, deptRolesByDept, teamRolesByDept, teams, teamLeads, supervisors },
+      query: { q, orgRole, deptRole, teamRole, team, assistantOf },
+      pagination: { page: safePage, limit, total, totalPages, pages, prevUrl, nextUrl },
     });
   } catch (e) {
     next(e);
   }
 }
-
 
 module.exports = {
   createTeam,

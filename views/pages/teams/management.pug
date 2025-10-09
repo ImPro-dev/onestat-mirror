@@ -16,21 +16,67 @@ block page
       .row
         .col-12
           .panel
-            .panel-header
-              h5.panel-title
+            // --- Header with responsive back button ---
+            .panel-header.d-flex.flex-column.flex-md-row.align-items-md-center.justify-content-between
+              h5.panel-title.mb-2.mb-md-0
                 span.panel-icon.linearicons-cog
                 = ' '
                 span= title
-            .panel-body
-
-              // --- Top bar: Back + Create team ---
-              .d-flex.flex-wrap.justify-content-between.align-items-center.mb-3
+              .d-flex.flex-wrap
                 a.btn.btn-outline-secondary(href='/teams/mediabuying')
                   span.linearicons-arrow-left.mr-2
                   | До списку команд
-                button#newTeamBtn.btn.btn-primary(type='button')
-                  span.fa-plus-circle.mr-2
-                  | Створити команду
+
+            .panel-body
+              // --- Filters (search + selects) ---
+              form.form-inline.mb-3(method='GET', action='/teams/mediabuying/management')
+                .form-group.mb-2.mr-2.mt-0
+                  input.form-control(
+                    type='text',
+                    name='q',
+                    size=24,
+                    placeholder='Пошук (імʼя/WebID)',
+                    value=(query && query.q || '')
+                  )
+                .form-group.mb-2.mr-2.mt-0
+                  select.form-control(name='orgRole')
+                    option(value='') Доступ: всі
+                    if options && options.orgRoles && options.orgRoles.length
+                      each r in options.orgRoles
+                        option(value=r.value selected=(query && query.orgRole===r.value) ? true : false)= r.label || r.value
+                .form-group.mb-2.mr-2.mt-0
+                  select.form-control(name='deptRole')
+                    option(value='') Посада у відділі: всі
+                    if options && options.deptRolesByDept && options.deptRolesByDept.length
+                      each dr in options.deptRolesByDept
+                        option(value=dr.value selected=(query && query.deptRole===dr.value) ? true : false)= dr.label || dr.value
+                .form-group.mb-2.mr-2.mt-0
+                  select.form-control(name='teamRole')
+                    option(value='') Посада у команді: всі
+                    if options && options.teamRolesByDept && options.teamRolesByDept.length
+                      each trr in options.teamRolesByDept
+                        option(value=trr.value selected=(query && query.teamRole===trr.value) ? true : false)= trr.label || trr.value
+                .form-group.mb-2.mr-2.mt-0
+                  select.form-control(name='team')
+                    option(value='') Команда: всі
+                    if options && options.teams && options.teams.length
+                      each t in options.teams
+                        option(value=String(t._id) selected=(query && String(query.team)===String(t._id)) ? true : false)= t.name
+                .form-group.mb-2.mr-2.mt-0
+                  select.form-control(name='assistantOf')
+                    option(value='') Наставник: всі
+                    if options && options.supervisors && options.supervisors.length
+                      each s in options.supervisors
+                        - const supName = `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.email || String(s._id)
+                        option(value=String(s._id) selected=(query && String(query.assistantOf)===String(s._id)) ? true : false)= supName
+                .form-group.mb-2.mr-2.mt-0
+                  select.form-control(name='limit')
+                    option(value='20' selected=(pagination && +pagination.limit===20)) 20
+                    option(value='50' selected=(pagination && +pagination.limit===50)) 50
+                button.btn.btn-light.ml-2.mb-2.mt-0(type='submit')
+                  span.linearicons-magnifier
+                a.btn.btn-outline-secondary.ml-2.mb-2(href='/teams/mediabuying/management', title='Очистити фільтри')
+                  span.linearicons-trash2
 
               // --- Flash ---
               if userError && userError.length
@@ -43,7 +89,7 @@ block page
                   else
                     span= userError
 
-              // Підготовка map для назв команд
+              // Prepare team names map (optional for client-side usage)
               - const teamNameById = {};
               if options && options.teams && options.teams.length
                 each t in options.teams
@@ -56,7 +102,6 @@ block page
                     tr
                       th(style='width:20px') №
                       th(style='min-width:280px') Співробітник
-                      //- th Telegram
                       th(style='min-width:150px')
                         span(data-toggle='tooltip' data-original-title='OrgRole')
                           | Доступ
@@ -87,10 +132,7 @@ block page
                         - const __disWeb      = __isAdmin || __isHead || !__canWeb;
 
                         tr(data-user-id=String(u._id))
-                          // №
                           td= idx + 1
-
-                          // Користувач (аватар + ПІБ)
                           td
                             img.rounded-circle.mr-2(
                               src=`/users/${u._id}/avatar`,
@@ -100,15 +142,6 @@ block page
                               style='object-fit:cover;vertical-align:middle;'
                             )
                             span.fw-semibold= __name
-
-                          // Telegram
-                          //- td
-                          //-   if u.telegramUsername
-                          //-     +telegramFormat(u.telegramUsername)
-                          //-   else
-                          //-     +telegramFormat('')
-
-                          // Доступ (orgRole)
                           td
                             select.form-control.form-control-sm.js-field(name='orgRole' data-field='orgRole')
                               if options && options.orgRoles && options.orgRoles.length
@@ -117,8 +150,6 @@ block page
                                     value=r.value
                                     selected=(u.orgRole===r.value) ? true : false
                                   )= r.label || r.value
-
-                          // Посада у відділі (deptRole)
                           td
                             select.form-control.form-control-sm.js-field(
                               name='deptRole'
@@ -132,8 +163,6 @@ block page
                                     value=dr.value
                                     selected=(u.deptRole===dr.value) ? true : false
                                   )= dr.label || dr.value
-
-                          // Роль у команді (teamRole)
                           td
                             select.form-control.form-control-sm.js-field(
                               name='teamRole'
@@ -147,8 +176,6 @@ block page
                                     value=trr.value
                                     selected=(u.teamRole===trr.value) ? true : false
                                   )= trr.label || trr.value
-
-                          // Команда (канонічне поле: team)
                           td
                             select.form-control.form-control-sm.js-field(
                               name='team'
@@ -162,10 +189,6 @@ block page
                                     value=String(t._id)
                                     selected=(String(u.team)===String(t._id)) ? true : false
                                   )= t.name
-
-                          // Супервайзер (канонічне поле: assistantOf)
-                          // Тепер показуємо ВСІХ лідерів та баєрів департаменту (без фільтра по команді)
-
                           td
                             select.form-control.form-control-sm.js-field(
                               name='assistantOf'
@@ -173,16 +196,14 @@ block page
                               disabled=__disSup ? true : false
                             )
                               option(value='') — не вибрано —
-                              if users && users.length
-                                each sv in users
-                                  if (sv.teamRole === 'lead' || sv.teamRole === 'member') && String(sv._id) !== String(u._id)
+                              if options && options.supervisors && options.supervisors.length
+                                each sv in options.supervisors
+                                  if String(sv._id) !== String(u._id)
                                     - const svName = `${sv.firstName || ''} ${sv.lastName || ''}`.trim() || sv.email || String(sv._id)
                                     option(
                                       value=String(sv._id)
                                       selected=(String(u.assistantOf)===String(sv._id)) ? true : false
                                     )= svName
-
-                          // WebID (канонічне: webId)
                           td
                             input.form-control.form-control-sm.js-field(
                               type='text'
@@ -191,45 +212,24 @@ block page
                               value=(u.webId || '')
                               disabled=__disWeb ? true : false
                             )
-
-                          // Статус
                           td.text-center
                             span.js-status —
-
                     else
                       tr
                         td(colspan='10') em Користувачів не знайдено.
 
-  // --- Modals ---
-  #teamModal.modal(tabindex='-1')
-    .modal-dialog
-      .modal-content
-        .modal-header
-          h5.modal-title Створити команду
-          button(type='button', class='close', data-dismiss='modal', aria-label='Close')
-            span(aria-hidden='true') ×
-        .modal-body
-          form#teamForm
-            .form-group
-              label.form-label Назва команди
-              input#teamName.form-control(type='text', maxlength='128', required)
-            .form-group
-              label.form-label Департамент
-              // Для цієї сторінки використовуємо поточний департамент
-              select#teamDept.form-control(required)
-                option(value=department selected) #{department}
-            .form-group
-              label.form-label Тімлід
-              select#teamLead.form-control(required)
-                option(value='') — оберіть тімліда —
-                if users && users.length
-                  each cand in users
-                    - const candName = `${cand.firstName || ''} ${cand.lastName || ''}`.trim() || cand.email || String(cand._id)
-                    option(value=String(cand._id))= candName
-            .form-text.text-muted Тімлід має належати цьому ж департаменту.
-        .modal-footer
-          button(type='button', class='btn btn-outline-primary', data-dismiss='modal') Скасувати
-          button#teamCreateBtn(type='button', class='btn btn-primary') Створити
+              // --- Pagination ---
+              if pagination && pagination.totalPages > 1
+                nav
+                  ul.pagination
+                    li.page-item(class=(pagination.page <= 1 ? 'disabled' : ''))
+                      a.page-link(href=pagination.prevUrl) «
+                    if pagination.pages && pagination.pages.length
+                      each p in pagination.pages
+                        li.page-item(class=(p.active ? 'active' : ''))
+                          a.page-link(href=p.url)= p.n
+                    li.page-item(class=(pagination.page >= pagination.totalPages ? 'disabled' : ''))
+                      a.page-link(href=pagination.nextUrl) »
 
   +modal-dynamic
   include ../layout/footer
