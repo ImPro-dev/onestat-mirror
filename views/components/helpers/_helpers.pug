@@ -48,3 +48,11 @@ mixin statusBadge(isActive)
 		span.badge.badge-success Активний
 	else
 		span.badge.badge-danger Деактивований
+
+//- Currency format
+mixin currencyFormat(value)
+	if value !== null
+		span= '$' + value
+	else
+		span= value
+

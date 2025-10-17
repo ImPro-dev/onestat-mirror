@@ -1,12 +1,14 @@
 mixin modal-dynamic
-	#modal-dynamic.modal.fade.slide-up
-		.modal-dialog
-			.modal-content
-				.modal-header
-					h6.modal-title
-					button.close( data-dismiss='modal' ): span ×
-				.modal-body
-					p.modal-text
-				.modal-footer
-					button.btn.btn-outline-primary.pr-4.pl-4( data-modal-decline ) Ні
-					button.btn.btn-primary.modal-action( data-modal-confirm, data-href ) Так
+  #modal-dynamic.modal.fade.slide-up
+    .modal-dialog
+      .modal-content
+        .modal-header
+          h6.modal-title
+          button.close(type='button', data-dismiss='modal')
+            span ×
+        .modal-body
+          p.modal-text
+        .modal-footer
+          button.btn.btn-outline-primary.pr-4.pl-4(type='button', data-modal-decline) Ні
+          // removed data-href to avoid accidental navigation handlers
+          button.btn.btn-primary.modal-action(type='button', data-modal-confirm) Так

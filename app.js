@@ -21,6 +21,7 @@ const indexRouter = require('./routes/index');
 const authRouter = require('./routes/auth');
 const usersRouter = require('./routes/users');
 const teamsRouter = require('./routes/teams');
+const offersRouter = require('./routes/offers');
 const adminUsersRouter = require('./routes/adminUsers');
 
 const dashboardRouter = require('./routes/dashboard');
@@ -83,6 +84,7 @@ app.use('/auth', csrfProtection, injectCsrf, authRouter);
 app.use('/dashboard', dashboardRouter);
 app.use('/users', usersRouter);
 app.use('/teams', teamsRouter);
+app.use('/offers', offersRouter);
 app.use('/admin/users', adminUsersRouter);
 
 app.use('/documentation', documentationRouter);

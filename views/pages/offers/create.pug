@@ -1,0 +1,215 @@
+extends ../../components/base/_skeleton
+include ../../components/rd-navbar/_rd-navbar
+include ../../components/input/_input
+include ../../components/helpers/_helpers
+include ../../components/select2/_select2
+include ../../components/helpers/_flagIcon
+
+block variables
+  - pageName = title;
+  - htmlClass.push('page-small-footer');
+
+block page
+  header.section.page-header
+    +rd-navbar
+
+  section.section-xs
+    .container-fluid
+      .row.justify-content-center
+        .col-lg-8.col-xxl-6
+          .panel.panel-border-top.panel-border-warning
+            // Form for creating an Offer
+            form(method='POST', action='/offers/create')
+              .panel-header
+                h5.panel-title
+                  span.panel-icon.linearicons-document2
+                  = ' '
+                  span= title
+              .panel-body
+                // --- Flash ---
+                if error && error.length
+                  +alert({close:false}).alert-danger.alert-sm.mb-3
+                    span.alert-icon.fa-exclamation-triangle
+                    if Array.isArray(error)
+                      each e in error
+                        span= e
+                        br
+                    else
+                      span= error
+
+                if success && success.length
+                  +alert({close:false}).alert-success.alert-sm.mb-3
+                    span.alert-icon.linearicons-checkmark-circle
+                    if Array.isArray(success)
+                      each m in success
+                        span= m
+                        br
+                    else
+                      span= success
+
+                .row.form-group
+                  .col-sm-3.text-sm-right
+                    label.col-form-label(for='offerName') Назва оферу:
+                  .col-sm-9
+                    .input-group
+                      .input-group-prepend
+                        span.input-group-text
+                          span.fa-file-text-o
+                      input.form-control(type='text', id='offerName', name='offerName', required)
+
+                .row.form-group
+                  .col-sm-3.text-sm-right
+                    label.col-form-label(for='offerId') ID оферу:
+                  .col-sm-9
+                    .input-group
+                      .input-group-prepend
+                        span.input-group-text
+                          span.fa-id-card-o
+                      input.form-control(type='text', id='offerId', name='offerId', required)
+
+                .row.form-group
+                  - var geoOptions = [];
+                  - geoOptions[0] =  {value: '', text: '--' };
+                  each val, key in countries
+                    - geoOptions[key + 1] = { value: val._id, text: val.emoji + ' [' + val.code + '] - ' + val.nameUk };
+                  .col-sm-3.text-sm-right
+                    label.col-form-label(for='country') Гео:
+                  .col-sm-9
+                    .input-group
+                      +select2-search({
+                        theme: 'primary',
+                        options: geoOptions,
+                        name: 'country'
+                      })
+
+                .row.form-group
+                  - var sourcesOptions = [];
+                  - sourcesOptions[0] =  {value: '', text: '--' };
+                  each val, key in sources
+                    - sourcesOptions[key + 1] = {value: val._id, text: val.label };
+                  .col-sm-3.text-sm-right
+                    label.col-form-label(for='source') Джерело:
+                  .col-sm-9
+                    .input-group
+                      +select2({
+                        theme: 'primary',
+                        options: sourcesOptions,
+                        name: 'source'
+                      })
+
+                .row.form-group
+                  .col-sm-3.text-sm-right
+                    label.col-form-label(for='bonus') Бонус:
+                  .col-sm-9
+                    .input-group.w-50
+                      .input-group-prepend
+                        span.input-group-text
+                          span.fa-diamond
+                      input.form-control(type='text', id='bonus', name='bonus', required)
+
+                .row.form-group
+                  .col-sm-3.text-sm-right
+                    label.col-form-label(for='rateAmount') Ставка:
+                  .col-sm-9
+                    .input-group.w-50
+                      .input-group-prepend
+                        span.input-group-text
+                          span.fa-usd
+                      input.form-control(type='number', step='1', min='0', placeholder='' id='rateAmount', name='rateAmount', required)
+
+                .row.form-group
+                  .col-sm-3.text-sm-right
+                    label.col-form-label(for='cap') Капа:
+                  .col-sm-9
+                    .input-group.w-50
+                      .input-group-prepend
+                        span.input-group-text
+                          span.fa-signal
+                      input.form-control(type='number', step='1', min='0', id='cap', name='cap')
+                    div
+                      small.text-muted Залишити пустим, якщо uncap
+
+                // --- Postclick (days) OPTIONAL
+                .row.form-group
+                  .col-sm-3.text-sm-right
+                    label.col-form-label(for='postclick') Постклік:
+                  .col-sm-9
+                    .input-group.form-group.w-50
+                      .input-group-prepend
+                        span.input-group-text
+                          span.fa-mouse-pointer
+                      input.form-control(type='number', step='1', min='0', id='postclick', name='postclick', placeholder='')
+                      .input-group-append
+                        span.input-group-text днів
+                    div
+                      small.text-muted Залишити пустим, якщо посткліка немає
+
+                .row.form-group
+                  - var modelOptions = [];
+                  - modelOptions[0] =  {value: '', text: '--' };
+                  each val, key in models
+                    - modelOptions[key + 1] = {value: val._id, text: val.label };
+                  .col-sm-3.text-sm-right
+                    label.col-form-label(for='model') Модель:
+                  .col-sm-9
+                    .input-group
+                      +select2({
+                        theme: 'primary',
+                        options: modelOptions,
+                        name: 'model'
+                      })
+
+                .row.form-group
+                  - var tconvOptions = [];
+                  - tconvOptions[0] = {value: '', text: '--' };
+                  each val, key in tconv
+                    - tconvOptions[key + 1] = {value: val._id, text: val.label };
+                  .col-sm-3.text-sm-right
+                    label.col-form-label(for='targetConversion') Цільова дія:
+                  .col-sm-9
+                    .input-group
+                      +select2({
+                        theme: 'primary',
+                        options: tconvOptions,
+                        name: 'targetConversion'
+                      })
+
+                .row.form-group
+                  .col-sm-3.text-sm-right
+                    label.col-form-label(for='isTest') Тестовий офер:
+                  .col-sm-9
+                    .input-group.col-form-label
+                      +switch( {
+                        id: 'isTest',
+                        name: 'isTest'
+                      } ).custom-switch-primary
+
+                .row.form-group
+                  .col-sm-3.text-sm-right
+                    label.col-form-label(for='link') Лінк на рум:
+                  .col-sm-9
+                    .input-group
+                      .input-group-prepend
+                        span.input-group-text
+                          span.fa-link
+                      input.form-control(type='text', id='link', name='link', placeholder='https://...')
+
+                .form-group
+                  label.col-form-label(for='kpi') КРІ:
+                  textarea.form-control.summernote(
+                    id='kpi',
+                    name='kpi',
+                    data-summernote-opts='{ "height": 200 }'
+                  )
+
+                .form-group
+                  label.col-form-label(for='notes') Примітки:
+                  textarea.form-control.summernote(
+                    id='notes',
+                    name='notes',
+                    data-summernote-opts='{ "height": 100 }'
+                  )
+              .panel-footer
+                button.btn.btn-primary(type='submit') Створити
+                a.btn.btn-light.ml-2(href='/offers') Скасувати
+    include ../layout/footer

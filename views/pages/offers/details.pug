@@ -1,0 +1,273 @@
+extends ../../components/base/_skeleton
+include ../../components/rd-navbar/_rd-navbar
+include ../../components/helpers/_helpers
+include ../../components/helpers/_flagIcon
+include ../../components/helpers/_date
+include ../../components/input/_input
+include ../../components/modal-dynamic/_modal-dynamic
+
+block variables
+  - pageName = title;
+  - htmlClass.push('page-small-footer');
+
+block page
+  header.section.page-header
+    +rd-navbar
+
+  section.section-xs
+    .container-fluid
+      .row
+        .col-12
+          .panel
+            .panel-header.d-flex.flex-column.flex-md-row.align-items-xl-center.justify-content-between
+              h5.panel-title.mb-4.mb-xl-0
+                span.panel-icon.linearicons-document2
+                = ' '
+                span= title
+                  = (offer && offer.country ? ' [' + offer.country.code + ']' : '')
+              .panel-actions
+                a.btn.btn-outline-secondary.mr-2(href='/offers')
+                  span.linearicons-arrow-left.mr-2.mr-2
+                  | Назад
+                if canWriteOffers
+                  a.btn.btn-primary.mr-2(href='/offers/' + offer._id + '/edit')
+                    span.linearicons-pencil.mr-2
+                    | Редагувати
+                  // Stop/Start with confirmation modal (POST + reload)
+                  form.d-inline(method='POST', action=`/offers/${offer._id}/active`)
+                    if typeof csrfToken !== 'undefined'
+                      input(type='hidden', name='_csrf', value=csrfToken)
+                    // next desired state
+                    input(type='hidden', name='isActive', value=(offer.isActive ? 'false' : 'true'))
+                    a.btn.mr-0(
+                      href='#'
+                      class=(offer.isActive ? 'btn-warning' : 'btn-success')
+                      data-toggle='tooltip'
+                      data-original-title=(offer.isActive ? 'Зупинити офер' : 'Запустити офер')
+                      data-confirmation=JSON.stringify({
+                        title: (offer.isActive ? 'Зупинити офер' : 'Запустити офер'),
+                        content: `${offer.offerName} ${offer.country ? '[' + offer.country.code + ']' : ''}`
+                      })
+                      data-confirm-submit
+                    )
+                      if offer.isActive
+                        span.fa-pause.mr-2
+                        | На стоп
+                      else
+                        span.fa-play.mr-2
+                        | Запуск
+
+            .panel-body
+              if error && error.length
+                +alert({close:false}).alert-danger.alert-sm.mb-3
+                  span.alert-icon.fa-exclamation-triangle
+                  if Array.isArray(error)
+                    each e in error
+                      span= e
+                      br
+                  else
+                    span= error
+
+              if success && success.length
+                +alert({close:false}).alert-success.alert-sm.mb-3
+                  span.alert-icon.linearicons-checkmark-circle
+                  if Array.isArray(success)
+                    each m in success
+                      span= m
+                      br
+                  else
+                    span= success
+
+              // --- General info
+              .row
+                .col-xxl-4.col-xl-6
+                  .card.mb-4
+                    .card-header
+                      h6.card-title.mb-0 Загальна інформація
+                    .card-body
+                      .table-responsive
+                        table.table.mt-3.mb-4
+                          tbody
+                            tr
+                              td.text-right.font-weight-bold(style='width:45%') Назва:
+                              td
+                                +flagIcon(offer && offer.country ? offer.country : null)
+                                span.ml-3= offer.offerName
+                                = (offer && offer.country ? ' [' + offer.country.code + ']' : '')
+                            tr
+                              td.text-right.font-weight-bold OfferID:
+                              td= offer.offerId
+                            tr
+                              td.text-right.font-weight-bold Гео:
+                              td= (offer && offer.country ? `${offer.country.nameUk} [${offer.country.code}]` : '—')
+                            tr
+                              td.text-right.font-weight-bold Джерело:
+                              td= (offer && offer.source ? offer.source.label : '—')
+                            tr
+                              td.text-right.font-weight-bold Ціль:
+                              td= (offer && offer.targetConversion ? offer.targetConversion.label : '—')
+                            tr
+                              td.text-right.font-weight-bold Тестовий офер:
+                              td= offer.isTest ? 'Так' : 'Ні'
+                            tr
+                              td.text-right.font-weight-bold Статус:
+                              td
+                                if (offer.isActive)
+                                  span.h6.fa-check-circle.text-secondary.mr-2
+                                  | Активний
+                                else
+                                  span.h6.fa-minus-circle.text-danger.mr-2
+                                  | На стопі
+                            tr
+                              td.text-right.font-weight-bold Лінк на рум:
+                              td
+                                if offer && offer.link
+                                  a.d-block(
+                                    href=offer.link,
+                                    target='_blank',
+                                    rel='noopener noreferrer',
+                                    style='max-width:420px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;'
+                                  )= offer.link
+                                else
+                                  span.text-muted —
+                            tr
+                              td.text-right.font-weight-bold Створено:
+                              td
+                                +dateTimeKyiv(offer && offer.createdAt)
+                            tr
+                              td.text-right.font-weight-bold Оновлено:
+                              td
+                                +dateTimeKyiv(offer && offer.updatedAt)
+
+                .col-xxl-8.col-xl-6
+                  .card.mb-3
+                    .card-header
+                      h6.card-title.mb-0 Фінанси
+                    .card-body
+                      .table-responsive
+                        table.table.mt-3.mb-4
+                          tbody
+                            tr
+                              td.text-right.font-weight-bold(style='width:20%') Бонус:
+                              td= offer.bonus || '—'
+                            tr
+                              td.text-right.font-weight-bold Модель:
+                              td= (offer && offer.model ? offer.model.label : '—')
+                            tr
+                              td.text-right.font-weight-bold Ставка:
+                              td
+                                +currencyFormat(offer && typeof offer.activeRate === 'number' ? offer.activeRate : null)
+                                if canWriteOffers
+                                  a.btn.btn-sm.btn-light.ml-3(href='#collapseExample', data-toggle='collapse')
+                                    span.linearicons-chevron-down.mr-2
+                                    | Оновити
+                                  .collapse(id='collapseExample')
+                                    - var __now = new Date();
+                                    - var __ymd = String(__now.getFullYear()) + '-' + String(__now.getMonth()+1).padStart(2,'0') + '-' + String(__now.getDate()).padStart(2,'0');
+                                    form(method='POST', action=`/offers/${offer._id}/rates/update`)
+                                      if typeof csrfToken !== 'undefined'
+                                        input(type='hidden', name='_csrf', value=csrfToken)
+                                      .form-group.mb-2.mt-4
+                                        .input-group
+                                          .input-group-prepend
+                                            span.input-group-text
+                                              span.fa-usd
+                                          input.form-control(
+                                            type='number',
+                                            id='newRateAmount',
+                                            name='newRateAmount',
+                                            step='1',
+                                            min='0',
+                                            required,
+                                            placeholder='USD'
+                                          )
+                                      .form-group.mb-2
+                                        input.form-control(
+                                          type='date',
+                                          id='newRateValidFrom',
+                                          name='newRateValidFrom',
+                                          required,
+                                          value=__ymd
+                                        )
+                                      button.btn.btn-warning.mb-2(type='submit')
+                                        span.fa-refresh.mr-2
+                                        | Оновити ставку
+                            tr
+                              td.text-right.font-weight-bold Капа:
+                              td= (typeof offer.cap === 'number') ? offer.cap : 'uncap'
+                            tr
+                              td.text-right.font-weight-bold Постклік:
+                              td= (typeof offer.postclick === 'number') ? (offer.postclick + ' днів') : '—'
+                            tr
+                              td.text-right.font-weight-bold KPI:
+                              td
+                                if offer && offer.kpi
+                                  != offer.kpi
+                                else
+                                  span.text-muted —
+
+                  .card
+                    .card-header
+                      h6.card-title.mb-0 Примітки
+                    .card-body
+                      if offer && offer.notes
+                        .richtext!= offer.notes
+                      else
+                        span.text-muted Немає
+
+              // --- Rate history
+              .card.mt-3
+                .card-header
+                  h6.card-title.mb-0 Історія ставок
+                if offer && offer.rateHistory && offer.rateHistory.length
+                  .table-responsive
+                    table.table.table-striped.mb-0
+                      thead
+                        tr
+                          th(style='min-width:100px') Ставка
+                          th(style='min-width:200px') Діє з
+                          th(style='min-width:200px') Діє до
+                          if canWriteOffers
+                            th(style='min-width:140px') Дія
+                      tbody
+                        - var __today = new Date(); __today.setHours(0,0,0,0);
+                        each r in (offer.rateHistory || [])
+                          - var _vf = r.validFrom ? new Date(r.validFrom) : null;
+                          - var _vt = r.validTo ? new Date(r.validTo) : null;
+                          - var _vfY = _vf ? _vf.getFullYear() : 0;
+                          - var _vfM = _vf ? String(_vf.getMonth()+1).padStart(2,'0') : '00';
+                          - var _vfD = _vf ? String(_vf.getDate()).padStart(2,'0') : '00';
+                          - var _vfYMD = _vf ? (_vfY + '-' + _vfM + '-' + _vfD) : '';
+                          - var _vfDisp = _vf ? (_vfD + '.' + _vfM + '.' + _vfY) : '';
+                          - var __vfCmp = _vf ? (new Date(_vf)).setHours(0,0,0,0) : 0;
+                          - var isFutureOpen = !!(_vf && !_vt && (__vfCmp > __today.getTime()));
+                          tr
+                            td
+                              +currencyFormat(typeof r.amount === 'number' ? r.amount : null)
+                            td
+                              +dateKyiv(r.validFrom)
+                            td
+                              +dateKyiv(r.validTo)
+                            if canWriteOffers
+                              td
+                                if isFutureOpen
+                                  form.d-inline(method='POST', action=`/offers/${offer._id}/rates/cancel`)
+                                    if typeof csrfToken !== 'undefined'
+                                      input(type='hidden', name='_csrf', value=csrfToken)
+                                    input(type='hidden', name='validFrom', value=_vfYMD)
+                                    a.btn.btn-outline-danger.btn-sm(
+                                      href='#'
+                                      data-confirmation=JSON.stringify({
+                                        title: 'Скасувати майбутню ставку',
+                                        content: `Видалити ставку з ${_vfDisp}?`
+                                      })
+                                      data-confirm-submit
+                                    )
+                                      span.linearicons-cross.mr-1
+                                      | Скасувати
+                else
+                  .p-3
+                    span.text-muted Історія відсутня.
+
+  +modal-dynamic
+  include ../layout/footer

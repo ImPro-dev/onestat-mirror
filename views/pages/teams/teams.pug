@@ -18,7 +18,7 @@ block page
           .panel
             // --- Header with responsive actions ---
             .panel-header.d-flex.flex-column.flex-md-row.align-items-xl-center.justify-content-between
-              h5.panel-title.mb-2.mb-xl-0
+              h5.panel-title.mb-4.mb-xl-0
                 span.panel-icon.linearicons-cash-dollar
                 = ' '
                 span= title
@@ -35,7 +35,7 @@ block page
                 .row
                   each b in buckets
                     .col-12.col-md-6.col-lg-4.mb-3
-                      .panel
+                      .panel.panel-border-top.panel-border-info
                         .panel-header.d-flex.justify-content-between.align-items-center
                           h6.panel-title.mb-0
                             span.linearicons-users2
@@ -78,9 +78,9 @@ block page
                                   = `${__lead.firstName || ''} ${__lead.lastName || ''}`.trim()
                                 else
                                   | —
-                              span.badge.badge-primary.mr-1= (roleLabel && __lead && __lead.teamRole && roleLabel[__lead.teamRole]) || (__lead && __lead.teamRole) || '—'
                               if isMediaBuying && __lead && __lead.webId
-                                span.badge.badge-light #{__lead.webId}
+                                span.badge.badge-light.mr-1 #{__lead.webId}
+                              span.badge.badge-info= (roleLabel && __lead && __lead.teamRole && roleLabel[__lead.teamRole]) || (__lead && __lead.teamRole) || '—'
 
                               div.text-muted.small.mt-3 Асистенти тімліда:
                               if b.assistantsOfLead && b.assistantsOfLead.length
@@ -95,7 +95,7 @@ block page
                                       )
                                     .media-body
                                       h6 #{`${a.firstName || ''} ${a.lastName || ''}`.trim() || a.email || String(a._id)}
-                                      span.badge.badge-light.mt-2= (roleLabel && roleLabel[a.teamRole]) || a.teamRole || 'assistant'
+                                      span.small.text-muted.mt-2= (roleLabel && roleLabel[a.teamRole]) || a.teamRole || 'assistant'
                               else
                                 .text-muted.small — немає —
 
@@ -115,9 +115,9 @@ block page
                                 .media-body
                                   h6
                                     = `${m.firstName || ''} ${m.lastName || ''}`.trim() || m.email || String(m._id)
-                                  span.badge.badge-light.mr-1= (roleLabel && roleLabel[m.teamRole]) || m.teamRole || 'member'
                                   if isMediaBuying && m.webId
-                                    span.badge.badge-light #{m.webId}
+                                    span.badge.badge-light.mr-1 #{m.webId}
+                                  span.small.text-muted= (roleLabel && roleLabel[m.teamRole]) || m.teamRole || 'member'
 
                                   div.text-muted.small.mt-3 Асистенти баєра:
                                   if row.assistants && row.assistants.length
@@ -132,7 +132,7 @@ block page
                                           )
                                         .media-body
                                           h6 #{`${a.firstName || ''} ${a.lastName || ''}`.trim() || a.email || String(a._id)}
-                                          span.badge.badge-light.mr-3= (roleLabel && roleLabel[a.teamRole]) || a.teamRole || 'assistant'
+                                          span.small.text-muted= (roleLabel && roleLabel[a.teamRole]) || a.teamRole || 'assistant'
                                   else
                                     .text-muted.small — немає —
                           else

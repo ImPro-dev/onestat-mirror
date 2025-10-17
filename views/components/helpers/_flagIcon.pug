@@ -1,0 +1,13 @@
+mixin flagIcon(country)
+  - const code = (country && country.code ? String(country.code).toLowerCase() : null);
+  if code
+    // Soft fallback: if SVG missing, replace the <img> with emoji
+    img.flag-icon.border(
+      src=`/flags/4x3/${code}.svg`
+      alt=`${country.code} flag`
+      width="30"
+      height="20"
+      onerror='this.replaceWith(document.createTextNode("🏳️"))'
+    )
+  else
+    span 🏳️

@@ -25,19 +25,72 @@
 						title: 'Media Buying',
 						link: '/teams/mediabuying',
 						icon: 'linearicons-cash-dollar'
-					},
-					{
-						title: 'Моя команда',
-						link: '/teams/myteam',
-						icon: 'linearicons-users2'
 					}
 				]
 			},
 			{
-				title: 'Оффери',
-				link: '/offers',
+				title: 'Офери',
+				link: '#',
 				icon: 'linearicons-papers',
-				access: ['manager', 'admin']
+				access: ['manager', 'admin'],
+				dropdown: [
+					{
+						title: 'Офери',
+						link: '/offers',
+						icon: 'linearicons-papers'
+					},
+					{
+						title: 'Статистика',
+						link: '#',
+						icon: 'linearicons-chart-bars'
+					},
+					{
+						title: 'Бюджети',
+						link: '#',
+						icon: 'linearicons-bag-dollar'
+					}
+				]
+			},
+			{
+				title: 'Акаунти',
+				link: '#',
+				icon: 'linearicons-users',
+				access: ['user', 'manager', 'admin'],
+				dropdown: [
+					{
+						title: 'Акаунти',
+						link: '#',
+						icon: 'linearicons-portrait2'
+					},
+					{
+						title: 'Кабінети',
+						link: '#',
+						icon: 'linearicons-contacts'
+					},
+					{
+						title: 'Проксі',
+						link: '#',
+						icon: 'linearicons-lan2'
+					}
+				]
+			},
+			{
+				title: 'Автозалив',
+				link: '#',
+				icon: 'linearicons-speed-fast',
+				access: ['user', 'manager', 'admin'],
+				dropdown: [
+					{
+						title: 'Зв\'язки',
+						link: '#',
+						icon: 'linearicons-share2'
+					},
+					{
+						title: 'Заливи',
+						link: '#',
+						icon: 'linearicons-receipt'
+					}
+				]
 			},
 			{
 				title: 'Статистика',
