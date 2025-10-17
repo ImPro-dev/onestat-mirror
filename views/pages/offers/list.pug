@@ -1,0 +1,261 @@
+extends ../../components/base/_skeleton
+include ../../components/rd-navbar/_rd-navbar
+include ../../components/modal-dynamic/_modal-dynamic
+include ../../components/helpers/_helpers
+include ../../components/input/_input
+include ../../components/select2/_select2
+include ../../components/helpers/_flagIcon
+include ../../components/helpers/_date
+
+block variables
+  - pageName = title;
+  - htmlClass.push('page-small-footer');
+
+block page
+  header.section.page-header
+    +rd-navbar
+
+  section.section-xs
+    .container-fluid
+      .row
+        .col-12
+          .panel
+            .panel-header.d-flex.flex-column.flex-md-row.align-items-xl-center.justify-content-between
+              h5.panel-title.mb-4.mb-xl-0
+                span.panel-icon.linearicons-papers
+                = ' '
+                span= title
+              .panel-actions
+                a.btn.btn-outline-secondary.mr-2(href='/offers/create')
+                  span.fa-plus-circle.mr-2
+                  | Створити офер
+                a.btn.btn-primary(href='/statistics')
+                  span.linearicons-chart-growth.mr-2
+                  | Статистика
+
+            .panel-body
+              .d-flex.flex-wrap.justify-content-between.align-items-center.mb-3
+                form.form-inline(method='GET', action='/offers')
+                  .form-group.mb-2.mr-2.mt-0
+                    input.form-control(
+                      type='text',
+                      name='q',
+                      size=25,
+                      placeholder='Пошук (назва/бонус/ставка)',
+                      value=(query && query.q || '')
+                    )
+                  .form-group.mb-2.mr-2.mt-0(style='width: 250px;')
+                    - var geoOptions = [];
+                    - geoOptions[0] =  {value: '', text: 'Гео' };
+                    each val, key in countries
+                      - selected = (query && String(query.country)===String(val._id)) ? true : false
+                      - geoOptions[key + 1] = { value: val._id, selected: selected, text: val.emoji + ' [' + val.code + '] - ' + val.nameUk };
+                    +select2-search({
+                      theme: 'primary',
+                      options: geoOptions,
+                      name: 'country',
+                      class: 'form-control'
+                    })
+                  .form-group.mb-2.mr-2.mt-0
+                    select.form-control(name='source')
+                      option(value='') Джерело: всі
+                      if sources && sources.length
+                        each s in sources
+                          option(
+                            value=s._id,
+                            selected=(query && String(query.source)===String(s._id)) ? true : false
+                          )= s.label
+                  .form-group.mb-2.mr-2.mt-0
+                    select.form-control(name='model')
+                      option(value='') Модель: всі
+                      if models && models.length
+                        each m in models
+                          option(
+                            value=m._id,
+                            selected=(query && String(query.model)===String(m._id)) ? true : false
+                          )= m.label
+                  .form-group.mb-2.mr-2.mt-0
+                    select.form-control(name='target')
+                      option(value='') Ціль: всі
+                      if tconv && tconv.length
+                        each t in tconv
+                          option(
+                            value=t._id,
+                            selected=(query && String(query.target)===String(t._id)) ? true : false
+                          )= t.label
+                  .form-group.mb-2.mr-2.mt-0
+                    select.form-control(name='test')
+                      option(value='') Тест: всі
+                      option(value='true' selected=(query && query.test==='true')) Так
+                      option(value='false' selected=(query && query.test==='false')) Ні
+                  .form-group.mb-2.mr-2.mt-0
+                    select.form-control(name='active')
+                      option(value='') Статус: всі
+                      option(value='true' selected=(query && query.active==='true')) Активні
+                      option(value='false' selected=(query && query.active==='false')) Неактивні
+                  .form-group.mb-2.mr-2.mt-0
+                    input.form-control(
+                      type='number',
+                      name='postclick',
+                      min='0',
+                      placeholder='Постклік (дні)',
+                      value=(query && (query.postclick || ''))
+                    )
+                  .form-group.mb-2.mr-2.mt-0
+                    select.form-control(name='limit')
+                      option(value='10' selected=(pagination && +pagination.limit===10)) 10
+                      option(value='20' selected=(pagination && +pagination.limit===20)) 20
+                      option(value='50' selected=(pagination && +pagination.limit===50)) 50
+                  button.btn.btn-light.ml-2.mb-2.mt-0(type='submit')
+                    span.linearicons-magnifier
+                  a.btn.btn-outline-secondary.ml-2.mb-2(href='/offers', title='Очистити всі фільтри')
+                    span.linearicons-trash2
+
+              if error && error.length
+                +alert({close:false}).alert-danger.alert-sm.mb-3
+                  span.alert-icon.fa-exclamation-triangle
+                  if Array.isArray(error)
+                    each e in error
+                      span= e
+                      br
+                  else
+                    span= error
+
+              if success && success.length
+                +alert({close:false}).alert-success.alert-sm.mb-3
+                  span.alert-icon.linearicons-checkmark-circle
+                  if Array.isArray(success)
+                    each m in success
+                      span= m
+                      br
+                  else
+                    span= success
+
+              if (offers && offers.length)
+                .table-responsive
+                  table.table.table-striped.table-hover
+                    thead
+                      tr
+                        th(style='width:20px; text-align: center') №
+                        th(style='min-width:200px')
+                          | Назва
+                          a.ml-1.fa-caret-up(href=sortUrls.name.asc title='Назва ↑' class=(sortBy==='name' && sortDir==='asc' ? 'text-muted' : 'text-light'))
+                          a.ml-1.fa-caret-down(href=sortUrls.name.desc title='Назва ↓' class=(sortBy==='name' && sortDir==='desc' ? 'text-muted' : 'text-light'))
+                        th(style='min-width:135px')
+                          | Бонус
+                          a.ml-1.fa-caret-up(href=sortUrls.bonus.asc title='Бонус ↑' class=(sortBy==='bonus' && sortDir==='asc' ? 'text-muted' : 'text-light'))
+                          a.ml-1.fa-caret-down(href=sortUrls.bonus.desc title='Бонус ↓' class=(sortBy==='bonus' && sortDir==='desc' ? 'text-muted' : 'text-light'))
+                        th(style='min-width:95px') Джерело
+                        th(style='min-width:50px') Модель
+                        th(style='min-width:50px') Ціль
+                        th(style='min-width:50px')
+                          | Ставка
+                          a.ml-1.fa-caret-up(href=sortUrls.rate.asc title='Ставка ↑' class=(sortBy==='rate' && sortDir==='asc' ? 'text-muted' : 'text-light'))
+                          a.ml-1.fa-caret-down(href=sortUrls.rate.desc title='Ставка ↓' class=(sortBy==='rate' && sortDir==='desc' ? 'text-muted' : 'text-light'))
+                        th(style='min-width:80px')
+                          | Капа
+                          a.ml-1.fa-caret-up(href=sortUrls.cap.asc title='Капа ↑' class=(sortBy==='cap' && sortDir==='asc' ? 'text-muted' : 'text-light'))
+                          a.ml-1.fa-caret-down(href=sortUrls.cap.desc title='Капа ↓' class=(sortBy==='cap' && sortDir==='desc' ? 'text-muted' : 'text-light'))
+                        th(style='min-width:70px')
+                          | Постклік
+                          a.ml-1.fa-caret-up(href=sortUrls.postclick.asc title='Постклік ↑' class=(sortBy==='postclick' && sortDir==='asc' ? 'text-muted' : 'text-light'))
+                          a.ml-1.fa-caret-down(href=sortUrls.postclick.desc title='Постклік ↓' class=(sortBy==='postclick' && sortDir==='desc' ? 'text-muted' : 'text-light'))
+                        th(style='min-width:50px') Тест
+                        th(style='min-width:175px')
+                          | Створено
+                          a.ml-1.fa-caret-up(href=sortUrls.createdAt.asc title='Створено ↑' class=(sortBy==='createdAt' && sortDir==='asc' ? 'text-muted' : 'text-light'))
+                          a.ml-1.fa-caret-down(href=sortUrls.createdAt.desc title='Створено ↓' class=(sortBy==='createdAt' && sortDir==='desc' ? 'text-muted' : 'text-light'))
+                        th(style='min-width:60px')
+                          | Статус
+                          a.ml-1.fa-caret-up(href=sortUrls.active.asc title='Статус ↑' class=(sortBy==='active' && sortDir==='asc' ? 'text-muted' : 'text-light'))
+                          a.ml-1.fa-caret-down(href=sortUrls.active.desc title='Статус ↓' class=(sortBy==='active' && sortDir==='desc' ? 'text-muted' : 'text-light'))
+                        th(style='min-width:150px') Дії
+                    tbody
+                      - var __page = (pagination && pagination.page) || 1;
+                      - var __lim = (pagination && pagination.limit) || 20;
+                      - var __start = ((__page - 1) * __lim) + 1;
+                      - var __i = 0;
+                      each offer, idx in (offers || [])
+                        - var deactivatedOpacity = offer && offer.isActive ? 1 : 0.3;
+                        tr(style='opacity: ' + deactivatedOpacity)
+                          td(style='text-align: center')= __start + (__i++)
+                          td
+                            +flagIcon(offer && offer.country ? offer.country : null)
+                            span.ml-3= (offer && offer.offerName ? offer.offerName : '')
+                            = (offer && offer.country ? ' [' + offer.country.code + '] ' : '')
+                          td= (offer && offer.bonus ? offer.bonus : '')
+                          td= (offer && offer.source ? offer.source.label : '')
+                          td= (offer && offer.model ? offer.model.label : '')
+                          td= (offer && offer.targetConversion ? offer.targetConversion.label : '')
+                          td(style='text-align: center')
+                            +currencyFormat(offer && typeof offer.activeRate === 'number' ? offer.activeRate : null)
+                          td= (offer && (typeof offer.cap === 'number')) ? offer.cap : 'uncap'
+                          td(style='text-align: center')= (typeof offer.postclick === 'number') ? offer.postclick + ' днів' : '—'
+                          td(style='text-align: center')
+                            if (offer && offer.isTest)
+                              span.fa-plus
+                            else
+                              span.fa-minus
+                          td
+                            +dateTimeKyiv(offer && offer.createdAt)
+                          td
+                            // dynamic-modal + POST (reload)
+                            form.d-inline.js-offer-toggle(method='POST', action=`/offers/${offer._id}/active`)
+                              if typeof csrfToken !== 'undefined'
+                                input(type='hidden', name='_csrf', value=csrfToken)
+                              input(type='hidden', name='isActive', value=(offer.isActive ? 'false' : 'true'))
+                              span(
+                                data-toggle='tooltip',
+                                data-original-title='Стоп/Запуск',
+                                data-confirmation=JSON.stringify({
+                                  title: 'Стоп/Запуск',
+                                  content: `${offer.offerName} [${offer.country && offer.country.code || ''}]`
+                                }),
+                                data-confirm-submit
+                              )
+                                +switch({
+                                  id: 'isActive' + offer._id,
+                                  name: 'isActive' + offer._id,
+                                  checked: offer.isActive ? true : false,
+                                  'data-offer-id': offer._id
+                                }).custom-switch-primary
+                          td
+                            a.btn.btn-primary.btn-sm.mr-2(
+                              href='/offers/statistics/' + offer._id,
+                              data-toggle='tooltip'
+                              data-original-title='Статистика'
+                            )
+                              span.linearicons-chart-growth
+                            a.btn.btn-secondary.btn-sm.mr-2(
+                              href='/offers/' + offer._id
+                              data-toggle='tooltip'
+                              data-original-title='Деталі'
+                            )
+                              span.linearicons-cog
+                            a.btn.btn-warning.btn-sm(
+                              href='/offers/' + offer._id + '/edit'
+                              data-toggle='tooltip'
+                              data-original-title='Редагувати'
+                            )
+                              span.linearicons-pencil5
+              else
+                p.text-muted Поки що немає оферів.
+
+              if pagination && pagination.totalPages > 1
+                nav
+                  ul.pagination
+                    li.page-item(class=(pagination.page <= 1 ? 'disabled' : ''))
+                      a.page-link(href=pagination.prevUrl) «
+                    if pagination.pages && pagination.pages.length
+                      each p in pagination.pages
+                        if p.url
+                          li.page-item(class=(p.active ? 'active' : ''))
+                            a.page-link(href=p.url)= p.n
+                        else
+                          li.page-item.disabled
+                            span.page-link= p.n
+                    li.page-item(class=(pagination.page >= pagination.totalPages ? 'disabled' : ''))
+                      a.page-link(href=pagination.nextUrl) »
+
+  +modal-dynamic
+  include ../layout/footer

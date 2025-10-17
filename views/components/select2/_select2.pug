@@ -16,7 +16,7 @@ mixin select2-multiple( data )
 mixin select2-search( data )
 	select.select2( name= data.name, data-minimum-results-search='2', data-placeholder= data.placeholder, data-dropdown-class= data.theme, class= data.theme )
 		each option in data.options
-			option= option
+			option(value=option.value, selected=option.selected)= option.text
 
 //- Select2
 	@param {string} data.name - name of select2
@@ -26,4 +26,4 @@ mixin select2-search( data )
 mixin select2( data )
 	select.select2( name= data.name, data-placeholder= data.placeholder, data-dropdown-class= data.theme, class= data.theme )
 		each option in data.options
-			option= option
+			option(value=option.value, selected=option.selected)= option.text

@@ -28,8 +28,22 @@ mixin radio( data )
 mixin switch ( data )
 	-
 		data = data || {};
-		data.id = data.id || randomStr( 8 );
-	.custom-control.custom-switch&attributes( attributes )
-		input.custom-control-input( type='checkbox', id= data.id, name= data.name )
-		label.custom-control-label( for= data.id )
+		data.id = data.id || randomStr(8);
+
+		const inputAttrs = {
+			type: 'checkbox',
+			id: data.id,
+			name: data.name,
+			checked: data.checked
+		};
+
+		// Merge any data-* into inputAttrs
+		for (const key in data) {
+			if (key.startsWith('data-')) inputAttrs[key] = data[key];
+		}
+
+	.custom-control.custom-switch
+		input.custom-control-input&attributes(inputAttrs)
+		label.custom-control-label(for=data.id)
 			block
+

@@ -1,0 +1,11 @@
+mixin dateTimeKyiv(val)
+  if val
+    = new Date(val).toLocaleString('uk-UA', { timeZone: 'Europe/Kyiv' })
+  else
+    | —
+
+mixin dateKyiv(val)
+  if val
+    = new Date(val).toLocaleDateString('uk-UA', { timeZone: 'Europe/Kyiv' })
+  else
+    | —
