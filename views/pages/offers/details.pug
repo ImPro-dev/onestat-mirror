@@ -92,7 +92,7 @@ block page
                               td.text-right.font-weight-bold(style='width:45%') Назва:
                               td
                                 +flagIcon(offer && offer.country ? offer.country : null)
-                                span.ml-3= offer.offerName
+                                span.ml-2= offer.offerName
                                 = (offer && offer.country ? ' [' + offer.country.code + ']' : '')
                             tr
                               td.text-right.font-weight-bold OfferID:
@@ -113,7 +113,7 @@ block page
                               td.text-right.font-weight-bold Статус:
                               td
                                 if (offer.isActive)
-                                  span.h6.fa-check-circle.text-secondary.mr-2
+                                  span.h6.fa-check-circle.text-success.mr-2
                                   | Активний
                                 else
                                   span.h6.fa-minus-circle.text-danger.mr-2
@@ -150,9 +150,6 @@ block page
                             tr
                               td.text-right.font-weight-bold(style='width:20%') Бонус:
                               td= offer.bonus || '—'
-                            tr
-                              td.text-right.font-weight-bold Модель:
-                              td= (offer && offer.model ? offer.model.label : '—')
                             tr
                               td.text-right.font-weight-bold Ставка:
                               td
@@ -198,6 +195,9 @@ block page
                             tr
                               td.text-right.font-weight-bold Постклік:
                               td= (typeof offer.postclick === 'number') ? (offer.postclick + ' днів') : '—'
+                            tr
+                              td.text-right.font-weight-bold Модель:
+                              td= (offer && offer.model ? offer.model.label : '—')
                             tr
                               td.text-right.font-weight-bold KPI:
                               td

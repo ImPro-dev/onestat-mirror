@@ -52,30 +52,26 @@ function buildPagination(basePath, query, total, page, limit) {
   return { page, limit, totalPages, pages, prevUrl, nextUrl };
 }
 
-// Normalize user and build offer permissions (robust to populated roles)
+// Build permissions from scopes (admin shortcut remains)
 function computeOfferPermissions(req, res) {
   const user =
-    (res && res.locals && (res.locals.user || res.locals.currentUser)) ||
+    (res?.locals?.user || res?.locals?.currentUser) ||
     req.user ||
-    (req.session && req.session.user) ||
+    req.session?.user ||
     null;
 
   const base = getUserScopes(user);
   const scopes = base instanceof Set ? new Set(base) : new Set(base || []);
 
-  const rawOrgRole =
-    (user && (user.orgRole?.value || user.orgRole || user.orgrole?.value || user.orgrole)) || '';
+  const rawOrgRole = (user && (user.orgRole?.value || user.orgRole || user.orgrole?.value || user.orgrole)) || '';
   const orgRole = String(rawOrgRole).toLowerCase();
 
   if (orgRole === 'admin') {
     Object.values(SCOPES).forEach((s) => scopes.add(s));
   }
 
-  const canWriteOffers =
-    scopes.has(SCOPES.OFFERS_ASSIGN_ANY) ||
-    scopes.has(SCOPES.OFFERS_CREATE_ANY) ||
-    scopes.has(SCOPES.TEAMS_MANAGE_DEPT);
-  const canCreateOffers = scopes.has(SCOPES.OFFERS_CREATE_ANY);
+  const canWriteOffers = scopes.has(SCOPES.OFFERS_WRITE_ANY);
+  const canCreateOffers = scopes.has(SCOPES.OFFERS_WRITE_ANY);
 
   return { canWriteOffers, canCreateOffers, scopes };
 }
@@ -240,7 +236,7 @@ async function getEdit(req, res, next) {
   }
 }
 
-// Edit submit (basic fields; rate is managed in step 3)
+// Edit submit (basic fields; rate is managed separately)
 async function postEdit(req, res, next) {
   try {
     const errors = validationResult(req);

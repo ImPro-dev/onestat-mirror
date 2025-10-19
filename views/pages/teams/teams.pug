@@ -22,13 +22,16 @@ block page
                 span.panel-icon.linearicons-cash-dollar
                 = ' '
                 span= title
-              .d-flex.flex-wrap.gap-2
-                button#newTeamBtn.btn.btn-outline-secondary.mr-2(type='button')
-                  span.fa-plus-circle.mr-2
-                  | Створити команду
-                a.btn.btn-primary(href='/teams/mediabuying/management')
-                  span.linearicons-cog.mr-2
-                  | Управління
+              if flags && (flags.isAdmin || flags.canManageDept)
+                .d-flex.flex-wrap.gap-2
+                  // Create team stays visible (can be tightened later)
+                  button#newTeamBtn.btn.btn-outline-secondary.mr-2(type='button')
+                    span.fa-plus-circle.mr-2
+                    | Створити команду
+                  // Show "Management" only for Admin or Head
+                  a.btn.btn-primary(href='/teams/mediabuying/management')
+                    span.linearicons-cog.mr-2
+                    | Управління
 
             .panel-body
               if buckets && buckets.length
@@ -175,7 +178,7 @@ block page
           button(type='button', class='btn btn-outline-secondary', data-dismiss='modal') Ні
           button#archiveTeamConfirm(type='button', class='btn btn-danger') Так, архівувати
 
-  // Create team (moved here from Management)
+  // Create team (SSR modal)
   #teamModal.modal(tabindex='-1')
     .modal-dialog
       .modal-content

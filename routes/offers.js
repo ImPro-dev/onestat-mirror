@@ -1,3 +1,4 @@
+// routes/offers.js
 'use strict';
 
 const express = require('express');
@@ -8,43 +9,37 @@ const { SCOPES } = require('../scripts/permissions/scopes');
 const offersController = require('../controllers/offersController');
 const v = require('../validators/offersValidator');
 
+// Listing: currently open to any authenticated user (your controller may filter by scopes).
 router.get('/', auth, offersController.getList);
 
+// Create
 router.get(
   '/create',
   auth,
-  requireAny(SCOPES.OFFERS_CREATE_ANY),
+  requireAny(SCOPES.OFFERS_WRITE_ANY),
   offersController.getCreate
 );
 
 router.post(
   '/create',
   auth,
-  requireAny(SCOPES.OFFERS_CREATE_ANY),
+  requireAny(SCOPES.OFFERS_WRITE_ANY),
   v.create,
   offersController.postCreate
 );
 
-// Edit offer (read/update)
+// Edit (read/update)
 router.get(
   '/:id/edit',
   auth,
-  requireAny(
-    SCOPES.OFFERS_ASSIGN_ANY,
-    SCOPES.OFFERS_CREATE_ANY,
-    SCOPES.TEAMS_MANAGE_DEPT
-  ),
+  requireAny(SCOPES.OFFERS_WRITE_ANY),
   offersController.getEdit
 );
 
 router.post(
   '/:id/edit',
   auth,
-  requireAny(
-    SCOPES.OFFERS_ASSIGN_ANY,
-    SCOPES.OFFERS_CREATE_ANY,
-    SCOPES.TEAMS_MANAGE_DEPT
-  ),
+  requireAny(SCOPES.OFFERS_WRITE_ANY),
   v.update,
   offersController.postEdit
 );
@@ -53,11 +48,7 @@ router.post(
 router.post(
   '/:id/active',
   auth,
-  requireAny(
-    SCOPES.OFFERS_ASSIGN_ANY,
-    SCOPES.OFFERS_CREATE_ANY,
-    SCOPES.TEAMS_MANAGE_DEPT
-  ),
+  requireAny(SCOPES.OFFERS_WRITE_ANY),
   offersController.toggleActive
 );
 
@@ -65,11 +56,7 @@ router.post(
 router.post(
   '/:id/rates/update',
   auth,
-  requireAny(
-    SCOPES.OFFERS_ASSIGN_ANY,
-    SCOPES.OFFERS_CREATE_ANY,
-    SCOPES.TEAMS_MANAGE_DEPT
-  ),
+  requireAny(SCOPES.OFFERS_WRITE_ANY),
   offersController.postUpdateRate
 );
 
@@ -77,15 +64,11 @@ router.post(
 router.post(
   '/:id/rates/cancel',
   auth,
-  requireAny(
-    SCOPES.OFFERS_ASSIGN_ANY,
-    SCOPES.OFFERS_CREATE_ANY,
-    SCOPES.TEAMS_MANAGE_DEPT
-  ),
+  requireAny(SCOPES.OFFERS_WRITE_ANY),
   offersController.postCancelRate
 );
 
-// Offer details
+// Details
 router.get('/:id', auth, offersController.getDetails);
 
 module.exports = router;
