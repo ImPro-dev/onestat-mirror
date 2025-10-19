@@ -18,32 +18,50 @@ module.exports = function variablesMiddleware(req, res, next) {
   res.locals.role = u?.orgRole || u?.role || null;
   res.locals.position = u?.position || null;
 
-  // 3) Scopes and capability flags (do NOT rely on flags for security;
-  //    route guards must still use requireAny/requireAll)
-  const scopesArr = Array.isArray(u) ? [] : getUserScopes(u || {});
+  // 3) Effective scopes and convenience flags for views.
+  //    IMPORTANT: Do NOT rely on flags for security; routes must still guard with requireAny/requireAll.
+  const scopesArr = Array.isArray(u) ? [] : Array.from(getUserScopes(u || {}));
   const scopes = new Set(scopesArr);
 
-  const isAdminByScope = scopes.has(SCOPES.INTEGRATIONS_ADMIN);
-  const isManagerByScope = !isAdminByScope && scopes.has(SCOPES.TEAMS_WRITE_ANY);
+  // Offer-related flags
+  const canSeeAllOffers = scopes.has(SCOPES.OFFERS_READ_ANY);
+  const canWriteOffers = scopes.has(SCOPES.OFFERS_WRITE_ANY);
+  const canAssignOffers = scopes.has(SCOPES.OFFERS_ASSIGN_TEAM) || canWriteOffers;
+  const canSeeAssignedOffersOnly = scopes.has(SCOPES.OFFERS_READ_ASSIGNED) && !canSeeAllOffers;
+
+  // Teams flags
   const canManageDept = scopes.has(SCOPES.TEAMS_MANAGE_DEPT);
   const canTeamsWriteAny = scopes.has(SCOPES.TEAMS_WRITE_ANY);
   const canTeamsWriteOwn = scopes.has(SCOPES.TEAMS_WRITE_OWN);
 
-  // Expose raw scopes and grouped flags for templating convenience
+  // Analytics flags
+  const canStatsAny = scopes.has(SCOPES.ANALYTICS_READ_ALL);
+  const canStatsDept = scopes.has(SCOPES.ANALYTICS_READ_DEPT);
+  const canStatsTeam = scopes.has(SCOPES.ANALYTICS_READ_TEAM);
+  const canStatsSelf = scopes.has(SCOPES.ANALYTICS_READ_SELF);
+
+  // Expose raw scopes and grouped flags
   res.locals.scopes = scopesArr;
   res.locals.flags = {
-    isAdmin: isAdminByScope,
-    isManager: isManagerByScope,
+    canSeeAllOffers,
+    canWriteOffers,
+    canAssignOffers,
+    canSeeAssignedOffersOnly,
+
     canManageDept,
     canTeamsWriteAny,
     canTeamsWriteOwn,
+
+    canStatsAny,
+    canStatsDept,
+    canStatsTeam,
+    canStatsSelf,
   };
 
-  // 4) Legacy booleans (kept for backward-compat in views only).
-  //    These mirror scope-based flags and should NOT be used as auth gates.
+  // 4) Legacy booleans (for templates only; keep behavior stable)
   const legacyRole = res.locals.role;
-  const legacyIsAdmin = (legacyRole === 'admin') || isAdminByScope;
-  const legacyIsManager = (!legacyIsAdmin && (legacyRole === 'manager')) || isManagerByScope;
+  const legacyIsAdmin = legacyRole === 'admin' || scopes.has(SCOPES.INTEGRATIONS_ADMIN);
+  const legacyIsManager = (!legacyIsAdmin && legacyRole === 'manager') || canTeamsWriteAny;
   res.locals.isAdmin = legacyIsAdmin;
   res.locals.isManager = legacyIsManager;
   res.locals.isUser = legacyRole === 'user' && !legacyIsAdmin && !legacyIsManager;

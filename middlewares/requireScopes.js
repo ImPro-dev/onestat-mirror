@@ -4,7 +4,7 @@
 const { getUserScopes } = require('../scripts/permissions/scopes');
 
 function pickUser(req, res) {
-  // Пріоритет: varMiddleware -> passport -> session
+  // Priority: variables middleware -> passport -> session
   return (res?.locals?.user)
     || (res?.locals?.currentUser)
     || req.user
@@ -12,6 +12,9 @@ function pickUser(req, res) {
     || null;
 }
 
+/**
+ * Allow if the user has at least one of the required scopes.
+ */
 function requireAny(...needed) {
   return (req, res, next) => {
     const user = pickUser(req, res);
@@ -25,6 +28,9 @@ function requireAny(...needed) {
   };
 }
 
+/**
+ * Allow only if the user has all required scopes.
+ */
 function requireAll(...needed) {
   return (req, res, next) => {
     const user = pickUser(req, res);

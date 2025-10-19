@@ -7,7 +7,7 @@ const User = require('../models/User');
 const Team = require('../models/Team');
 const enumsService = require('../services/enumsService');
 const { SCOPES, getUserScopes } = require('../scripts/permissions/scopes');
-const { getTeamRoleLabel } = require('../helpers/appHelper'); // moved helper here
+const { getTeamRoleLabel } = require('../helpers/appHelper');
 
 // -------------------- helpers --------------------
 function toObjectIdOrNull(v) {
@@ -15,17 +15,27 @@ function toObjectIdOrNull(v) {
   return Types.ObjectId.isValid(v) ? new Types.ObjectId(v) : null;
 }
 
+/**
+ * Normalize current actor capabilities using scopes:
+ * - isAdmin: INTEGRATIONS_ADMIN
+ * - isHead: TEAMS_MANAGE_DEPT
+ * We keep "isManagerAny" (TEAMS_WRITE_ANY) only for backward-compat filtering
+ * (e.g., hide admins from classic "manager"), but the main model is Admin/Head.
+ */
 function getActorFlags(req, res) {
-  if (res?.locals) {
-    const isAdmin = !!res.locals.isAdmin;
-    const isManager = !!res.locals.isManager && !isAdmin;
-    return { isAdmin, isManager };
-  }
-  const user = req.session?.user || req.user || null;
-  const set = new Set(getUserScopes(user));
-  const isAdmin = set.has(SCOPES.INTEGRATIONS_ADMIN);
-  const isManager = !isAdmin && set.has(SCOPES.TEAMS_WRITE_ANY);
-  return { isAdmin, isManager };
+  const user =
+    res?.locals?.user ||
+    res?.locals?.currentUser ||
+    req.session?.user ||
+    req.user ||
+    null;
+
+  const scopes = new Set(getUserScopes(user));
+  const isAdmin = scopes.has(SCOPES.INTEGRATIONS_ADMIN);
+  const isHead = scopes.has(SCOPES.TEAMS_MANAGE_DEPT);
+  const isManagerAny = scopes.has(SCOPES.TEAMS_WRITE_ANY); // legacy-ish
+
+  return { isAdmin, isHead, isManagerAny };
 }
 
 async function loadEnumValues(department) {
@@ -62,13 +72,16 @@ function normalizeWebId(input) {
 async function getManagementData(req, res, next) {
   try {
     const department = req.query.department || 'Media Buying';
-    const { isAdmin, isManager } = getActorFlags(req, res);
+    const { isAdmin, isHead, isManagerAny } = getActorFlags(req, res);
 
     const { ORG, deptRolesByDept, teamRolesByDept, orgRoles } = await loadEnumValues(department);
 
+    // Base query by department.
     const usersQuery = { department };
-    if (!isAdmin && isManager && ORG.ADMIN) {
-      usersQuery.orgRole = { $ne: ORG.ADMIN }; // manager should not see admins
+
+    // Classic "manager" should not see admins. Head/Admin can see everyone.
+    if (!isAdmin && !isHead && isManagerAny && ORG.ADMIN) {
+      usersQuery.orgRole = { $ne: ORG.ADMIN };
     }
 
     const rawUsers = await User.find(usersQuery)
@@ -93,7 +106,8 @@ async function getManagementData(req, res, next) {
       position: u.position || null,
     }));
 
-    const orgRolesForSelect = (!isAdmin && isManager && ORG.ADMIN)
+    // For non-admin & non-head "manager" — remove "admin" option from selector
+    const orgRolesForSelect = (!isAdmin && !isHead && isManagerAny && ORG.ADMIN)
       ? orgRoles.filter(r => r.value !== ORG.ADMIN)
       : orgRoles;
 
@@ -141,8 +155,9 @@ async function patchRoles(req, res, next) {
 
     const { ORG, DEPT, TEAM } = await loadEnumValues(user.department);
 
-    const { isAdmin, isManager } = getActorFlags(req, res);
-    if (!isAdmin && isManager && typeof patch.orgRole !== 'undefined' && ORG.ADMIN && patch.orgRole === ORG.ADMIN) {
+    // Only classic "manager" is blocked from setting admin.
+    const { isAdmin, isHead, isManagerAny } = getActorFlags(req, res);
+    if (!isAdmin && !isHead && isManagerAny && typeof patch.orgRole !== 'undefined' && ORG.ADMIN && patch.orgRole === ORG.ADMIN) {
       return res.status(403).json({ ok: false, error: 'Forbidden', message: 'Manager cannot assign admin role' });
     }
 
@@ -394,7 +409,7 @@ async function patchRoles(req, res, next) {
     if (typeof patch.webId !== 'undefined') {
       const canHaveWebId =
         user.department === 'Media Buying' &&
-        user.teamRole && [TEAM.LEAD, TEAM.MEMBER].includes(user.teamRole);
+        user.teamRole && ['lead', 'member'].includes(user.teamRole);
 
       user.webId = canHaveWebId ? normalizeWebId(patch.webId) : null;
     }

@@ -24,7 +24,7 @@ router.get('/',
   userController.UserList
 );
 
-// ADD
+// ADD (write-any or basic-create)
 router.get('/add',
   auth,
   requireAny(SCOPES.ORG_USERS_WRITE_ANY, SCOPES.ORG_USERS_CREATE_BASIC),
@@ -38,7 +38,7 @@ router.post('/add',
   userController.AddUser
 );
 
-// EDIT
+// EDIT (write-any or basic-edit)
 router.get(`/edit/:id(${OID})`,
   auth,
   requireAny(SCOPES.ORG_USERS_WRITE_ANY, SCOPES.ORG_USERS_EDIT_BASIC),
@@ -71,7 +71,7 @@ router.post(`/:id(${OID})/avatar/upload`,
   userController.UploadAvatar
 );
 
-// AVATAR: delete (NEW)
+// AVATAR: delete
 router.post(`/:id(${OID})/avatar/delete`,
   auth,
   csrfProtection,
@@ -86,7 +86,7 @@ router.post(`/remove/:id(${OID})`,
   userController.RemoveUser
 );
 
-// PROFILE (додали CSRF, щоб у шаблоні був токен для кнопок/форм)
+// PROFILE (add CSRF to provide token in template for forms/buttons)
 router.get(`/:id(${OID})`,
   auth,
   csrfProtection, ensureCsrfLocal,

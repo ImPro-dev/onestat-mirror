@@ -20,8 +20,6 @@ const mongoose = require('mongoose');
 
 const AVATAR_DIR = path.join(__dirname, '..', 'uploads', 'avatars');
 
-// const WEBID_RE = /^w\d{3,}$/i;
-
 // Helpers
 function redirectBack(res, req, path = '/users/add') {
   const suffix = req.body?.department ? `?department=${encodeURIComponent(req.body.department)}` : '';
@@ -37,17 +35,16 @@ function buildUrl(base, params) {
   return `${base}?${qs.toString()}`;
 }
 
-// видаляє ВСІ сесії користувача з session-колекції (connect-mongodb-session)
+// Remove all user sessions from connect-mongodb-session collection
 async function revokeUserSessions(userId) {
   const col = mongoose.connection.collection('sessions');
-  // у документі поле "session" — це JSON-рядок; шукаємо за "id":"<userId>"
   await col.deleteMany({ session: { $regex: `"id":"${String(userId)}"` } });
 }
 
 /**
- * GET: Users list (простий варіант)
+ * GET: Users list
+ * (filters, sorting, pagination)
  */
-// --- LIST (усі фільтри лишаємо, сортування теж) ---
 const UserList = async (req, res) => {
   try {
     const {
@@ -74,15 +71,15 @@ const UserList = async (req, res) => {
     const page = toInt(pageRaw, 1);
     const limit = toInt(limitRaw, 20);
 
-    // фільтр
+    // filter
     const find = {};
     if (q && q.trim()) {
       const re = new RegExp(q.trim(), 'i');
       find.$or = [{ firstName: re }, { lastName: re }, { email: re }, { webId: re }];
     }
     if (department) find.department = department;
-    if (orgRole) find.orgRole = orgRole;       // хоч і не редагується тут, але доступний для фільтра
-    if (teamRole) find.teamRole = teamRole;    // те саме
+    if (orgRole) find.orgRole = orgRole;
+    if (teamRole) find.teamRole = teamRole;
     if (active === 'true') find.isActive = true;
     if (active === 'false') find.isActive = false;
 
@@ -136,16 +133,16 @@ const UserList = async (req, res) => {
       title: 'Користувачі',
       users,
 
-      // фільтри (залишені всі)
+      // filters
       departments,
       orgRoles,
       teamRoles,
       query: { q, department, orgRole, teamRole, active },
 
-      // пагінація
+      // pagination
       pagination: { page: safePage, limit, total, totalPages, pages, prevUrl, nextUrl },
 
-      // сортування
+      // sorting
       sortBy, sortDir, sortUrls,
     });
   } catch (err) {
@@ -155,19 +152,20 @@ const UserList = async (req, res) => {
   }
 };
 
-
 /**
  * GET: Add user page
  */
 const AddUserPage = async (req, res) => {
   res.render('pages/users/add', {
     title: 'Новий користувач',
-    departments: await getDepartmentOptions(),   // тільки відділи
+    departments: await getDepartmentOptions(),
   });
 };
 
 /**
  * POST: Create new user
+ * Teamlead is allowed to create a basic user (ORG_USERS_CREATE_BASIC).
+ * Only Admin/Head (via users.js route guards) can fully manage roles later.
  */
 const AddUser = async (req, res) => {
   try {
@@ -183,17 +181,13 @@ const AddUser = async (req, res) => {
 
     const { firstName, lastName, email, password, telegramUsername, department } = req.body;
 
-    let orgRole = 'user';     // за замовчуванням
-    let teamRoleFinal = null; // базова форма без командних ролей
-    let position = null;      // базова форма без позиції
-    let webIdFinal = null;    // базова форма без webId
-
-    // якщо адмін/менеджер з повними правами — можна дозволити orgRole з форми (за потреби)
+    let orgRole = 'user';     // default orgRole for creation
+    // Allow orgRole override only if actor has ORG_USERS_WRITE_ANY (admin/head)
     if (canWriteAny && req.body.orgRole) {
       orgRole = String(req.body.orgRole);
     }
 
-    // Базові перевірки
+    // Basic validation
     if (!firstName?.trim() || !lastName?.trim()) {
       req.flash('userError', 'Будь ласка, заповни імʼя та прізвище.');
       return redirectBack(res, req);
@@ -208,25 +202,22 @@ const AddUser = async (req, res) => {
     }
     const emailNorm = String(email).trim().toLowerCase();
 
-    // Унікальність email
+    // Unique email
     const existing = await User.findOne({ email: emailNorm }).lean();
     if (existing) {
       req.flash('userError', 'Користувач з таким емейлом вже існує.');
       return redirectBack(res, req);
     }
 
-    // Валідність відділу
+    // Department validity
     const deptOk = await Department.exists({ value: department, isActive: true });
     if (!deptOk) {
       req.flash('userError', 'Невірний відділ.');
       return redirectBack(res, req);
     }
 
-    // Пароль
     const passwordHash = await dbHelper.hashPassword(password);
 
-    // Створення з мінімальним набором полів:
-    // orgRole — ФІКСОВАНО 'user'; teamRole/deptRole/webId/position — не чіпаємо
     await User.create({
       firstName: String(firstName).trim(),
       lastName: String(lastName).trim(),
@@ -236,10 +227,9 @@ const AddUser = async (req, res) => {
       telegramUsername: telegramUsername ? String(telegramUsername).trim() : null,
 
       department,
-      orgRole: orgRole,   // ← завжди user при створенні
+      orgRole,
       team: null,
       teamRole: null,
-      // deptRole: null,  // якщо є в моделі — теж null
       webId: null,
       position: null,
 
@@ -256,9 +246,8 @@ const AddUser = async (req, res) => {
 };
 
 /**
- * GET: Edit user page
+ * GET: Edit user page (basic data only)
  */
-// --- EDIT PAGE (мінімальні поля + відділ) ---
 const EditUserPage = async (req, res) => {
   try {
     if (!req.query.allow) {
@@ -275,7 +264,6 @@ const EditUserPage = async (req, res) => {
       return res.redirect('/users');
     }
 
-    // список відділів для селекта
     const departments = await getDepartmentOptions();
 
     return res.render('pages/users/edit', {
@@ -290,12 +278,9 @@ const EditUserPage = async (req, res) => {
   }
 };
 
-
-
 /**
- * POST: Edit user data (без зміни пароля)
+ * POST: Edit user (basic fields only)
  */
-// --- EDIT SUBMIT (тільки базові поля) ---
 const EditUser = async (req, res) => {
   try {
     const { id, firstName, lastName, email, telegramUsername, department } = req.body;
@@ -311,7 +296,7 @@ const EditUser = async (req, res) => {
       return res.redirect('/users');
     }
 
-    // --- Базові перевірки ---
+    // validation
     if (!firstName?.trim() || !lastName?.trim()) {
       req.flash('userError', 'Будь ласка, заповни імʼя та прізвище.');
       return res.redirect(`/users/edit/${id}?allow=1`);
@@ -324,7 +309,7 @@ const EditUser = async (req, res) => {
 
     const emailNorm = String(email).trim().toLowerCase();
 
-    // --- Перевірка унікальності email (якщо змінився) ---
+    // unique email when changed
     if (emailNorm !== current.email) {
       const emailTaken = await User.exists({ _id: { $ne: id }, email: emailNorm });
       if (emailTaken) {
@@ -333,14 +318,12 @@ const EditUser = async (req, res) => {
       }
     }
 
-    // --- Перевірка валідності відділу ---
     const deptOk = await Department.exists({ value: department, isActive: true });
     if (!deptOk) {
       req.flash('userError', 'Невірний відділ.');
       return res.redirect(`/users/edit/${id}?allow=1`);
     }
 
-    // --- Оновлюємо тільки базові поля ---
     await User.findByIdAndUpdate(
       id,
       {
@@ -364,12 +347,11 @@ const EditUser = async (req, res) => {
   }
 };
 
-
 /**
- * GET: User profile page
- * Доступ:
- *  - власний профіль: завжди
- *  - чужий профіль: вимагає ORG_USERS_READ_ANY
+ * GET: Profile page
+ * Access:
+ *  - self: always
+ *  - others: requires ORG_USERS_READ_ANY
  */
 const ProfilePage = async (req, res) => {
   try {
@@ -409,7 +391,7 @@ const ProfilePage = async (req, res) => {
   }
 };
 
-// --- NEW: Видалення аватара ---
+// Delete avatar
 const DeleteAvatar = async (req, res) => {
   const id = req.params.id;
   try {
@@ -423,7 +405,7 @@ const DeleteAvatar = async (req, res) => {
     try {
       if (fs.existsSync(filePath)) await fs.promises.unlink(filePath);
     } catch (e) {
-      // якщо не вдалося видалити — логнемо, але не валимо UX
+      // swallow unlink error (do not break UX)
       console.error('Avatar unlink error:', e);
     }
 
@@ -439,7 +421,7 @@ const DeleteAvatar = async (req, res) => {
 };
 
 /**
- * GET: Remove user (простий варіант)
+ * Remove user (simple)
  */
 const RemoveUser = async (req, res) => {
   try {
@@ -454,13 +436,13 @@ const RemoveUser = async (req, res) => {
 };
 
 /**
- * POST: Deactivate User
+ * Deactivate user
  */
 const DeactivateUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // не дозволяємо вимикати самого себе
+    // do not allow self-deactivation
     if (String(req.session?.user?.id) === String(id)) {
       req.flash('userError', 'Не можна деактивувати власний обліковий запис.');
       return res.redirect('/users');
@@ -476,7 +458,6 @@ const DeactivateUser = async (req, res) => {
       return res.redirect('/users');
     }
 
-    // кілл усіх його сесій
     await revokeUserSessions(id);
 
     req.flash('userSuccess', `Користувача ${user.firstName || ''} ${user.lastName || ''} деактивовано.`);
@@ -489,7 +470,7 @@ const DeactivateUser = async (req, res) => {
 };
 
 /**
- * POST: Activate User
+ * Activate user
  */
 const ActivateUser = async (req, res) => {
   try {
@@ -514,7 +495,7 @@ const ActivateUser = async (req, res) => {
   }
 };
 
-// Віддати картинку: якщо нема — віддати плейсхолдер
+// Serve avatar (fallback to placeholder)
 const ServeAvatar = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -540,7 +521,7 @@ const canEditUserBase = (sessionUser, targetUserId) => {
   return isSelf || scopes.has(SCOPES.ORG_USERS_WRITE_ANY);
 };
 
-// Сторінка завантаження
+// Upload avatar page
 const UploadAvatarPage = async (req, res) => {
   try {
     const id = req.params.id;
@@ -567,7 +548,7 @@ const UploadAvatarPage = async (req, res) => {
   }
 };
 
-// Обробка аплоаду
+// Handle avatar upload
 const UploadAvatar = async (req, res) => {
   const id = req.params.id;
   try {

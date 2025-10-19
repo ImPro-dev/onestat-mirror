@@ -26,9 +26,10 @@ block page
                 = ' '
                 span= title
               .panel-actions
-                a.btn.btn-outline-secondary.mr-2(href='/offers/create')
-                  span.fa-plus-circle.mr-2
-                  | Створити офер
+                if (canWriteOffers)
+                  a.btn.btn-outline-secondary.mr-2(href='/offers/create')
+                    span.fa-plus-circle.mr-2
+                    | Створити офер
                 a.btn.btn-primary(href='/statistics')
                   span.linearicons-chart-growth.mr-2
                   | Статистика
@@ -106,6 +107,7 @@ block page
                       option(value='10' selected=(pagination && +pagination.limit===10)) 10
                       option(value='20' selected=(pagination && +pagination.limit===20)) 20
                       option(value='50' selected=(pagination && +pagination.limit===50)) 50
+                      option(value='100' selected=(pagination && +pagination.limit===100)) 100
                   button.btn.btn-light.ml-2.mb-2.mt-0(type='submit')
                     span.linearicons-magnifier
                   a.btn.btn-outline-secondary.ml-2.mb-2(href='/offers', title='Очистити всі фільтри')
@@ -181,7 +183,7 @@ block page
                           td(style='text-align: center')= __start + (__i++)
                           td
                             +flagIcon(offer && offer.country ? offer.country : null)
-                            span.ml-3= (offer && offer.offerName ? offer.offerName : '')
+                            span.ml-2= (offer && offer.offerName ? offer.offerName : '')
                             = (offer && offer.country ? ' [' + offer.country.code + '] ' : '')
                           td= (offer && offer.bonus ? offer.bonus : '')
                           td= (offer && offer.source ? offer.source.label : '')
@@ -198,27 +200,39 @@ block page
                               span.fa-minus
                           td
                             +dateTimeKyiv(offer && offer.createdAt)
-                          td
-                            // dynamic-modal + POST (reload)
-                            form.d-inline.js-offer-toggle(method='POST', action=`/offers/${offer._id}/active`)
-                              if typeof csrfToken !== 'undefined'
-                                input(type='hidden', name='_csrf', value=csrfToken)
-                              input(type='hidden', name='isActive', value=(offer.isActive ? 'false' : 'true'))
-                              span(
-                                data-toggle='tooltip',
-                                data-original-title='Стоп/Запуск',
-                                data-confirmation=JSON.stringify({
-                                  title: 'Стоп/Запуск',
-                                  content: `${offer.offerName} [${offer.country && offer.country.code || ''}]`
-                                }),
-                                data-confirm-submit
-                              )
-                                +switch({
-                                  id: 'isActive' + offer._id,
-                                  name: 'isActive' + offer._id,
-                                  checked: offer.isActive ? true : false,
-                                  'data-offer-id': offer._id
-                                }).custom-switch-primary
+                          td(style='text-align: center')
+                            if (canWriteOffers)
+                              // dynamic-modal + POST (reload)
+                              form.d-inline.js-offer-toggle(method='POST', action=`/offers/${offer._id}/active`)
+                                if typeof csrfToken !== 'undefined'
+                                  input(type='hidden', name='_csrf', value=csrfToken)
+                                input(type='hidden', name='isActive', value=(offer.isActive ? 'false' : 'true'))
+                                span(
+                                  data-toggle='tooltip',
+                                  data-original-title='Стоп/Запуск',
+                                  data-confirmation=JSON.stringify({
+                                    title: 'Стоп/Запуск',
+                                    content: `${offer.offerName} [${offer.country && offer.country.code || ''}]`
+                                  }),
+                                  data-confirm-submit
+                                )
+                                  +switch({
+                                    id: 'isActive' + offer._id,
+                                    name: 'isActive' + offer._id,
+                                    checked: offer.isActive ? true : false,
+                                    'data-offer-id': offer._id
+                                  }).custom-switch-primary
+                            else
+                              if (offer.isActive)
+                                span.h5.fa-check-circle.text-success(
+                                  data-toggle='tooltip'
+                                  data-original-title='Офер активний'
+                                )
+                              else
+                                 span.h5.fa-minus-circle.text-danger(
+                                  data-toggle='tooltip'
+                                  data-original-title='Офер на стопі'
+                                )
                           td
                             a.btn.btn-primary.btn-sm.mr-2(
                               href='/offers/statistics/' + offer._id,
@@ -232,12 +246,13 @@ block page
                               data-original-title='Деталі'
                             )
                               span.linearicons-cog
-                            a.btn.btn-warning.btn-sm(
-                              href='/offers/' + offer._id + '/edit'
-                              data-toggle='tooltip'
-                              data-original-title='Редагувати'
-                            )
-                              span.linearicons-pencil5
+                            if (canWriteOffers)
+                              a.btn.btn-warning.btn-sm(
+                                href='/offers/' + offer._id + '/edit'
+                                data-toggle='tooltip'
+                                data-original-title='Редагувати'
+                              )
+                                span.linearicons-pencil5
               else
                 p.text-muted Поки що немає оферів.
 

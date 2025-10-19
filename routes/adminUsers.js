@@ -6,10 +6,10 @@ const { getManagementData, patchRoles } = require('../controllers/adminUsersCont
 const { requireAny } = require('../middlewares/requireScopes');
 const { SCOPES } = require('../scripts/permissions/scopes');
 
-// Доступ до менеджмент-даних:
-//  - Manager: ORG_USERS_READ_ANY
-//  - Head:    TEAMS_MANAGE_DEPT
-//  - Admin:   INTEGRATIONS_ADMIN
+// Access to management data page
+// - Manager: ORG_USERS_READ_ANY
+// - Head:    TEAMS_MANAGE_DEPT
+// - Admin:   INTEGRATIONS_ADMIN
 router.get(
   '/management',
   requireAny(
@@ -20,10 +20,10 @@ router.get(
   getManagementData
 );
 
-// Оновлення ролей користувачів:
-//  - Manager: ORG_USERS_WRITE_ANY
-//  - Head:    TEAMS_MANAGE_DEPT
-//  - Admin:   INTEGRATIONS_ADMIN
+// Update user roles
+// - Manager: ORG_USERS_WRITE_ANY
+// - Head:    TEAMS_MANAGE_DEPT
+// - Admin:   INTEGRATIONS_ADMIN
 router.patch(
   '/:id/roles',
   requireAny(

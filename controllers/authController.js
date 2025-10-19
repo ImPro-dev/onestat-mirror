@@ -5,10 +5,7 @@ const User = require('../models/User');
 const { killOtherSessions } = require('../services/sessionsService');
 
 /**
- *
- * @param {Request} req
- * @param {Response} res
- * @returns
+ * Auth page (login form)
  */
 const Auth = async (req, res) => {
   if (req.session.isAuthenticated) {
@@ -19,12 +16,10 @@ const Auth = async (req, res) => {
     isLogin: true,
     captcha: res.recaptcha,
   });
-}
+};
 
 /**
- * Login customer
- * @param {Request} req
- * @param {Response} res
+ * Handle login
  */
 const Login = async (req, res) => {
   try {
@@ -40,9 +35,9 @@ const Login = async (req, res) => {
       return res.redirect('/auth');
     }
 
-    // ВАЖЛИВО: явно підтягуємо passwordHash
+    // Important: explicitly select passwordHash
     const candidate = await User.findOne({ email: emailNorm, isActive: true })
-      .select('+passwordHash'); // <—
+      .select('+passwordHash');
 
     if (!candidate) {
       req.flash('error', 'Користувача не знайдено');
@@ -55,12 +50,11 @@ const Login = async (req, res) => {
       return res.redirect('/auth');
     }
 
-    // Успіх: оновлюємо lastLoginAt (не тримаємо hash у сесії)
+    // Update last login time
     candidate.lastLoginAt = new Date();
     await candidate.save();
-    // await User.updateOne({ _id: candidate._id }, { $set: { lastLoginAt: new Date() } });
 
-    // Кладемо в сесію мінімум без чутливих полів
+    // Store minimal user snapshot in session (no sensitive fields)
     req.session.user = {
       id: String(candidate._id),
       email: candidate.email,
@@ -74,7 +68,7 @@ const Login = async (req, res) => {
       assistantOf: candidate.assistantOf,
       team: candidate.team,
       webId: candidate.webId,
-      grants: candidate.grants || [],     // додаткові кастомні скоупи з БД
+      grants: candidate.grants || [], // custom grants from DB
     };
     req.session.isAuthenticated = true;
 
@@ -94,9 +88,7 @@ const Login = async (req, res) => {
 };
 
 /**
- * Logout customer
- * @param {Request} req
- * @param {Response} res
+ * Logout
  */
 const Logout = (req, res) => {
   req.session.destroy((err) => {
@@ -105,12 +97,12 @@ const Logout = (req, res) => {
       req.flash('error', 'Помилка при виході');
       return res.redirect('/dashboard');
     }
-    res.clearCookie('connect.sid'); // очищаємо cookie сесії
+    res.clearCookie('connect.sid');
     res.redirect('/auth');
   });
 };
 
-// GET: форма зміни пароля
+// GET: change-password form
 const ChangePasswordPage = async (req, res) => {
   try {
     return res.render('pages/auth/change-password', {
@@ -123,7 +115,7 @@ const ChangePasswordPage = async (req, res) => {
   }
 };
 
-// POST: зміна пароля
+// POST: change-password
 const ChangePassword = async (req, res) => {
   try {
     const userId = req.session?.user?.id || req.session?.user?._id;
@@ -132,7 +124,6 @@ const ChangePassword = async (req, res) => {
       return res.redirect('/auth');
     }
 
-    // підтримуємо обидва імені поля
     const currentPassword = req.body.currentPassword;
     const { newPassword, confirmPassword } = req.body || {};
 
@@ -173,16 +164,7 @@ const ChangePassword = async (req, res) => {
       { $set: { passwordHash: newHash, lastPasswordChangeAt: new Date() } }
     );
 
-    // прибиваємо всі сесії користувача
-    // try {
-    //   const col = mongoose.connection.collection('sessions');
-    //   await col.deleteMany({ session: { $regex: `"id":"${String(userId)}"` } });
-    // } catch (e) {
-    //   console.error('Failed to revoke sessions after password change:', e);
-    // }
-
     req.flash('userSuccess', 'Пароль успішно змінено.');
-    // return res.redirect('/auth');
     return res.redirect('/users/' + userId);
   } catch (err) {
     console.error(err);
@@ -191,11 +173,10 @@ const ChangePassword = async (req, res) => {
   }
 };
 
-
 module.exports = {
   Auth,
   Login,
   Logout,
   ChangePasswordPage,
   ChangePassword,
-}
+};

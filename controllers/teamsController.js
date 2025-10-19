@@ -21,8 +21,12 @@ function getActor(req) {
   };
 }
 
+/**
+ * Head may manage only own department. Admin bypasses the restriction.
+ */
 function assertHeadDepartment(actor, department) {
   if (!actor) return;
+  if (actor.orgrole === 'admin') return; // admin bypass
   if ((actor.deptrole === 'head') && actor.department && department && actor.department !== department) {
     const err = new Error('Forbidden: head can manage only own department');
     err.status = 403;
@@ -30,19 +34,23 @@ function assertHeadDepartment(actor, department) {
   }
 }
 
+/**
+ * Return coarse flags based on scopes.
+ * We keep isManagerAny (TEAMS_WRITE_ANY) for compatibility, but the main
+ * authority comes from Admin (INTEGRATIONS_ADMIN) and Head (TEAMS_MANAGE_DEPT).
+ */
 function getActorFlags(req, res) {
-  // 1) prefer res.locals flags
-  if (res?.locals) {
-    const isAdmin = !!res.locals.isAdmin;
-    const isManager = !!res.locals.isManager && !isAdmin;
-    return { isAdmin, isManager };
-  }
-  // 2) fallback to scopes
-  const user = req.session?.user || req.user || null;
+  const user =
+    res?.locals?.user ||
+    res?.locals?.currentUser ||
+    req.session?.user ||
+    req.user ||
+    null;
   const set = new Set(getUserScopes(user));
   const isAdmin = set.has(SCOPES.INTEGRATIONS_ADMIN);
-  const isManager = !isAdmin && set.has(SCOPES.TEAMS_WRITE_ANY);
-  return { isAdmin, isManager };
+  const isHead = set.has(SCOPES.TEAMS_MANAGE_DEPT);
+  const isManagerAny = set.has(SCOPES.TEAMS_WRITE_ANY);
+  return { isAdmin, isHead, isManagerAny };
 }
 
 // =======================================================
@@ -209,7 +217,7 @@ async function renderDeptTeamsPage(req, res, next, { department }) {
   try {
     const dept = String(department || 'Media Buying').trim();
 
-    // 1) Активні команди департаменту
+    // 1) Active teams in the department
     const teams = await Team.find({ department: dept, isActive: true })
       .select('_id name department lead')
       .sort({ name: 1 })
@@ -217,25 +225,25 @@ async function renderDeptTeamsPage(req, res, next, { department }) {
 
     const teamIds = teams.map(t => t._id);
 
-    // 2) Користувачі департаменту, що входять до цих команд (канонічні поля)
+    // 2) Users in those teams (canonical fields)
     const users = await User.find({ department: dept, team: { $in: teamIds } })
       .select('_id firstName lastName email webId team teamRole assistantOf')
       .lean();
 
-    // 3) Побудова buckets: { team, lead, buyers:[{buyer, assistants:[] }], assistantsOfLead:[] }
+    // 3) Build buckets: { team, lead, buyers:[{buyer, assistants:[] }], assistantsOfLead:[] }
     const byTeam = new Map(
       teams.map(t => [String(t._id), { team: t, lead: null, buyers: [], assistantsOfLead: [] }])
     );
     const byId = new Map(users.map(u => [String(u._id), u]));
 
-    // lead з users
+    // lead from users
     for (const u of users) {
       if (u.team && u.teamRole === 'lead') {
         const bucket = byTeam.get(String(u.team));
         if (bucket) bucket.lead = u;
       }
     }
-    // fallback: якщо не знайшли серед users, глянемо team.lead
+    // fallback to team.lead
     const missing = [];
     for (const bucket of byTeam.values()) {
       if (!bucket.lead && bucket.team.lead) missing.push(bucket.team.lead);
@@ -261,7 +269,7 @@ async function renderDeptTeamsPage(req, res, next, { department }) {
       }
     }
 
-    // assistants: до баєра або до ліда
+    // assistants
     for (const u of users) {
       if (!u.team || u.teamRole !== 'assistant') continue;
       const bucket = byTeam.get(String(u.team));
@@ -280,12 +288,12 @@ async function renderDeptTeamsPage(req, res, next, { department }) {
 
     const buckets = Array.from(byTeam.values());
 
-    // 4) Локалізовані лейбли ролей (для бейджів)
+    // 4) Localized labels for badges
     const teamRolesByDept = await enumsService.getTeamRoleOptionsByDept(dept);
     const roleLabel = {};
     for (const r of (teamRolesByDept || [])) roleLabel[r.value] = r.label || r.value;
 
-    // 5) Кандидати тімлідів для модалки створення команди (SSR!)
+    // 5) Teamlead candidates for "create team" modal (SSR)
     const leadsRaw = await getTeamLeads(dept, { onlyActive: true, withTeamOnly: false });
     const teamLeads = (leadsRaw || [])
       .map(u => ({
@@ -300,24 +308,24 @@ async function renderDeptTeamsPage(req, res, next, { department }) {
         return an.localeCompare(bn);
       });
 
-    // 6) Рендер
+    // 6) Render
     res.render('pages/teams/teams', {
       title: `${dept}`,
       department: dept,
       isMediaBuying: (dept === 'Media Buying'),
       buckets,
       roleLabel,
-      options: { teamLeads },    // ← важливо для заповнення селекту
+      options: { teamLeads },
     });
   } catch (e) { next(e); }
 }
 
 // =======================================================
-// SSR: management page (table is prefilled; canonical: team, assistantOf)
+// SSR: management page (canonical: team, assistantOf)
 // =======================================================
 async function renderDeptManagementPage(req, res, next, { department }) {
   try {
-    const { isAdmin, isManager } = getActorFlags(req, res);
+    const { isAdmin, isHead, isManagerAny } = getActorFlags(req, res);
 
     // query params (filters + pagination)
     const {
@@ -343,9 +351,9 @@ async function renderDeptManagementPage(req, res, next, { department }) {
     const page = toInt(pageRaw, 1);
     const limit = toInt(limitRaw, 20);
 
-    // base query (respect manager visibility)
+    // base query (respect legacy manager visibility)
     const find = { department };
-    if (!isAdmin && isManager) {
+    if (!isAdmin && !isHead && isManagerAny) {
       find.orgRole = { $ne: 'admin' };
     }
 
@@ -390,7 +398,7 @@ async function renderDeptManagementPage(req, res, next, { department }) {
       enumsService.getDeptRoleOptionsByDept(department),
       enumsService.getTeamRoleOptionsByDept(department),
     ]);
-    const orgRoles = isAdmin ? orgRolesAll : orgRolesAll.filter(r => r.value !== 'admin');
+    const orgRoles = (isAdmin || isHead) ? orgRolesAll : orgRolesAll.filter(r => r.value !== 'admin');
 
     const teams = await Team.find({ department, isActive: true })
       .select('_id name')
