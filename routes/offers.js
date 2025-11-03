@@ -11,6 +11,7 @@ const v = require('../validators/offersValidator');
 
 // Listing: currently open to any authenticated user (your controller may filter by scopes).
 router.get('/', auth, offersController.getList);
+router.get('/my', offersController.getMyList);
 
 // Create
 router.get(
@@ -66,6 +67,24 @@ router.post(
   auth,
   requireAny(SCOPES.OFFERS_WRITE_ANY),
   offersController.postCancelRate
+);
+
+// ---- Offer Assignment ----
+router.post(
+  '/:id/assignment',
+  auth,
+  requireAny(
+    SCOPES.OFFERS_ASSIGN_ANY,
+    SCOPES.OFFERS_ASSIGN_OWN,
+    SCOPES.OFFERS_ASSIGN_TEAM
+  ),
+  offersController.postAssign
+);
+
+router.get(
+  '/:id/assignees',
+  auth,
+  offersController.getAssignees
 );
 
 // Details

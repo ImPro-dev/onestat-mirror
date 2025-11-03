@@ -1,0 +1,13 @@
+mixin copyInput(opts)
+  -
+    var v = (opts && opts.value) ? String(opts.value) : '';
+    var size = (opts && opts.size) || 'sm';
+    var readonly = (opts && opts.readonly !== false); // default true
+    var btnText = (opts && opts.btnText) || 'Copy';
+    var inputId = (opts && opts.id) || ('ci_' + Math.random().toString(36).slice(2));
+  .input-group
+    input.form-control(class=('form-control-' + size), type='text', id=inputId, readonly=readonly, value=v, onclick='this.select();')
+    .input-group-append
+      button.btn(class=('btn-' + size) + ' btn-outline-secondary', type='button', onclick=`(function(){var el=document.getElementById('${inputId}'); if(!el) return; el.select(); try{navigator.clipboard && navigator.clipboard.writeText(el.value);}catch(e){document.execCommand && document.execCommand('copy');}})();`)
+        span.linearicons-copy
+        |  #{btnText}

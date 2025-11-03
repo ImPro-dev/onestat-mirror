@@ -159,7 +159,7 @@ block page
               label.form-label Нова назва
               input#renameTeamName.form-control(type='text', maxlength='128', required)
         .modal-footer
-          button(type='button', class='btn btn-secondary', data-dismiss='modal') Скасувати
+          button(type='button', class='btn btn-light', data-dismiss='modal') Скасувати
           button#renameTeamSaveBtn(type='button', class='btn btn-primary') Зберегти
 
   // Archive team confirm
@@ -175,7 +175,7 @@ block page
           p.mb-0 Підтвердити архівацію команди:
           p.fw-semibold.mt-1#archiveTeamName
         .modal-footer
-          button(type='button', class='btn btn-outline-secondary', data-dismiss='modal') Ні
+          button(type='button', class='btn btn-light', data-dismiss='modal') Ні
           button#archiveTeamConfirm(type='button', class='btn btn-danger') Так, архівувати
 
   // Create team (SSR modal)
@@ -205,7 +205,7 @@ block page
                     option(value=String(cand._id))= candName
             .form-text.text-muted Тімлід має належати цьому ж департаменту.
         .modal-footer
-          button(type='button', class='btn btn-outline-primary', data-dismiss='modal') Скасувати
+          button(type='button', class='btn btn-light', data-dismiss='modal') Скасувати
           button#teamCreateBtn(type='button', class='btn btn-primary') Створити
 
   +modal-dynamic

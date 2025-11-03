@@ -6,36 +6,13 @@ const { Types } = mongoose;
 const User = require('../models/User');
 const Team = require('../models/Team');
 const enumsService = require('../services/enumsService');
-const { SCOPES, getUserScopes } = require('../scripts/permissions/scopes');
 const { getTeamRoleLabel } = require('../helpers/appHelper');
+const { getActorFlags } = require('../helpers/acl');
 
 // -------------------- helpers --------------------
 function toObjectIdOrNull(v) {
   if (!v) return null;
   return Types.ObjectId.isValid(v) ? new Types.ObjectId(v) : null;
-}
-
-/**
- * Normalize current actor capabilities using scopes:
- * - isAdmin: INTEGRATIONS_ADMIN
- * - isHead: TEAMS_MANAGE_DEPT
- * We keep "isManagerAny" (TEAMS_WRITE_ANY) only for backward-compat filtering
- * (e.g., hide admins from classic "manager"), but the main model is Admin/Head.
- */
-function getActorFlags(req, res) {
-  const user =
-    res?.locals?.user ||
-    res?.locals?.currentUser ||
-    req.session?.user ||
-    req.user ||
-    null;
-
-  const scopes = new Set(getUserScopes(user));
-  const isAdmin = scopes.has(SCOPES.INTEGRATIONS_ADMIN);
-  const isHead = scopes.has(SCOPES.TEAMS_MANAGE_DEPT);
-  const isManagerAny = scopes.has(SCOPES.TEAMS_WRITE_ANY); // legacy-ish
-
-  return { isAdmin, isHead, isManagerAny };
 }
 
 async function loadEnumValues(department) {
@@ -65,21 +42,18 @@ function dbDeptToUi(deptRoleDB) { return (deptRoleDB && deptRoleDB !== 'none') ?
 function normalizeWebId(input) {
   if (input == null) return null;
   const digits = String(input).replace(/\D/g, '');
-  return digits.length ? digits : null; // keep digits only; model enforces exact format
+  return digits.length ? digits : null;
 }
 
 // -------------------- GET /admin/users/management --------------------
 async function getManagementData(req, res, next) {
   try {
     const department = req.query.department || 'Media Buying';
-    const { isAdmin, isHead, isManagerAny } = getActorFlags(req, res);
+    const { isAdmin, isHead, isManagerAny } = getActorFlags(res?.locals?.user || req.session?.user || req.user);
 
     const { ORG, deptRolesByDept, teamRolesByDept, orgRoles } = await loadEnumValues(department);
 
-    // Base query by department.
     const usersQuery = { department };
-
-    // Classic "manager" should not see admins. Head/Admin can see everyone.
     if (!isAdmin && !isHead && isManagerAny && ORG.ADMIN) {
       usersQuery.orgRole = { $ne: ORG.ADMIN };
     }
@@ -106,7 +80,6 @@ async function getManagementData(req, res, next) {
       position: u.position || null,
     }));
 
-    // For non-admin & non-head "manager" — remove "admin" option from selector
     const orgRolesForSelect = (!isAdmin && !isHead && isManagerAny && ORG.ADMIN)
       ? orgRoles.filter(r => r.value !== ORG.ADMIN)
       : orgRoles;
@@ -137,7 +110,6 @@ async function patchRoles(req, res, next) {
       return res.status(400).json({ ok: false, error: 'Invalid user id' });
     }
 
-    // Only apply fields present in the payload
     const b = req.body || {};
     const has = (k) => Object.prototype.hasOwnProperty.call(b, k);
 
@@ -155,18 +127,17 @@ async function patchRoles(req, res, next) {
 
     const { ORG, DEPT, TEAM } = await loadEnumValues(user.department);
 
-    // Only classic "manager" is blocked from setting admin.
-    const { isAdmin, isHead, isManagerAny } = getActorFlags(req, res);
+    const { isAdmin, isHead, isManagerAny } = getActorFlags(res?.locals?.user || req.session?.user || req.user);
     if (!isAdmin && !isHead && isManagerAny && typeof patch.orgRole !== 'undefined' && ORG.ADMIN && patch.orgRole === ORG.ADMIN) {
       return res.status(403).json({ ok: false, error: 'Forbidden', message: 'Manager cannot assign admin role' });
     }
 
-    // ---- ORG ROLE (partial update)
+    // ORG ROLE
     if (typeof patch.orgRole !== 'undefined' && patch.orgRole !== user.orgRole) {
       user.orgRole = patch.orgRole;
     }
 
-    // If user becomes admin → clear dept/team fields and any leadership
+    // If becomes admin → clear dept/team leadership
     if (ORG.ADMIN && user.orgRole === ORG.ADMIN) {
       if (user.team) {
         await Team.updateOne({ _id: user.team, lead: user._id }, { $unset: { lead: 1 } }, { runValidators: false });
@@ -199,12 +170,12 @@ async function patchRoles(req, res, next) {
       });
     }
 
-    // ---- DEPT ROLE / TEAM ROLE / TEAM / ASSISTANTOF (partial updates)
-    const prevTeamRole = user.teamRole; // snapshot before mutation
+    // DEPT/TEAM ROLES + TEAM/assistantOf
+    const prevTeamRole = user.teamRole;
     const deptRoleUI = has('deptRole') ? patch.deptRole : dbDeptToUi(user.deptRole);
     const teamRoleNew = has('teamRole') ? patch.teamRole : user.teamRole;
 
-    // Department head on/off
+    // Head on/off
     if (DEPT.HEAD && deptRoleUI === DEPT.HEAD) {
       if (TEAM.LEAD && prevTeamRole === TEAM.LEAD) {
         await Team.updateMany({ lead: user._id }, { $unset: { lead: 1 } }, { runValidators: false });
@@ -222,8 +193,7 @@ async function patchRoles(req, res, next) {
       } catch { user.position = user.position || 'Head'; }
     } else {
       if (has('deptRole')) {
-        user.deptRole = uiDeptToDb(deptRoleUI); // null/'' → 'none'
-        // Recompute position based on current teamRole if it exists; otherwise clear.
+        user.deptRole = uiDeptToDb(deptRoleUI);
         if (user.teamRole) {
           const label = await getTeamRoleLabel(user.department, user.teamRole);
           user.position = label || null;
@@ -268,7 +238,6 @@ async function patchRoles(req, res, next) {
             user.assistantOf = null;
           }
 
-          // set position by TeamRole label
           user.position = (await getTeamRoleLabel(user.department, TEAM.LEAD)) || null;
 
         } else if (teamRoleNew && TEAM.MEMBER && teamRoleNew === TEAM.MEMBER) {
@@ -285,7 +254,6 @@ async function patchRoles(req, res, next) {
             user.team = team._id;
           }
 
-          // set position by TeamRole label
           user.position = (await getTeamRoleLabel(user.department, TEAM.MEMBER)) || null;
 
         } else if (teamRoleNew && TEAM.ASSISTANT && teamRoleNew === TEAM.ASSISTANT) {
@@ -310,7 +278,6 @@ async function patchRoles(req, res, next) {
           }
           user.webId = null;
 
-          // set position by TeamRole label
           user.position = (await getTeamRoleLabel(user.department, TEAM.ASSISTANT)) || null;
 
         } else {
@@ -321,7 +288,7 @@ async function patchRoles(req, res, next) {
           user.teamRole = null;
           user.team = null;
           user.assistantOf = null;
-          user.position = null; // clear position when no team role and not head
+          user.position = null;
         }
       }
 
@@ -359,9 +326,8 @@ async function patchRoles(req, res, next) {
             }
             user.assistantOf = null;
           }
-          // position stays as role-based label
         } else {
-          // "not selected" for team
+          // no team selected
           if (user.teamRole === TEAM.LEAD && prevTeamId) {
             await Team.updateOne(
               { _id: prevTeamId, lead: user._id },
@@ -396,16 +362,14 @@ async function patchRoles(req, res, next) {
           }
           user.assistantOf = sup._id;
           user.team = sup.team;
-          // position remains assistant's label
         } else {
           user.assistantOf = null;
           user.team = null;
-          // position remains assistant's label
         }
       }
     }
 
-    // --- webId (Media Buying only, for LEAD/MEMBER). Does not touch team/assistantOf.
+    // webId (Media Buying only, for LEAD/MEMBER)
     if (typeof patch.webId !== 'undefined') {
       const canHaveWebId =
         user.department === 'Media Buying' &&

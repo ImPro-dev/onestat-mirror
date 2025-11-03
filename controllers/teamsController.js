@@ -5,8 +5,8 @@ const mongoose = require('mongoose');
 const Team = require('../models/Team');
 const User = require('../models/User');
 const enumsService = require('../services/enumsService');
-const { SCOPES, getUserScopes } = require('../scripts/permissions/scopes');
-const { getTeamLeads, getSupervisors } = require('../helpers/appHelper');
+const { getTeamLeads, getSupervisors, getTeamRoleValues } = require('../helpers/appHelper');
+const { buildFlags } = require('../helpers/acl');
 
 // ---- helpers ----
 function getActor(req) {
@@ -26,31 +26,26 @@ function getActor(req) {
  */
 function assertHeadDepartment(actor, department) {
   if (!actor) return;
-  if (actor.orgrole === 'admin') return; // admin bypass
-  if ((actor.deptrole === 'head') && actor.department && department && actor.department !== department) {
+  const flags = buildFlags(actor);
+  // Admin (integrations admin) bypass
+  if (flags.isIntegrationsAdmin) return;
+  // Head may manage only own department
+  if (flags.canManageDept && actor.department && department && String(actor.department) !== String(department)) {
     const err = new Error('Forbidden: head can manage only own department');
     err.status = 403;
     throw err;
   }
 }
 
-/**
- * Return coarse flags based on scopes.
- * We keep isManagerAny (TEAMS_WRITE_ANY) for compatibility, but the main
- * authority comes from Admin (INTEGRATIONS_ADMIN) and Head (TEAMS_MANAGE_DEPT).
- */
+// flags for SSR via centralized ACL
 function getActorFlags(req, res) {
-  const user =
-    res?.locals?.user ||
-    res?.locals?.currentUser ||
-    req.session?.user ||
-    req.user ||
-    null;
-  const set = new Set(getUserScopes(user));
-  const isAdmin = set.has(SCOPES.INTEGRATIONS_ADMIN);
-  const isHead = set.has(SCOPES.TEAMS_MANAGE_DEPT);
-  const isManagerAny = set.has(SCOPES.TEAMS_WRITE_ANY);
-  return { isAdmin, isHead, isManagerAny };
+  const user = res?.locals?.user || req.session?.user || req.user || null;
+  const f = buildFlags(user || {});
+  return {
+    isAdmin: !!f.isIntegrationsAdmin,
+    isHead: !!f.canManageDept,
+    isManagerAny: !!f.canTeamsWriteAny,
+  };
 }
 
 // =======================================================
@@ -139,6 +134,9 @@ async function getDeptTeamsTree(req, res, next) {
     const actor = getActor(req);
     assertHeadDepartment(actor, department);
 
+    // Resolve canonical role values (no literals)
+    const ROLES = await getTeamRoleValues(department);
+
     const teams = await Team.find({ department, isActive: true })
       .select('_id name department lead')
       .lean();
@@ -157,7 +155,7 @@ async function getDeptTeamsTree(req, res, next) {
 
     // lead from users
     for (const u of users) {
-      if (u.teamRole === 'lead' && u.team) {
+      if (u.team && u.teamRole === ROLES.LEAD) {
         const bucket = byTeam.get(String(u.team));
         if (bucket) bucket.lead = u;
       }
@@ -183,7 +181,7 @@ async function getDeptTeamsTree(req, res, next) {
 
     // buyers
     for (const u of users) {
-      if (u.teamRole === 'member' && u.team) {
+      if (u.team && u.teamRole === ROLES.MEMBER) {
         const bucket = byTeam.get(String(u.team));
         if (bucket) bucket.buyers.push({ buyer: u, assistants: [] });
       }
@@ -191,17 +189,17 @@ async function getDeptTeamsTree(req, res, next) {
 
     // assistants
     for (const u of users) {
-      if (u.teamRole !== 'assistant' || !u.team) continue;
+      if (!u.team || u.teamRole !== ROLES.ASSISTANT) continue;
       const bucket = byTeam.get(String(u.team));
       if (!bucket) continue;
 
       const sup = u.assistantOf ? byId.get(String(u.assistantOf)) : null;
       if (!sup) continue;
 
-      if (sup.teamRole === 'member') {
+      if (sup.teamRole === ROLES.MEMBER) {
         const cell = bucket.buyers.find(bx => String(bx.buyer._id) === String(sup._id));
         if (cell) cell.assistants.push(u);
-      } else if (sup.teamRole === 'lead') {
+      } else if (sup.teamRole === ROLES.LEAD) {
         bucket.assistantsOfLead.push(u);
       }
     }
@@ -216,6 +214,9 @@ async function getDeptTeamsTree(req, res, next) {
 async function renderDeptTeamsPage(req, res, next, { department }) {
   try {
     const dept = String(department || 'Media Buying').trim();
+
+    // Canonical role values for the department
+    const ROLES = await getTeamRoleValues(dept);
 
     // 1) Active teams in the department
     const teams = await Team.find({ department: dept, isActive: true })
@@ -238,7 +239,7 @@ async function renderDeptTeamsPage(req, res, next, { department }) {
 
     // lead from users
     for (const u of users) {
-      if (u.team && u.teamRole === 'lead') {
+      if (u.team && u.teamRole === ROLES.LEAD) {
         const bucket = byTeam.get(String(u.team));
         if (bucket) bucket.lead = u;
       }
@@ -263,7 +264,7 @@ async function renderDeptTeamsPage(req, res, next, { department }) {
 
     // buyers
     for (const u of users) {
-      if (u.team && u.teamRole === 'member') {
+      if (u.team && u.teamRole === ROLES.MEMBER) {
         const bucket = byTeam.get(String(u.team));
         if (bucket) bucket.buyers.push({ buyer: u, assistants: [] });
       }
@@ -271,17 +272,17 @@ async function renderDeptTeamsPage(req, res, next, { department }) {
 
     // assistants
     for (const u of users) {
-      if (!u.team || u.teamRole !== 'assistant') continue;
+      if (!u.team || u.teamRole !== ROLES.ASSISTANT) continue;
       const bucket = byTeam.get(String(u.team));
       if (!bucket) continue;
 
       const sup = u.assistantOf ? byId.get(String(u.assistantOf)) : null;
       if (!sup) continue;
 
-      if (sup.teamRole === 'member') {
+      if (sup.teamRole === ROLES.MEMBER) {
         const cell = bucket.buyers.find(b => String(b.buyer._id) === String(sup._id));
         if (cell) cell.assistants.push(u);
-      } else if (sup.teamRole === 'lead') {
+      } else if (sup.teamRole === ROLES.LEAD) {
         bucket.assistantsOfLead.push(u);
       }
     }

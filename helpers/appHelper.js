@@ -11,6 +11,40 @@ const DEFAULT_PROJECTION =
   '_id firstName lastName email department orgRole deptRole teamRole team assistantOf webId isActive position';
 const DEFAULT_SORT = { lastName: 1, firstName: 1 };
 
+/* -------------------------------------------------------------------------- */
+/*  Actor helper (single canonical accessor)                                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * getActor(req, res)
+ * Canonical way to read the current user from request/locals and normalize fields.
+ * Returns null if unauthenticated.
+ */
+function getActor(req, res) {
+  const raw =
+    (res && res.locals && res.locals.user) ||
+    (req && (req.user || (req.session && req.session.user))) ||
+    null;
+
+  if (!raw) return null;
+
+  const id = String(raw._id || raw.id || '');
+  return {
+    ...raw,
+    id,
+    _id: raw._id || id,
+    orgRole: raw.orgRole ?? raw.orgrole ?? null,
+    deptRole: raw.deptRole ?? raw.deptrole ?? null,
+    teamRole: raw.teamRole ?? raw.teamrole ?? null,
+    department: raw.department ?? raw.dept ?? null,
+    team: raw.team ?? null,
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Team role values & labels                                                 */
+/* -------------------------------------------------------------------------- */
+
 /**
  * Resolve canonical team role values for a given department via enumsService.
  * Avoids hardcoding 'lead' | 'member' | 'assistant'.
@@ -247,10 +281,14 @@ async function getTeamRoster(teamId) {
 }
 
 module.exports = {
+  // Actor
+  getActor,
+
   // Labels
   getTeamRoleLabel,
 
   // Role-based helpers
+  getTeamRoleValues,
   getTeamLeads,
   getBuyers,
   getAssistants,

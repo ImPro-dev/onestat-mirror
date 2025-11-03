@@ -16,7 +16,11 @@ mixin telegramFormat(raw)
 		- let username = val.replace(/^https?:\/\/t\.me\//i, '').replace(/^@/, '').trim();
 		- const valid = /^[a-zA-Z0-9_]{2,32}$/.test(username);
 		if valid
-			a(href=`https://t.me/${username}`, target='_blank', rel='noopener noreferrer')
+			a(
+				href=`https://t.me/${username}`,
+				target='_blank',
+				rel='noopener noreferrer'
+				style='display: inline-block; text-overflow: ellipsis; overflow: hidden; width: 120px; white-space: nowrap;')
 				| @#{username}
 		else
 			if /^https?:\/\//i.test(val)

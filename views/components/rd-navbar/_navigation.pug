@@ -1,5 +1,6 @@
 //- Main Navigation
 mixin navigation( menu, type )
+	- var PWAenabled = true;
 	if( !type )
 		ul.rd-navbar-nav&attributes( attributes )
 			each item in menu
@@ -10,6 +11,8 @@ mixin navigation( menu, type )
 							span.rd-navbar-title-text= item.heading
 				else
 					if (role && item.access && item.access.includes(role))
+						if (item.title == 'PWA' && !PWAenabled)
+							- continue
 						li.rd-navbar-nav-item( class= {active: item.active} )
 							a.rd-navbar-link( href= item.link target= item.blank ? '_blank' : '' )
 								if( item.icon )
@@ -22,11 +25,12 @@ mixin navigation( menu, type )
 	else if( type === 'dropdown' )
 		ul.rd-navbar-dropdown
 			each item in menu
-				li.rd-navbar-dropdown-item( class= {active: item.active} )
-					a.rd-navbar-link( href= item.link )
-						if( item.icon )
-							span.rd-navbar-icon( class= item.icon )
-						= item.title
+				if (role && item.access && item.access.includes(role))
+					li.rd-navbar-dropdown-item( class= {active: item.active} )
+						a.rd-navbar-link( href= item.link )
+							if( item.icon )
+								span.rd-navbar-icon( class= item.icon )
+							= item.title
 
-					if( item.dropdown )
-						+navigation( item.dropdown, 'dropdown' )
+						if( item.dropdown )
+							+navigation( item.dropdown, 'dropdown' )

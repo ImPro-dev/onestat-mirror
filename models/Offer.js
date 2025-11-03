@@ -9,32 +9,45 @@ const RateSchema = new mongoose.Schema({
   validTo: { type: Date, default: null },
 }); // keep _id for addressing specific periods if needed
 
-const OfferSchema = new mongoose.Schema({
-  offerName: { type: String, required: true, trim: true },
-  offerId: { type: String, required: true, trim: true },
-  country: { type: mongoose.Schema.Types.ObjectId, ref: 'Country', required: true },
-  source: { type: mongoose.Schema.Types.ObjectId, ref: 'TrafficSource', required: true },
-  model: { type: mongoose.Schema.Types.ObjectId, ref: 'OfferModel', required: true },
-  targetConversion: { type: mongoose.Schema.Types.ObjectId, ref: 'TargetConversion', required: true },
+const OfferSchema = new mongoose.Schema(
+  {
+    offerName: { type: String, required: true, trim: true },
+    offerId: { type: String, required: true, trim: true },
+    country: { type: mongoose.Schema.Types.ObjectId, ref: 'Country', required: true },
+    source: { type: mongoose.Schema.Types.ObjectId, ref: 'TrafficSource', required: true },
+    model: { type: mongoose.Schema.Types.ObjectId, ref: 'OfferModel', required: true },
+    targetConversion: { type: mongoose.Schema.Types.ObjectId, ref: 'TargetConversion', required: true },
 
-  // history; active rate has validTo = null
-  rates: { type: [RateSchema], default: [] },
+    // Rate history; active rate has validTo = null
+    rates: { type: [RateSchema], default: [] },
 
-  // denormalized current active rate (kept in sync in service)
-  activeRate: { type: Number, default: null },
+    // Denormalized current active rate (kept in sync in service)
+    activeRate: { type: Number, default: null },
 
-  bonus: { type: String, required: true, trim: true },
-  cap: { type: Number, default: null },
+    bonus: { type: String, required: true, trim: true },
+    cap: { type: Number, default: null },
 
-  // postclick window in days; null means not used
-  postclick: { type: Number, default: null },
+    // Postclick window in days; null means not used
+    postclick: { type: Number, default: null },
 
-  kpi: { type: String, default: '' },
-  link: { type: String, default: '' },
-  isTest: { type: Boolean, default: false },
-  notes: { type: String, default: '' },
-  isActive: { type: Boolean, default: true },
-}, { timestamps: true });
+    kpi: { type: String, default: '' },
+    link: { type: String, default: '' },
+    isTest: { type: Boolean, default: false },
+    notes: { type: String, default: '' },
+    isActive: { type: Boolean, default: true },
+
+    // Keitaro: last used campaign names per service template (templateId → string)
+    // Example: { "101": "OfferName [US] · T1", "202": "Custom name" }
+    keitaroNames: {
+      type: Map,
+      of: String,
+      default: () => ({}),
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
 // Indexes
 OfferSchema.index({ offerName: 1 });
@@ -57,8 +70,9 @@ OfferSchema.path('rates').validate(function (arr) {
   return open <= 1;
 }, 'Only one active rate period (validTo=null) is allowed.');
 
-// Optional: help queries over history
-OfferSchema.index({ 'rates.validFrom': 1 });
-OfferSchema.index({ 'rates.validTo': 1 });
+// Optional helper virtual to expose "rateHistory" as an alias of "rates"
+OfferSchema.virtual('rateHistory').get(function () {
+  return this.rates;
+});
 
 module.exports = mongoose.model('Offer', OfferSchema);

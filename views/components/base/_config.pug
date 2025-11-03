@@ -24,7 +24,8 @@
 					{
 						title: 'Media Buying',
 						link: '/teams/mediabuying',
-						icon: 'linearicons-cash-dollar'
+						icon: 'linearicons-cash-dollar',
+						access: ['manager', 'admin']
 					}
 				]
 			},
@@ -32,22 +33,31 @@
 				title: 'Офери',
 				link: '#',
 				icon: 'linearicons-papers',
-				access: ['manager', 'admin'],
+				access: ['user', 'manager', 'admin'],
 				dropdown: [
 					{
 						title: 'Офери',
 						link: '/offers',
-						icon: 'linearicons-papers'
+						icon: 'linearicons-papers',
+						access: ['manager', 'admin']
+					},
+					{
+						title: 'Мої офери',
+						link: '/offers/my',
+						icon: 'linearicons-papers',
+						access: ['user', 'manager']
 					},
 					{
 						title: 'Статистика',
 						link: '#',
-						icon: 'linearicons-chart-bars'
+						icon: 'linearicons-chart-bars',
+						access: ['manager', 'admin']
 					},
 					{
 						title: 'Бюджети',
 						link: '#',
-						icon: 'linearicons-bag-dollar'
+						icon: 'linearicons-bag-dollar',
+						access: ['manager', 'admin']
 					}
 				]
 			},
@@ -60,17 +70,20 @@
 					{
 						title: 'Акаунти',
 						link: '#',
-						icon: 'linearicons-portrait2'
+						icon: 'linearicons-portrait2',
+						access: ['user', 'manager', 'admin']
 					},
 					{
 						title: 'Кабінети',
 						link: '#',
-						icon: 'linearicons-contacts'
+						icon: 'linearicons-contacts',
+						access: ['user', 'manager', 'admin']
 					},
 					{
 						title: 'Проксі',
 						link: '#',
-						icon: 'linearicons-lan2'
+						icon: 'linearicons-lan2',
+						access: ['user', 'manager', 'admin']
 					}
 				]
 			},
@@ -83,12 +96,14 @@
 					{
 						title: 'Зв\'язки',
 						link: '#',
-						icon: 'linearicons-share2'
+						icon: 'linearicons-share2',
+						access: ['user', 'manager', 'admin']
 					},
 					{
 						title: 'Заливи',
 						link: '#',
-						icon: 'linearicons-receipt'
+						icon: 'linearicons-receipt',
+						access: ['user', 'manager', 'admin']
 					}
 				]
 			},
@@ -97,6 +112,38 @@
 				link: '/statistics',
 				icon: 'linearicons-chart-bars',
 				access: ['user', 'manager', 'admin']
+			},
+			{
+				title: 'PWA',
+				link: '#',
+				icon: 'linearicons-laptop-phone',
+				access: ['user', 'manager', 'admin'],
+				dropdown: [
+					{
+						title: 'Список',
+						link: '#',
+						icon: 'linearicons-list4',
+						access: ['user', 'manager', 'admin']
+					},
+					{
+						title: 'Статистика',
+						link: '#',
+						icon: 'linearicons-chart-bars',
+						access: ['user', 'manager', 'admin']
+					},
+					{
+						title: 'Лендінги',
+						link: '#',
+						icon: 'linearicons-picture3',
+						access: ['user', 'manager', 'admin']
+					},
+					{
+						title: 'Пуші',
+						link: '#',
+						icon: 'linearicons-outbox',
+						access: ['user', 'manager', 'admin']
+					}
+				]
 			},
 			{
 				heading: 'Налаштування',
@@ -117,12 +164,14 @@
 					{
 						title: 'Налаштування',
 						link: '/documentation/setup',
-						icon: 'linearicons-cog'
+						icon: 'linearicons-cog',
+						access: ['user', 'manager', 'admin']
 					},
 					{
 						title: 'Використання',
 						link: '/documentation/usage',
-						icon: 'linearicons-file-spreadsheet'
+						icon: 'linearicons-file-spreadsheet',
+						access: ['user', 'manager', 'admin']
 					}
 				]
 			},

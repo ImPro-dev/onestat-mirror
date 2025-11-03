@@ -1,0 +1,58 @@
+// Shared card: General offer info
+.card.mb-4
+  .card-header
+    h6.card-title.mb-0 Загальна інформація
+  .card-body
+    .table-responsive
+      table.table.mt-3.mb-4
+        tbody
+          tr
+            td.text-right.font-weight-bold(style='width:45%') Назва:
+            td
+              +flagIcon(offer && offer.country ? offer.country : null)
+              span.ml-2= offer.offerName
+              = (offer && offer.country ? ' [' + offer.country.code + ']' : '')
+          tr
+            td.text-right.font-weight-bold OfferID:
+            td= offer.offerId
+          tr
+            td.text-right.font-weight-bold Гео:
+            td= (offer && offer.country ? `${offer.country.nameUk} [${offer.country.code}]` : '—')
+          tr
+            td.text-right.font-weight-bold Джерело:
+            td= (offer && offer.source ? offer.source.label : '—')
+          tr
+            td.text-right.font-weight-bold Ціль:
+            td= (offer && offer.targetConversion ? offer.targetConversion.label : '—')
+          tr
+            td.text-right.font-weight-bold Тестовий офер:
+            td= offer.isTest ? 'Так' : 'Ні'
+          tr
+            td.text-right.font-weight-bold Статус:
+            td
+              if (offer.isActive)
+                span.h6.fa-check-circle.text-success.mr-2
+                | Активний
+              else
+                span.h6.fa-minus-circle.text-danger.mr-2
+                | На стопі
+          tr
+            td.text-right.font-weight-bold Лінк на рум:
+            td
+              if offer && offer.link
+                a.d-block(
+                  href=offer.link,
+                  target='_blank',
+                  rel='noopener noreferrer',
+                  style='max-width:420px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;'
+                )= offer.link
+              else
+                span.text-muted —
+          tr
+            td.text-right.font-weight-bold Створено:
+            td
+              +dateTimeKyiv(offer && offer.createdAt)
+          tr
+            td.text-right.font-weight-bold Оновлено:
+            td
+              +dateTimeKyiv(offer && offer.updatedAt)

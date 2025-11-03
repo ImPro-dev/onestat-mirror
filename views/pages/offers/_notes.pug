@@ -1,0 +1,9 @@
+// Shared card: Notes
+.card
+  .card-header
+    h6.card-title.mb-0 Примітки
+  .card-body
+    if offer && offer.notes
+      .richtext!= offer.notes
+    else
+      span.text-muted Немає

@@ -1,6 +1,7 @@
 extends ../../components/base/_skeleton
 include ../../components/rd-navbar/_rd-navbar
 include ../../components/helpers/_helpers
+include ../../components/copy/_copy
 include ../../components/helpers/_flagIcon
 include ../../components/helpers/_date
 include ../../components/input/_input
@@ -26,24 +27,23 @@ block page
                 span= title
                   = (offer && offer.country ? ' [' + offer.country.code + ']' : '')
               .panel-actions
-                a.btn.btn-outline-secondary.mr-2(href='/offers')
+                a.btn.btn-outline-secondary.mr-2(href=`${basePath}`)
                   span.linearicons-arrow-left.mr-2.mr-2
                   | Назад
+                a.btn.btn-primary.mr-2(href='/offers/statistics/' + offer._id,)
+                  span.linearicons-chart-growth.mr-2
+                  | Статистика
                 if canWriteOffers
-                  a.btn.btn-primary.mr-2(href='/offers/' + offer._id + '/edit')
-                    span.linearicons-pencil.mr-2
+                  a.btn.btn-warning.mr-2(href='/offers/' + offer._id + '/edit')
+                    span.linearicons-pencil5.mr-2
                     | Редагувати
-                  // Stop/Start with confirmation modal (POST + reload)
                   form.d-inline(method='POST', action=`/offers/${offer._id}/active`)
                     if typeof csrfToken !== 'undefined'
                       input(type='hidden', name='_csrf', value=csrfToken)
-                    // next desired state
                     input(type='hidden', name='isActive', value=(offer.isActive ? 'false' : 'true'))
                     a.btn.mr-0(
                       href='#'
-                      class=(offer.isActive ? 'btn-warning' : 'btn-success')
-                      data-toggle='tooltip'
-                      data-original-title=(offer.isActive ? 'Зупинити офер' : 'Запустити офер')
+                      class=(offer.isActive ? 'btn-danger' : 'btn-success')
                       data-confirmation=JSON.stringify({
                         title: (offer.isActive ? 'Зупинити офер' : 'Запустити офер'),
                         content: `${offer.offerName} ${offer.country ? '[' + offer.country.code + ']' : ''}`
@@ -78,196 +78,264 @@ block page
                   else
                     span= success
 
-              // --- General info
               .row
                 .col-xxl-4.col-xl-6
-                  .card.mb-4
-                    .card-header
-                      h6.card-title.mb-0 Загальна інформація
-                    .card-body
-                      .table-responsive
-                        table.table.mt-3.mb-4
-                          tbody
-                            tr
-                              td.text-right.font-weight-bold(style='width:45%') Назва:
-                              td
-                                +flagIcon(offer && offer.country ? offer.country : null)
-                                span.ml-2= offer.offerName
-                                = (offer && offer.country ? ' [' + offer.country.code + ']' : '')
-                            tr
-                              td.text-right.font-weight-bold OfferID:
-                              td= offer.offerId
-                            tr
-                              td.text-right.font-weight-bold Гео:
-                              td= (offer && offer.country ? `${offer.country.nameUk} [${offer.country.code}]` : '—')
-                            tr
-                              td.text-right.font-weight-bold Джерело:
-                              td= (offer && offer.source ? offer.source.label : '—')
-                            tr
-                              td.text-right.font-weight-bold Ціль:
-                              td= (offer && offer.targetConversion ? offer.targetConversion.label : '—')
-                            tr
-                              td.text-right.font-weight-bold Тестовий офер:
-                              td= offer.isTest ? 'Так' : 'Ні'
-                            tr
-                              td.text-right.font-weight-bold Статус:
-                              td
-                                if (offer.isActive)
-                                  span.h6.fa-check-circle.text-success.mr-2
-                                  | Активний
-                                else
-                                  span.h6.fa-minus-circle.text-danger.mr-2
-                                  | На стопі
-                            tr
-                              td.text-right.font-weight-bold Лінк на рум:
-                              td
-                                if offer && offer.link
-                                  a.d-block(
-                                    href=offer.link,
-                                    target='_blank',
-                                    rel='noopener noreferrer',
-                                    style='max-width:420px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;'
-                                  )= offer.link
-                                else
-                                  span.text-muted —
-                            tr
-                              td.text-right.font-weight-bold Створено:
-                              td
-                                +dateTimeKyiv(offer && offer.createdAt)
-                            tr
-                              td.text-right.font-weight-bold Оновлено:
-                              td
-                                +dateTimeKyiv(offer && offer.updatedAt)
+                  // include partials inside this column
+                  include _offerInfo
 
                 .col-xxl-8.col-xl-6
-                  .card.mb-3
-                    .card-header
-                      h6.card-title.mb-0 Фінанси
-                    .card-body
-                      .table-responsive
-                        table.table.mt-3.mb-4
-                          tbody
-                            tr
-                              td.text-right.font-weight-bold(style='width:20%') Бонус:
-                              td= offer.bonus || '—'
-                            tr
-                              td.text-right.font-weight-bold Ставка:
-                              td
-                                +currencyFormat(offer && typeof offer.activeRate === 'number' ? offer.activeRate : null)
-                                if canWriteOffers
-                                  a.btn.btn-sm.btn-light.ml-3(href='#collapseExample', data-toggle='collapse')
-                                    span.linearicons-chevron-down.mr-2
-                                    | Оновити
-                                  .collapse(id='collapseExample')
-                                    - var __now = new Date();
-                                    - var __ymd = String(__now.getFullYear()) + '-' + String(__now.getMonth()+1).padStart(2,'0') + '-' + String(__now.getDate()).padStart(2,'0');
-                                    form(method='POST', action=`/offers/${offer._id}/rates/update`)
-                                      if typeof csrfToken !== 'undefined'
-                                        input(type='hidden', name='_csrf', value=csrfToken)
-                                      .form-group.mb-2.mt-4
-                                        .input-group
-                                          .input-group-prepend
-                                            span.input-group-text
-                                              span.fa-usd
-                                          input.form-control(
-                                            type='number',
-                                            id='newRateAmount',
-                                            name='newRateAmount',
-                                            step='1',
-                                            min='0',
-                                            required,
-                                            placeholder='USD'
-                                          )
-                                      .form-group.mb-2
-                                        input.form-control(
-                                          type='date',
-                                          id='newRateValidFrom',
-                                          name='newRateValidFrom',
-                                          required,
-                                          value=__ymd
-                                        )
-                                      button.btn.btn-warning.mb-2(type='submit')
-                                        span.fa-refresh.mr-2
-                                        | Оновити ставку
-                            tr
-                              td.text-right.font-weight-bold Капа:
-                              td= (typeof offer.cap === 'number') ? offer.cap : 'uncap'
-                            tr
-                              td.text-right.font-weight-bold Постклік:
-                              td= (typeof offer.postclick === 'number') ? (offer.postclick + ' днів') : '—'
-                            tr
-                              td.text-right.font-weight-bold Модель:
-                              td= (offer && offer.model ? offer.model.label : '—')
-                            tr
-                              td.text-right.font-weight-bold KPI:
-                              td
-                                if offer && offer.kpi
-                                  != offer.kpi
-                                else
-                                  span.text-muted —
+                  include _finance
+                  include _notes
 
-                  .card
-                    .card-header
-                      h6.card-title.mb-0 Примітки
-                    .card-body
-                      if offer && offer.notes
-                        .richtext!= offer.notes
-                      else
-                        span.text-muted Немає
+              // ======== Personal referral links for the current user (buyer/assistant) ========
+              -
+                var __myId = (typeof myID !== 'undefined' && myID) ? String(myID) : null;
+                var __myLinks = Array.isArray(typeof myAssignments !== 'undefined' ? myAssignments : null)
+                  ? (myAssignments || [])
+                  : [];
+                if (!__myLinks.length && Array.isArray(assignees) && __myId) {
+                  __myLinks = (assignees || []).filter(function(r){
+                    var uid = r && r.user && (String(r.user._id || r.user.id || ''));
+                    return uid && uid === __myId && r.keitaroLink;
+                  }).map(function(r){
+                    return {
+                      campaignName: r.campaignName,
+                      keitaroLink: r.keitaroLink
+                    };
+                  });
+                }
 
-              // --- Rate history
-              .card.mt-3
-                .card-header
-                  h6.card-title.mb-0 Історія ставок
-                if offer && offer.rateHistory && offer.rateHistory.length
-                  .table-responsive
-                    table.table.table-striped.mb-0
-                      thead
-                        tr
-                          th(style='min-width:100px') Ставка
-                          th(style='min-width:200px') Діє з
-                          th(style='min-width:200px') Діє до
-                          if canWriteOffers
-                            th(style='min-width:140px') Дія
-                      tbody
-                        - var __today = new Date(); __today.setHours(0,0,0,0);
-                        each r in (offer.rateHistory || [])
-                          - var _vf = r.validFrom ? new Date(r.validFrom) : null;
-                          - var _vt = r.validTo ? new Date(r.validTo) : null;
-                          - var _vfY = _vf ? _vf.getFullYear() : 0;
-                          - var _vfM = _vf ? String(_vf.getMonth()+1).padStart(2,'0') : '00';
-                          - var _vfD = _vf ? String(_vf.getDate()).padStart(2,'0') : '00';
-                          - var _vfYMD = _vf ? (_vfY + '-' + _vfM + '-' + _vfD) : '';
-                          - var _vfDisp = _vf ? (_vfD + '.' + _vfM + '.' + _vfY) : '';
-                          - var __vfCmp = _vf ? (new Date(_vf)).setHours(0,0,0,0) : 0;
-                          - var isFutureOpen = !!(_vf && !_vt && (__vfCmp > __today.getTime()));
-                          tr
-                            td
-                              +currencyFormat(typeof r.amount === 'number' ? r.amount : null)
-                            td
-                              +dateKyiv(r.validFrom)
-                            td
-                              +dateKyiv(r.validTo)
-                            if canWriteOffers
-                              td
-                                if isFutureOpen
-                                  form.d-inline(method='POST', action=`/offers/${offer._id}/rates/cancel`)
-                                    if typeof csrfToken !== 'undefined'
-                                      input(type='hidden', name='_csrf', value=csrfToken)
-                                    input(type='hidden', name='validFrom', value=_vfYMD)
-                                    a.btn.btn-outline-danger.btn-sm(
-                                      href='#'
-                                      data-confirmation=JSON.stringify({
-                                        title: 'Скасувати майбутню ставку',
-                                        content: `Видалити ставку з ${_vfDisp}?`
-                                      })
-                                      data-confirm-submit
-                                    )
-                                      span.linearicons-cross.mr-1
-                                      | Скасувати
-                else
-                  .p-3
-                    span.text-muted Історія відсутня.
+              if __myLinks && __myLinks.length
+                .row
+                  .col-12
+                    .card.mt-3
+                      .card-header
+                        h6.card-title.mb-0 Мої посилання
+                      .card-body
+                        .table-responsive
+                          table.table.table-striped.mb-0
+                            thead
+                              tr
+                                th(style='min-width:200px') Кампанія
+                                th(style='min-width:420px') Посилання
+                            tbody
+                              each row in __myLinks
+                                tr
+                                  td= row.campaignName || '—'
+                                  td
+                                    if row.keitaroLink
+                                      +copyInput({ value: row.keitaroLink, size: 'sm', btnText: 'Copy' })
+                                    else
+                                      span.text-muted — (ще не додано)
+
+              // ======== Assignment form (visible only for users with write permissions) ========
+              if canAssignOffers
+                hr
+                .row
+                  .col-xl-4
+                    .card.mt-3
+                      .card-header
+                        h6.card-title.mb-0 Видача на запуск
+                      .card-body
+                        form(method='POST', action=`/offers/${offer._id}/assignment`)
+                          if typeof csrfToken !== 'undefined'
+                            input(type='hidden', name='_csrf', value=csrfToken)
+
+                          // service template selector; option holds rendered labelPattern
+                          label(for='templateId') Сервіс:
+                          select.form-control(name='templateId' id='templateId' required)
+                            option(value='') — оберіть сервіс —
+                            if serviceTemplates && serviceTemplates.length
+                              each t in serviceTemplates
+                                - var labelP = (t && t.labelPattern) ? t.labelPattern.replace('{offerName}', (offer && offer.offerName) || '').replace('{geo}', (offer && offer.country ? offer.country.code : '')) : '';
+                                option(
+                                  value=t.keitaroTemplateId
+                                  data-label=labelP
+                                )= (labelP || (t && t.keitaroTemplateId))
+
+                          label.mt-3(for='campaignName') Кампанія:
+                          .input-group
+                            .input-group-prepend
+                              span.input-group-text
+                                span.linearicons-tag
+                            input.form-control(
+                              type='text',
+                              id='campaignName',
+                              name='campaignName',
+                              placeholder='Залиште пустим, щоб взяти зі шаблону'
+                            )
+                          // dynamic hint placeholder under the input (script-controlled)
+                          small#campaignHint.text-muted.d-block.mt-1(style='min-height:1.25rem') &nbsp;
+
+                          label.mt-3.mt-2 Байєри:
+                          if eligibleUsers && eligibleUsers.length
+                            each u in eligibleUsers
+                              .custom-control.custom-checkbox.custom-checkbox-primary.mt-3
+                                input.custom-control-input(
+                                  type='checkbox',
+                                  id=`user_${u.id}`,
+                                  name='users',
+                                  value=u.id
+                                )
+                                label.custom-control-label(for=`user_${u.id}`)= u.text
+                          else
+                            | Немає доступних баєрів
+
+                          button.btn.btn-primary.mt-4(type='submit')
+                            span.fa-send.mr-2
+                            | Видати офер
+
+                  .col-xl-8
+                    .card.mt-3
+                      .card-header
+                        h6.card-title.mb-0 Видано
+                      .card-body
+                        if assignees && assignees.length
+                          // group assignees by campaignName
+                          - var __groups = {};
+                          - (assignees || []).forEach(function (row) {
+                          -   var key = (row.campaignName && row.campaignName.trim()) || '—';
+                          -   (__groups[key] = __groups[key] || []).push(row);
+                          - });
+
+                          // sort group names by earliest assignedAt (ASC: oldest first)
+                          - var __groupNames = Object.keys(__groups).sort(function(a, b){
+                          -   var ma = Math.min.apply(null, __groups[a].map(function(r){ return new Date(r.assignedAt).getTime() || 0; }));
+                          -   var mb = Math.min.apply(null, __groups[b].map(function(r){ return new Date(r.assignedAt).getTime() || 0; }));
+                          -   return ma - mb;
+                          - });
+
+                          each gname in __groupNames
+                            .panel.panel-light
+                              .panel-header
+                                .group-5.d-flex.flex-wrap.align-items-center.justify-content-between
+                                  h6.panel-title= gname
+                              .panel-body
+                                p.panel-text
+                                  // sort rows by buyer webId (ASC: smallest first)
+                                  - var __rows = __groups[gname].slice().sort(function(x, y){
+                                  -   var ax = (x.user && x.user.webId) ? parseInt(x.user.webId, 10) : 0;
+                                  -   var ay = (y.user && y.user.webId) ? parseInt(y.user.webId, 10) : 0;
+                                  -   return ax - ay;
+                                  - });
+                                  each row in __rows
+                                    .d-flex.flex-column.flex-md-row.align-items-sm-center.mb-2
+                                      - var buyerWebId = (row.user && row.user.webId);
+                                      span= '#' + buyerWebId + ':  '
+                                      if row.keitaroLink
+                                        +copyInput({ value: row.keitaroLink, size: 'sm', btnText: 'Copy' })
+                                      else
+                                        span.text-muted  — (ще не додано)
+                        else
+                          span.text-muted Призначень поки немає.
+
+  // Prefill campaignName + hint + disable already-assigned users (EN-only comments)
+  script.
+    (function () {
+      var KEITARO_NAMES = !{JSON.stringify((offer && offer.keitaroNames) || {})};
+      var RAW_ASSIGNEES = !{JSON.stringify(assignees || [])};
+
+      // templateId -> { userId: true }
+      var ASSIGNED_BY_TEMPLATE = {};
+      RAW_ASSIGNEES.forEach(function (r) {
+        var tid = String(r && r.serviceTemplateId);
+        var uid = r && r.user && (r.user._id || r.user.id);
+        if (!tid || !uid) return;
+        uid = String(uid);
+        if (!ASSIGNED_BY_TEMPLATE[tid]) ASSIGNED_BY_TEMPLATE[tid] = {};
+        ASSIGNED_BY_TEMPLATE[tid][uid] = true;
+      });
+
+      var $tpl = document.getElementById('templateId');
+      var $name = document.getElementById('campaignName');
+      var $hint = document.getElementById('campaignHint');
+      var $userChecks = function () { return document.querySelectorAll('input[name="users"][type="checkbox"]'); };
+      if (!$tpl || !$name || !$hint) return;
+
+      // hint state controller
+      function setHint(state) {
+        $hint.classList.remove('text-success', 'text-muted');
+        if (state === 'saved') {
+          $hint.classList.add('text-success');
+          $hint.textContent = 'Компанія для даного сервісу вже створювалась.';
+        } else if (state === 'new') {
+          $hint.classList.add('text-muted');
+          $hint.textContent = 'Компанія для даного сервісу ще не створювалась.';
+        } else {
+          $hint.classList.add('text-muted');
+          $hint.textContent = 'Оберіть сервіс';
+        }
+      }
+
+      // track manual edits to avoid overwriting typed value
+      var userTyped = false;
+      $name.addEventListener('input', function () {
+        userTyped = !!(this.value && this.value.trim().length);
+        if (!userTyped) delete this.dataset.dirty;
+        else this.dataset.dirty = '1';
+      });
+
+      // prefill campaign name from saved or template label
+      function prefillName(force) {
+        if (!force && userTyped && $name.value && $name.value.trim().length) return;
+
+        var tid = $tpl.value;
+        if (!tid) { setHint('none'); return; }
+
+        var saved = KEITARO_NAMES && (KEITARO_NAMES[tid] || KEITARO_NAMES[String(+tid)]);
+        if (saved && String(saved).trim().length) {
+          $name.value = saved;
+          setHint('saved');
+          return;
+        }
+
+        var opt = $tpl.options[$tpl.selectedIndex];
+        var label = (opt && opt.getAttribute('data-label')) || (opt && opt.text) || '';
+        label = (label || '').trim();
+        if (label) { $name.value = label; setHint('new'); }
+        else { setHint('none'); }
+      }
+
+      // disable already-assigned buyers for the selected template
+      function applyAssignedState() {
+        var tid = $tpl.value;
+        var assigned = (tid && ASSIGNED_BY_TEMPLATE[tid]) ? ASSIGNED_BY_TEMPLATE[tid] : null;
+        var inputs = $userChecks();
+
+        // reset first
+        (inputs.forEach ? inputs.forEach : Array.prototype.forEach).call(inputs, function (inp) {
+          inp.disabled = false;
+          if (inp.dataset && inp.dataset.auto === '1') {
+            inp.checked = false;
+          }
+          if (inp.dataset) delete inp.dataset.auto;
+        });
+
+        if (!assigned) return;
+
+        // then mark assigned
+        (inputs.forEach ? inputs.forEach : Array.prototype.forEach).call(inputs, function (inp) {
+          var uid = String(inp.value || '');
+          if (assigned[uid]) {
+            inp.disabled = true;
+            if (inp.dataset) inp.dataset.auto = '1';
+          }
+        });
+      }
+
+      // react to template change
+      $tpl.addEventListener('change', function () {
+        prefillName(true);
+        applyAssignedState();
+      });
+
+      // initial state
+      setHint('none');
+      if ($tpl.value) {
+        prefillName(true);
+        applyAssignedState();
+      }
+    })();
 
   +modal-dynamic
   include ../layout/footer

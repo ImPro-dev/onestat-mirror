@@ -1,7 +1,8 @@
 // middlewares/variables.js
 'use strict';
 
-const { SCOPES, getUserScopes } = require('../scripts/permissions/scopes');
+const { buildFlags, isAdminUser } = require('../helpers/acl');
+const { getUserScopes } = require('../scripts/permissions/scopes');
 
 module.exports = function variablesMiddleware(req, res, next) {
   // 1) Auth/session
@@ -9,7 +10,7 @@ module.exports = function variablesMiddleware(req, res, next) {
   res.locals.user = u ? { ...u, id: u.id || (u._id ? String(u._id) : undefined) } : null;
   res.locals.isAuth = !!req.session.isAuthenticated;
 
-  // 2) Canonical helpers (backward-compatible names)
+  // 2) Canonical helpers (legacy-compatible names)
   const myId = u?.id || (u?._id ? String(u._id) : null);
   res.locals.myID = myId;
   res.locals.webID = u?.webId || null;
@@ -18,53 +19,53 @@ module.exports = function variablesMiddleware(req, res, next) {
   res.locals.role = u?.orgRole || u?.role || null;
   res.locals.position = u?.position || null;
 
-  // 3) Effective scopes and convenience flags for views.
-  //    IMPORTANT: Do NOT rely on flags for security; routes must still guard with requireAny/requireAll.
-  const scopesArr = Array.isArray(u) ? [] : Array.from(getUserScopes(u || {}));
-  const scopes = new Set(scopesArr);
+  // 3) Unified scopes & flags (computed ONCE per request)
+  // Memoize on req to reuse from other middleware if needed.
+  let scopes = req._aclScopes;
+  let flags = req._aclFlags;
+  if (!(scopes instanceof Set)) {
+    scopes = getUserScopes(u || {});
+    req._aclScopes = scopes;
+  }
+  if (!flags) {
+    flags = buildFlags(u || {}, scopes);
+    req._aclFlags = flags;
+  }
 
-  // Offer-related flags
-  const canSeeAllOffers = scopes.has(SCOPES.OFFERS_READ_ANY);
-  const canWriteOffers = scopes.has(SCOPES.OFFERS_WRITE_ANY);
-  const canAssignOffers = scopes.has(SCOPES.OFFERS_ASSIGN_TEAM) || canWriteOffers;
-  const canSeeAssignedOffersOnly = scopes.has(SCOPES.OFFERS_READ_ASSIGNED) && !canSeeAllOffers;
-
-  // Teams flags
-  const canManageDept = scopes.has(SCOPES.TEAMS_MANAGE_DEPT);
-  const canTeamsWriteAny = scopes.has(SCOPES.TEAMS_WRITE_ANY);
-  const canTeamsWriteOwn = scopes.has(SCOPES.TEAMS_WRITE_OWN);
-
-  // Analytics flags
-  const canStatsAny = scopes.has(SCOPES.ANALYTICS_READ_ALL);
-  const canStatsDept = scopes.has(SCOPES.ANALYTICS_READ_DEPT);
-  const canStatsTeam = scopes.has(SCOPES.ANALYTICS_READ_TEAM);
-  const canStatsSelf = scopes.has(SCOPES.ANALYTICS_READ_SELF);
-
-  // Expose raw scopes and grouped flags
-  res.locals.scopes = scopesArr;
+  // Expose both Set and array (templates need arrays)
+  res.locals.acl = Object.freeze({
+    scopes,
+    flags,
+  });
+  res.locals.scopes = Array.from(scopes);
   res.locals.flags = {
-    canSeeAllOffers,
-    canWriteOffers,
-    canAssignOffers,
-    canSeeAssignedOffersOnly,
-
-    canManageDept,
-    canTeamsWriteAny,
-    canTeamsWriteOwn,
-
-    canStatsAny,
-    canStatsDept,
-    canStatsTeam,
-    canStatsSelf,
+    // offers
+    canSeeAllOffers: flags.canSeeAllOffers,
+    canWriteOffers: flags.canWriteOffers,
+    canAssignOffers: flags.canAssignOffers,
+    canSeeAssignedOffersOnly: flags.canSeeAssignedOffersOnly,
+    // teams
+    canManageDept: flags.canManageDept,
+    canTeamsWriteAny: flags.canTeamsWriteAny,
+    canTeamsWriteOwn: flags.canTeamsWriteOwn,
+    // analytics
+    canStatsAny: flags.canStatsAny,
+    canStatsDept: flags.canStatsDept,
+    canStatsTeam: flags.canStatsTeam,
+    canStatsSelf: flags.canStatsSelf,
+    // users
+    canUsersReadAny: flags.canUsersReadAny,
+    canUsersWriteAny: flags.canUsersWriteAny,
+    canUsersCreateBasic: flags.canUsersCreateBasic,
+    canUsersEditBasic: flags.canUsersEditBasic,
   };
 
-  // 4) Legacy booleans (for templates only; keep behavior stable)
-  const legacyRole = res.locals.role;
-  const legacyIsAdmin = legacyRole === 'admin' || scopes.has(SCOPES.INTEGRATIONS_ADMIN);
-  const legacyIsManager = (!legacyIsAdmin && legacyRole === 'manager') || canTeamsWriteAny;
+  // 4) Legacy booleans (templates only)
+  const legacyIsAdmin = isAdminUser(u || {});
+  const legacyIsManager = (!legacyIsAdmin && (u?.orgRole === 'manager' || flags.canTeamsWriteAny));
   res.locals.isAdmin = legacyIsAdmin;
   res.locals.isManager = legacyIsManager;
-  res.locals.isUser = legacyRole === 'user' && !legacyIsAdmin && !legacyIsManager;
+  res.locals.isUser = !legacyIsAdmin && !legacyIsManager;
 
   // 5) Flash
   res.locals.userError = req.flash('userError');
@@ -72,7 +73,7 @@ module.exports = function variablesMiddleware(req, res, next) {
   res.locals.error = req.flash('error');
   res.locals.success = req.flash('success');
 
-  // 6) CSRF token (present only if csurf is mounted on the route)
+  // 6) CSRF token (only if csurf is mounted)
   res.locals.csrfToken = (typeof req.csrfToken === 'function') ? req.csrfToken() : undefined;
 
   next();

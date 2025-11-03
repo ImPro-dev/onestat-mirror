@@ -1,0 +1,118 @@
+// Shared card: Finance (rate, cap, postclick, model, KPI)
+.card.mb-3
+  .card-header
+    h6.card-title.mb-0 Фінанси
+  .card-body
+    .table-responsive
+      table.table.mt-3.mb-4
+        tbody
+          tr
+            td.text-right.font-weight-bold(style='width:20%') Бонус:
+            td= offer.bonus || '—'
+          tr
+            td.text-right.font-weight-bold Ставка:
+            td
+              +currencyFormat(offer && typeof offer.activeRate === 'number' ? offer.activeRate : null)
+              a.btn.btn-sm.btn-light.ml-3(href='#collapseExample', data-toggle='collapse')
+                span.linearicons-chevron-down
+              .collapse(id='collapseExample')
+                if canWriteOffers
+                  - var __now = new Date();
+                  - var __ymd = String(__now.getFullYear()) + '-' + String(__now.getMonth()+1).padStart(2,'0') + '-' + String(__now.getDate()).padStart(2,'0');
+                  form(method='POST', action=`/offers/${offer._id}/rates/update`)
+                    if typeof csrfToken !== 'undefined'
+                      input(type='hidden', name='_csrf', value=csrfToken)
+                    .form-group.mb-2.mt-4
+                      .input-group
+                        .input-group-prepend
+                          span.input-group-text
+                            span.fa-usd
+                        input.form-control(
+                          type='number',
+                          id='newRateAmount',
+                          name='newRateAmount',
+                          step='1',
+                          min='0',
+                          required,
+                          placeholder='USD'
+                        )
+                    .form-group.mb-2
+                      input.form-control(
+                        type='date',
+                        id='newRateValidFrom',
+                        name='newRateValidFrom',
+                        required,
+                        value=__ymd
+                      )
+                    button.btn.btn-light.mb-2(type='submit')
+                      span.fa-refresh.mr-2
+                      | Оновити ставку
+                    hr
+
+                if offer && offer.rateHistory && offer.rateHistory.length
+                  h6.mb-3.mt-3 Історія ставок
+                  .table-responsive
+                    table.table.table-striped.mb-0
+                      thead
+                        tr
+                          th(style='min-width:100px') Ставка
+                          th(style='min-width:200px') Діє з
+                          th(style='min-width:200px') Діє до
+                          if canWriteOffers
+                            th(style='min-width:140px') Дія
+                      tbody
+                        - var __today = new Date(); __today.setHours(0,0,0,0);
+                        each r in (offer.rateHistory || [])
+                          - var _vf = r.validFrom ? new Date(r.validFrom) : null;
+                          - var _vt = r.validTo ? new Date(r.validTo) : null;
+                          - var _vfY = _vf ? _vf.getFullYear() : 0;
+                          - var _vfM = _vf ? String(_vf.getMonth()+1).padStart(2,'0') : '00';
+                          - var _vfD = _vf ? String(_vf.getDate()).padStart(2,'0') : '00';
+                          - var _vfYMD = _vf ? (_vfY + '-' + _vfM + '-' + _vfD) : '';
+                          - var _vfDisp = _vf ? (_vfD + '.' + _vfM + '.' + _vfY) : '';
+                          - var __vfCmp = _vf ? (new Date(_vf)).setHours(0,0,0,0) : 0;
+                          - var isFutureOpen = !!(_vf && !_vt && (__vfCmp > __today.getTime()));
+                          tr
+                            td
+                              +currencyFormat(typeof r.amount === 'number' ? r.amount : null)
+                            td
+                              +dateKyiv(r.validFrom)
+                            td
+                              +dateKyiv(r.validTo)
+                            if canWriteOffers
+                              td
+                                if isFutureOpen
+                                  form.d-inline(method='POST', action=`/offers/${offer._id}/rates/cancel`)
+                                    if typeof csrfToken !== 'undefined'
+                                      input(type='hidden', name='_csrf', value=csrfToken)
+                                    input(type='hidden', name='validFrom', value=_vfYMD)
+                                    a.btn.btn-outline-danger.btn-sm(
+                                      href='#'
+                                      data-confirmation=JSON.stringify({
+                                        title: 'Скасувати майбутню ставку',
+                                        content: `Видалити ставку з ${_vfDisp}?`
+                                      })
+                                      data-confirm-submit
+                                    )
+                                      span.linearicons-cross.mr-1
+                                      | Скасувати
+                else
+                  .p-3
+                    span.text-muted Історія відсутня.
+
+          tr
+            td.text-right.font-weight-bold Капа:
+            td= (typeof offer.cap === 'number') ? offer.cap : 'uncap'
+          tr
+            td.text-right.font-weight-bold Постклік:
+            td= (typeof offer.postclick === 'number') ? (offer.postclick + ' днів') : '—'
+          tr
+            td.text-right.font-weight-bold Модель:
+            td= (offer && offer.model ? offer.model.label : '—')
+          tr
+            td.text-right.font-weight-bold KPI:
+            td
+              if offer && offer.kpi
+                != offer.kpi
+              else
+                span.text-muted —

@@ -14,9 +14,9 @@ const {
 
 const fs = require('fs');
 const path = require('path');
-const { SCOPES, getUserScopes } = require('../scripts/permissions/scopes');
-const { processAndSaveAvatar } = require('../middlewares/uploadAvatar');
 const mongoose = require('mongoose');
+
+const { canReadUserProfile, canEditUserBasic, buildFlags } = require('../helpers/acl');
 
 const AVATAR_DIR = path.join(__dirname, '..', 'uploads', 'avatars');
 
@@ -43,7 +43,6 @@ async function revokeUserSessions(userId) {
 
 /**
  * GET: Users list
- * (filters, sorting, pagination)
  */
 const UserList = async (req, res) => {
   try {
@@ -71,7 +70,6 @@ const UserList = async (req, res) => {
     const page = toInt(pageRaw, 1);
     const limit = toInt(limitRaw, 20);
 
-    // filter
     const find = {};
     if (q && q.trim()) {
       const re = new RegExp(q.trim(), 'i');
@@ -164,15 +162,16 @@ const AddUserPage = async (req, res) => {
 
 /**
  * POST: Create new user
- * Teamlead is allowed to create a basic user (ORG_USERS_CREATE_BASIC).
- * Only Admin/Head (via users.js route guards) can fully manage roles later.
+ * Teamlead may create a basic user (ORG_USERS_CREATE_BASIC).
+ * Only Admin/Head (ORG_USERS_WRITE_ANY) may override orgRole at creation.
  */
 const AddUser = async (req, res) => {
   try {
     const actor = req.session?.user || null;
-    const scopes = new Set(getUserScopes(actor));
-    const canWriteAny = scopes.has(SCOPES.ORG_USERS_WRITE_ANY);
-    const canCreateBasic = scopes.has(SCOPES.ORG_USERS_CREATE_BASIC);
+    const flags = buildFlags(actor);
+
+    const canWriteAny = flags.canUsersWriteAny;
+    const canCreateBasic = flags.canUsersCreateBasic;
 
     if (!canWriteAny && !canCreateBasic) {
       req.flash('userError', 'Недостатньо прав для створення користувача.');
@@ -181,13 +180,12 @@ const AddUser = async (req, res) => {
 
     const { firstName, lastName, email, password, telegramUsername, department } = req.body;
 
-    let orgRole = 'user';     // default orgRole for creation
-    // Allow orgRole override only if actor has ORG_USERS_WRITE_ANY (admin/head)
+    let orgRole = 'user';
     if (canWriteAny && req.body.orgRole) {
       orgRole = String(req.body.orgRole);
     }
 
-    // Basic validation
+    // basic validation
     if (!firstName?.trim() || !lastName?.trim()) {
       req.flash('userError', 'Будь ласка, заповни імʼя та прізвище.');
       return redirectBack(res, req);
@@ -202,14 +200,12 @@ const AddUser = async (req, res) => {
     }
     const emailNorm = String(email).trim().toLowerCase();
 
-    // Unique email
     const existing = await User.findOne({ email: emailNorm }).lean();
     if (existing) {
       req.flash('userError', 'Користувач з таким емейлом вже існує.');
       return redirectBack(res, req);
     }
 
-    // Department validity
     const deptOk = await Department.exists({ value: department, isActive: true });
     if (!deptOk) {
       req.flash('userError', 'Невірний відділ.');
@@ -296,7 +292,6 @@ const EditUser = async (req, res) => {
       return res.redirect('/users');
     }
 
-    // validation
     if (!firstName?.trim() || !lastName?.trim()) {
       req.flash('userError', 'Будь ласка, заповни імʼя та прізвище.');
       return res.redirect(`/users/edit/${id}?allow=1`);
@@ -309,7 +304,6 @@ const EditUser = async (req, res) => {
 
     const emailNorm = String(email).trim().toLowerCase();
 
-    // unique email when changed
     if (emailNorm !== current.email) {
       const emailTaken = await User.exists({ _id: { $ne: id }, email: emailNorm });
       if (emailTaken) {
@@ -351,16 +345,14 @@ const EditUser = async (req, res) => {
  * GET: Profile page
  * Access:
  *  - self: always
- *  - others: requires ORG_USERS_READ_ANY
+ *  - others: canReadUserProfile (ORG_USERS_READ_ANY)
  */
 const ProfilePage = async (req, res) => {
   try {
     const id = req.params.id;
     const sessionUser = req.session?.user || null;
-    const isSelf = !!(sessionUser && String(sessionUser._id || sessionUser.id) === String(id));
 
-    const scopes = new Set(getUserScopes(sessionUser));
-    if (!isSelf && !scopes.has(SCOPES.ORG_USERS_READ_ANY)) {
+    if (!canReadUserProfile(sessionUser, id)) {
       req.flash('userError', 'У вас немає доступу до цього профілю.');
       return res.redirect('/dashboard');
     }
@@ -380,8 +372,8 @@ const ProfilePage = async (req, res) => {
     return res.render('pages/users/profile', {
       title: `Профіль · ${`${user.firstName || ''} ${user.lastName || ''}`.trim()}`,
       user,
-      isSelf,
-      canEdit: canEditUserBase(sessionUser, id),
+      isSelf: !!(sessionUser && String(sessionUser._id || sessionUser.id) === String(id)),
+      canEdit: canEditUserBasic(sessionUser, id),
       hasAvatar,
     });
   } catch (err) {
@@ -396,7 +388,7 @@ const DeleteAvatar = async (req, res) => {
   const id = req.params.id;
   try {
     const me = req.session?.user || null;
-    if (!canEditUserBase(me, id)) {
+    if (!canEditUserBasic(me, id)) {
       req.flash('userError', 'Недостатньо прав для видалення аватара.');
       return res.redirect(`/users/${id}`);
     }
@@ -405,7 +397,6 @@ const DeleteAvatar = async (req, res) => {
     try {
       if (fs.existsSync(filePath)) await fs.promises.unlink(filePath);
     } catch (e) {
-      // swallow unlink error (do not break UX)
       console.error('Avatar unlink error:', e);
     }
 
@@ -420,9 +411,7 @@ const DeleteAvatar = async (req, res) => {
   }
 };
 
-/**
- * Remove user (simple)
- */
+// Remove user
 const RemoveUser = async (req, res) => {
   try {
     await User.deleteOne({ _id: req.params.id });
@@ -435,14 +424,11 @@ const RemoveUser = async (req, res) => {
   }
 };
 
-/**
- * Deactivate user
- */
+// Deactivate user
 const DeactivateUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // do not allow self-deactivation
     if (String(req.session?.user?.id) === String(id)) {
       req.flash('userError', 'Не можна деактивувати власний обліковий запис.');
       return res.redirect('/users');
@@ -469,9 +455,7 @@ const DeactivateUser = async (req, res) => {
   }
 };
 
-/**
- * Activate user
- */
+// Activate user
 const ActivateUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -495,7 +479,7 @@ const ActivateUser = async (req, res) => {
   }
 };
 
-// Serve avatar (fallback to placeholder)
+// Serve avatar
 const ServeAvatar = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -515,18 +499,12 @@ const ServeAvatar = async (req, res) => {
   }
 };
 
-const canEditUserBase = (sessionUser, targetUserId) => {
-  const scopes = new Set(getUserScopes(sessionUser));
-  const isSelf = sessionUser && String(sessionUser._id || sessionUser.id) === String(targetUserId);
-  return isSelf || scopes.has(SCOPES.ORG_USERS_WRITE_ANY);
-};
-
 // Upload avatar page
 const UploadAvatarPage = async (req, res) => {
   try {
     const id = req.params.id;
     const me = req.session?.user || null;
-    if (!canEditUserBase(me, id)) {
+    if (!canEditUserBasic(me, id)) {
       req.flash('userError', 'Недостатньо прав для зміни аватара.');
       return res.redirect('/users');
     }
@@ -553,9 +531,9 @@ const UploadAvatar = async (req, res) => {
   const id = req.params.id;
   try {
     const me = req.session?.user || null;
-    if (!canEditUserBase(me, id)) {
+    if (!canEditUserBasic(me, id)) {
       req.flash('userError', 'Недостатньо прав для зміни аватара.');
-      return res.redirect('/users');
+      return res.redirect(`/users/${id}`);
     }
 
     if (!req.file) {
@@ -563,6 +541,7 @@ const UploadAvatar = async (req, res) => {
       return res.redirect(`/users/${id}/avatar/upload`);
     }
 
+    const { processAndSaveAvatar } = require('../middlewares/uploadAvatar');
     await processAndSaveAvatar(id, req.file.buffer);
     await User.findByIdAndUpdate(id, { $set: { avatarUpdatedAt: new Date() } });
 

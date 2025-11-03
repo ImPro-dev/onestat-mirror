@@ -2,10 +2,9 @@
 'use strict';
 
 /**
- * Canonical scopes. Keep legacy constants for backward compatibility,
- * but prefer the new read/write model below.
+ * Canonical scopes. Kept immutable to avoid accidental mutations.
  */
-const SCOPES = {
+const SCOPES = Object.freeze({
   // Users
   ORG_USERS_READ_ANY: 'org:users:read:any',
   ORG_USERS_WRITE_ANY: 'org:users:write:any',
@@ -36,37 +35,35 @@ const SCOPES = {
   // Analytics / Statistics
   ANALYTICS_READ_ALL: 'analytics:read:all',
   ANALYTICS_READ_DEPT: 'analytics:read:dept',
-  ANALYTICS_READ_TEAM: 'analytics:read:team', // NEW: team-level stats
+  ANALYTICS_READ_TEAM: 'analytics:read:team',
   ANALYTICS_READ_SELF: 'analytics:read:self',
 
   // Integrations
   INTEGRATIONS_ADMIN: 'integrations:admin',
-};
+});
 
 /**
- * Role -> scopes mapping.
- * Combine org-level role with team/department roles (see TEAMROLE_TO_SCOPES / DEPTROLE_TO_SCOPES).
+ * Role -> scopes mapping. Immutable.
  */
-const ROLE_TO_SCOPES = {
-  admin: [...Object.values(SCOPES)],
+const ROLE_TO_SCOPES = Object.freeze({
+  admin: Object.freeze([...Object.values(SCOPES)]),
 
   // Manager preserved as a broad role (if used in your org):
-  manager: [
-    SCOPES.OFFERS_READ_ANY,        // тільки читання оферів (за потреби)
+  manager: Object.freeze([
+    SCOPES.OFFERS_READ_ANY,
     SCOPES.ANALYTICS_READ_DEPT,
-  ],
+  ]),
 
-  user: [
+  user: Object.freeze([
     SCOPES.ANALYTICS_READ_SELF,
-  ],
-};
+  ]),
+});
 
 /**
- * Team role -> scopes.
- * Teamlead: read all offers, assign to own team, can create/edit basic users.
+ * Team role -> scopes. Immutable.
  */
-const TEAMROLE_TO_SCOPES = {
-  lead: [
+const TEAMROLE_TO_SCOPES = Object.freeze({
+  lead: Object.freeze([
     SCOPES.TEAMS_READ_ANY,
     SCOPES.OFFERS_READ_ANY,
     SCOPES.OFFERS_ASSIGN_TEAM,
@@ -75,31 +72,30 @@ const TEAMROLE_TO_SCOPES = {
     SCOPES.ORG_USERS_EDIT_BASIC,
     SCOPES.ANALYTICS_READ_TEAM,
     SCOPES.ANALYTICS_READ_SELF,
-  ],
-  member: [
+  ]),
+  member: Object.freeze([
     SCOPES.OFFERS_READ_ASSIGNED,
     SCOPES.ANALYTICS_READ_SELF,
-  ],
-  assistant: [
+  ]),
+  assistant: Object.freeze([
     SCOPES.OFFERS_READ_ASSIGNED,
-    SCOPES.ANALYTICS_READ_SELF, // consider adding explicit "read:mentor" if needed later
-  ],
-};
+    SCOPES.ANALYTICS_READ_SELF,
+  ]),
+});
 
 /**
- * Department role -> scopes.
- * Head: manages own department, full offers write, can read any offers, broad analytics.
+ * Department role -> scopes. Immutable.
  */
-const DEPTROLE_TO_SCOPES = {
-  head: [
+const DEPTROLE_TO_SCOPES = Object.freeze({
+  head: Object.freeze([
     SCOPES.TEAMS_MANAGE_DEPT,
     SCOPES.TEAMS_READ_ANY,
     SCOPES.OFFERS_READ_ANY,
     SCOPES.OFFERS_WRITE_ANY,
-    SCOPES.OFFERS_ASSIGN_TEAM, // Head can assign within department/team structures
+    SCOPES.OFFERS_ASSIGN_TEAM,
     SCOPES.ANALYTICS_READ_ALL,
-  ],
-};
+  ]),
+});
 
 // ——— Normalization helpers ———
 function norm(v) { return typeof v === 'string' ? v.toLowerCase() : v; }
@@ -109,6 +105,7 @@ function pickRole(user, camel, snake) {
 
 /**
  * Build an effective scope set from org/team/dept roles and extra grants.
+ * Returns a Set (intended to be cached per-request by middleware).
  */
 function getUserScopes(user) {
   const orgRole = pickRole(user, 'orgRole', 'orgrole');
@@ -120,6 +117,7 @@ function getUserScopes(user) {
   const dept = DEPTROLE_TO_SCOPES[deptRole] || [];
   const extra = Array.isArray(user?.grants) ? user.grants : [];
 
+  // No Object.freeze here — we return a fresh Set
   return new Set([...base, ...team, ...dept, ...extra]);
 }
 
